@@ -1,0 +1,10 @@
+out/
+.idea/
+target/
+*.iml
+*.jar
+Artifacts/
+debug/
+src/test/java/Private/
+TestData/Private/
+output
