@@ -20,9 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public class ImageTester {
-    private static final String cur_ver = "2.3.0";
+    private static final String cur_ver = "2.3.1";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -127,6 +128,8 @@ public class ImageTester {
         try {
             String batchMapperPath = cmd.getOptionValue("mp", null);
             // Split each of the batch POJOs into a parallel stream and let JVM handle multithreading
+           
+         
             BatchMapDeserializer.readFile(batchMapperPath).parallelStream().forEach(currentBatch -> {
                 logger.printBatchPojo(currentBatch);
                 Config currentConfiguration = new Config();
@@ -141,13 +144,13 @@ public class ImageTester {
                         .apiKey(currentConfiguration.apiKey)
                         .serverUrl(currentConfiguration.serverUrl)
                         .proxySettings(currentConfiguration.proxy_settings)
-                        .matchLevel(cmd.getOptionValue("ml", null))
+                        .matchLevel(currentBatch.matchLevel)
                         .branch(cmd.getOptionValue("br", null))
                         .parentBranch(cmd.getOptionValue("pb", null))
                         .baselineEnvName(cmd.getOptionValue("bn", null))
                         .logFile(cmd.getOptionValue("lf", null))
                         .hostOs(currentBatch.os)
-                        .hostApp(cmd.getOptionValue("ap"))
+                        .hostApp(currentBatch.browser)
                         .saveFaliedTests(cmd.hasOption("as"))
                         .ignoreDisplacement(cmd.hasOption("id"))
                         .saveNewTests(!cmd.hasOption("pn"))
@@ -163,13 +166,13 @@ public class ImageTester {
                 currentConfiguration.forcedName = currentBatch.testName;
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
-                currentConfiguration.setViewport(cmd.getOptionValue("vs", null));
-                currentConfiguration.setMatchSize(cmd.getOptionValue("ms", null));
-                currentConfiguration.setBatchInfo(currentBatch.batchName, cmd.hasOption("nc"));
+                currentConfiguration.setViewport(currentBatch.viewport.length() == 0 ? null: currentBatch.viewport);
+                currentConfiguration.setMatchSize(currentBatch.matchsize.length() == 0 ? null: currentBatch.matchsize);
+                currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
-
+               
                 try {
-                    File root = new File(currentBatch.fileName);
+                    File root = new File(currentBatch.filePath);
                     int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
                     Suite suite = Suite.create(
                             root.getCanonicalFile(),
