@@ -1,5 +1,7 @@
 package com.yanirta.lib;
 
+import com.applitools.eyes.BatchInfo;
+import com.yanirta.BatchMapper.BatchMapPojo;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.log4j.Level;
@@ -37,8 +39,12 @@ public class Logger {
         setDebug(true);
     }
 
+    public void printBatchPojo(BatchMapPojo batchMapPojo) {
+        out_.printf("%s \n", batchMapPojo);
+    }
+
     public void printProgress(int curr, int total) {
-        out_.printf("[%s/%s] ", curr, total);
+        out_.printf("[%s/%s] \n", curr, total);
     }
 
     private void printPrefix() {
@@ -46,6 +52,10 @@ public class Logger {
             Date date = new Date(System.currentTimeMillis());
             out_.printf("[%s] [%s] ", dateFormatter_.format(date), Thread.currentThread().getName());
         }
+    }
+
+    public void printMessage(String msg) {
+        out_.print(msg);
     }
 
     public void reportDebug(String format, Object... args) {

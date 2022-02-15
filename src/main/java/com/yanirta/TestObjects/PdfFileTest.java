@@ -10,7 +10,6 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.SocketException;
 
 public class PdfFileTest extends DocumentTestBase {
 
@@ -33,14 +32,11 @@ public class PdfFileTest extends DocumentTestBase {
                     eyes.checkImage(bim, String.format("Page-%s", page));
                     bim.getGraphics().dispose();
                     bim.flush();
-                } catch (SocketException e) {
-                    logger().reportException(e, file().getAbsolutePath());
                 } catch (IOException e) {
                     logger().reportException(e, file().getAbsolutePath());
                 }
             }
             return eyes.close(false);
         }
-        //Do nothing
     }
 }

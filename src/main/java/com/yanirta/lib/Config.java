@@ -31,7 +31,8 @@ public class Config {
     public String matchHeight = null;
     public boolean legacyFileOrder = false;
     public boolean dontCloseBatches = false;
-    private HashSet<String> batchesIdListForBatchClose = new HashSet<>();
+    public String batchMapperPath = null;
+    private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
@@ -62,7 +63,6 @@ public class Config {
         matchWidth = dims[0];
         if (dims.length > 1)
             matchHeight = dims[1];
-        return;
     }
 
     //set batch related info

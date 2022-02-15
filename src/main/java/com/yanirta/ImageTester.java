@@ -3,16 +3,26 @@ package com.yanirta;
 import com.applitools.eyes.AccessibilityGuidelinesVersion;
 import com.applitools.eyes.AccessibilityLevel;
 import com.applitools.eyes.MatchLevel;
-import com.yanirta.lib.*;
-import org.apache.commons.cli.*;
-
+import com.yanirta.BatchMapper.BatchMapDeserializer;
+import com.yanirta.lib.Config;
+import com.yanirta.lib.EyesFactory;
+import com.yanirta.lib.EyesUtilitiesConfig;
+import com.yanirta.lib.Logger;
+import com.yanirta.lib.TestExecutor;
+import com.yanirta.lib.Utils;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.ParseException;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 public class ImageTester {
-    private static final String cur_ver = ImageTester.class.getPackage().getImplementationVersion();
+    private static final String cur_ver = "2.3.0";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -32,6 +42,11 @@ public class ImageTester {
             if (cmd.hasOption("dv"))
                 Utils.disableCertValidation();
 
+            String batchMapperPath = cmd.getOptionValue("mp", null);
+            if (batchMapperPath != null) {
+                runTestWithBatchMapper(logger, cmd);
+            }
+
             Config config = new Config();
             config.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
             config.serverUrl = cmd.getOptionValue("s", null);
@@ -39,7 +54,6 @@ public class ImageTester {
             String[] accessibilityOptions = cmd.getOptionValues("ac");
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
-            // Eyes factory
             EyesFactory factory
                     = new EyesFactory(cur_ver, logger)
                     .apiKey(config.apiKey)
@@ -58,12 +72,10 @@ public class ImageTester {
                     .imageCut(cmd.getOptionValues("ic"))
                     .accSettings(accessibilityOptions);
 
-
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
-
             config.appName = cmd.getOptionValue("a", "ImageTester");
-            config.DocumentConversionDPI = Float.valueOf(cmd.getOptionValue("di", "250"));
+            config.DocumentConversionDPI = Float.parseFloat(cmd.getOptionValue("di", "250"));
             config.pdfPass = cmd.getOptionValue("pp", null);
             config.pages = cmd.getOptionValue("sp", null);
             config.includePageNumbers = cmd.hasOption("pn");
@@ -78,71 +90,131 @@ public class ImageTester {
             config.dontCloseBatches = cmd.hasOption("dcb");
 
             File root = new File(cmd.getOptionValue("f", "."));
-            int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
 
-            // Tests executor
+            int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
             TestExecutor executor = new TestExecutor(maxThreads, factory, config);
 
-            // Suite
             Suite suite = Suite.create(root.getCanonicalFile(), config, executor);
 
-            // EyesUtilities config
             config.eyesUtilsConf = new EyesUtilitiesConfig(cmd);
-
-            if (suite == null) {
-                System.out.println("Nothing to test!\n");
-                System.exit(0);
-            }
 
             suite.run();
 
-            //close batches before exit
             config.closeBatches();
 
-            //exit
             System.exit(0);
-        } catch (ParseException e) {
+        } catch (ParseException | IOException e) {
             logger.reportException(e);
             logger.printHelp(options);
             System.exit(-1);
-        } catch (IOException e) {
-            logger.reportException(e);
-            logger.printHelp(options);
-            System.exit(-1);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        } catch (KeyManagementException e) {
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
             e.printStackTrace();
             System.exit(-1);
         }
     }
 
-    //k,a,f,p,s,ml,bd,pb,bn,vs,lf,as,os,ap,di,sp,pn,pp,th
+    /**
+     * Running the ImageTester with the BatchMapper differs enough that it warrants a different execution logic
+     * ImageTester will use this method for test execution when a batch mapper is specified with "-mp"
+     *
+     * @param logger Logger utility
+     * @param cmd CommandLine tool that parses arguments and flags from CLI execution
+     */
+    private static void runTestWithBatchMapper(final Logger logger, final CommandLine cmd) {
+
+        System.out.println("Running ImageTester with BatchMapper");
+
+        try {
+            String batchMapperPath = cmd.getOptionValue("mp", null);
+            // Split each of the batch POJOs into a parallel stream and let JVM handle multithreading
+            BatchMapDeserializer.readFile(batchMapperPath).parallelStream().forEach(currentBatch -> {
+                logger.printBatchPojo(currentBatch);
+                Config currentConfiguration = new Config();
+                currentConfiguration.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
+                currentConfiguration.serverUrl = cmd.getOptionValue("s", null);
+                currentConfiguration.setProxy(cmd.getOptionValues("p"));
+                String[] accessibilityOptions = cmd.getOptionValues("ac");
+                accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
+
+                EyesFactory factory
+                        = new EyesFactory(cur_ver, logger)
+                        .apiKey(currentConfiguration.apiKey)
+                        .serverUrl(currentConfiguration.serverUrl)
+                        .proxySettings(currentConfiguration.proxy_settings)
+                        .matchLevel(cmd.getOptionValue("ml", null))
+                        .branch(cmd.getOptionValue("br", null))
+                        .parentBranch(cmd.getOptionValue("pb", null))
+                        .baselineEnvName(cmd.getOptionValue("bn", null))
+                        .logFile(cmd.getOptionValue("lf", null))
+                        .hostOs(currentBatch.os)
+                        .hostApp(cmd.getOptionValue("ap"))
+                        .saveFaliedTests(cmd.hasOption("as"))
+                        .ignoreDisplacement(cmd.hasOption("id"))
+                        .saveNewTests(!cmd.hasOption("pn"))
+                        .imageCut(cmd.getOptionValues("ic"))
+                        .accSettings(accessibilityOptions);
+                currentConfiguration.splitSteps = cmd.hasOption("st");
+                currentConfiguration.logger = logger;
+                currentConfiguration.appName = currentBatch.app;
+                currentConfiguration.DocumentConversionDPI = Float.parseFloat(cmd.getOptionValue("di", "250"));
+                currentConfiguration.pdfPass = cmd.getOptionValue("pp", null);
+                currentConfiguration.pages = currentBatch.pages;
+                currentConfiguration.includePageNumbers = cmd.hasOption("pn");
+                currentConfiguration.forcedName = currentBatch.testName;
+                currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
+                currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
+                currentConfiguration.setViewport(cmd.getOptionValue("vs", null));
+                currentConfiguration.setMatchSize(cmd.getOptionValue("ms", null));
+                currentConfiguration.setBatchInfo(currentBatch.batchName, cmd.hasOption("nc"));
+                currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
+
+                try {
+                    File root = new File(currentBatch.fileName);
+                    int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
+                    Suite suite = Suite.create(
+                            root.getCanonicalFile(),
+                            currentConfiguration,
+                            new TestExecutor(maxThreads, factory, currentConfiguration)
+                    );
+                    currentConfiguration.eyesUtilsConf = new EyesUtilitiesConfig(cmd);
+                    suite.run();
+                } catch (IOException e) {
+                    logger.printMessage("Could not find file to test upon");
+                    e.printStackTrace();
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                } finally {
+                    currentConfiguration.closeBatches();
+                }
+            });
+        } catch (Exception e) {
+            logger.reportException(e);
+            e.printStackTrace();
+        } finally {
+            System.exit(0);
+        }
+    }
+
     private static Options getOptions() {
         Options options = new Options();
-
         options.addOption(Option.builder("k")
                 .longOpt("apiKey")
                 .desc("Applitools api key")
                 .hasArg()
                 .argName("apikey")
                 .build());
-
         options.addOption(Option.builder("a")
                 .longOpt("AppName")
                 .desc("Set own application name, default: ImageTester")
                 .hasArg()
                 .argName("name")
                 .build());
-
         options.addOption(Option.builder("f")
                 .longOpt("folder")
                 .desc("Set the root folder to start the analysis, default: \\.")
                 .hasArg()
                 .argName("path")
                 .build());
-
         options.addOption(Option.builder("p")
                 .longOpt("proxy")
                 .desc("Set proxy address")
@@ -152,7 +224,6 @@ public class ImageTester {
                 .argName("url [,user,password]")
                 .build()
         );
-
         options.addOption(Option.builder("s")
                 .longOpt("server")
                 .desc("Set Applitools server url")
@@ -160,35 +231,30 @@ public class ImageTester {
                 .argName("url")
                 .build()
         );
-
         options.addOption(Option.builder("ml")
                 .longOpt("matchLevel")
                 .desc(String.format("Set match level to one of [%s], default = Strict", Utils.getEnumValues(MatchLevel.class)))
                 .hasArg()
                 .argName("level")
                 .build());
-
         options.addOption(Option.builder("br")
                 .longOpt("branch")
                 .desc("Set branch name")
                 .hasArg()
                 .argName("name")
                 .build());
-
         options.addOption(Option.builder("pb")
                 .longOpt("parentBranch")
                 .desc("Set parent branch name, optional when working with branches")
                 .hasArg()
                 .argName("name")
                 .build());
-
         options.addOption(Option.builder("bn")
                 .longOpt("baseline")
                 .desc("Set baseline name")
                 .hasArg()
                 .argName("name")
                 .build());
-
         options.addOption(Option.builder("vs")
                 .longOpt("viewportsize")
                 .desc("Declare viewport size identifier <width>x<height> ie. 1000x600, if not set,default will be first image's size of every test")
@@ -201,27 +267,23 @@ public class ImageTester {
                 .hasArg()
                 .argName("size")
                 .build());
-
         options.addOption(Option.builder("lf")
                 .longOpt("logFile")
                 .desc("Specify Applitools log-file")
                 .hasArg()
                 .argName("file")
                 .build());
-
         options.addOption(Option.builder("as")
                 .longOpt("autoSave")
                 .desc("Automatically save failed tests. Waring, might save buggy baselines without human inspection. ")
                 .hasArg(false)
                 .build());
-
         options.addOption(Option.builder("os")
                 .longOpt("hostOs")
                 .desc("Set OS identifier for the screens under test")
                 .hasArg()
                 .argName("os")
                 .build());
-
         options.addOption(Option.builder("ap")
                 .longOpt("hostApp")
                 .desc("Set Host-app identifier for the screens under test")
@@ -326,9 +388,13 @@ public class ImageTester {
                 .desc("Don't automatically close batch when tests are finished running")
                 .hasArg(false)
                 .build());
+        options.addOption(Option.builder("mp")
+                .longOpt("mapperPath")
+                .desc("Path to Batch Mapper CSV, to be used with BatchMapper jar")
+                .hasArgs()
+                .build());
 
         EyesUtilitiesConfig.injectOptions(options);
-
         return options;
     }
 }
