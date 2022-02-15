@@ -104,12 +104,18 @@ The tool build in java and requires minimal set of parameters the minimal comman
     To use it, supply a path to a batch mapper configuration file (a '|' delimited CSV).
     <br><br>
     #### Batch Mapper parameters
-    - `directory` - The name of the directory where the tests are located
-    - `fileName`- The name of the pdf being tested
-    - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15)
+    - `filePath`- The location of files (PDF/Image) being tested
     - `testName` - The name of the test as it will appear on the Applitools dashboard (Optional)
-    - `os` - The operating system to be tested on. This is optional
     - `app` - The app name of the test as it will appear on the Applitools dashboard (Optional)
+    - `os` - The operating system to be tested on (Optional)
+    - `browser` - The browser to be tested on (Optional)
+    - `viewport` - The viewport for the test `-vs` flag (Optional)
+    - `matchsize` - The size to adjust the image , `-ms` flag (Optional)
+    - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
+    - `matchLevel`- The MatchLevel for the test (Optional)
+   
+    
+    
     - `batchName` - The name of the batch as it will appear on the Applitools dashboard
   
     #### Sample CSV:
