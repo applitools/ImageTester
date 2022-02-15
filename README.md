@@ -113,11 +113,7 @@ The tool build in java and requires minimal set of parameters the minimal comman
     - `matchsize` - The size to adjust the image , `-ms` flag (Optional)
     - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
     - `matchLevel`- The MatchLevel for the test (Optional)
-   
     
-    
-    - `batchName` - The name of the batch as it will appear on the Applitools dashboard
-  
     #### Sample CSV:
   ```
   filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
