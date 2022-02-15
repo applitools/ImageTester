@@ -114,11 +114,10 @@ The tool build in java and requires minimal set of parameters the minimal comman
   
     #### Sample CSV:
   ```
-  directory|fileName|pages|testName|os|app|batchName
-  pdfs_to_test|TestData/batchMapperTesting/XYZABCDE.pdf|4-7|batchMapTest_2_14_Atest_threads|Linux|batchMapApp|pdfsBatch_2_14_threads_A
-  pdfs_to_test|TestData/batchMapperTesting/ABCDE.pdf|1-4|batchMapTest_2_14_Atest_threads_2|Linux|batchMapApp|pdfsBatch_2_14_threads_B
-  pdfs_to_test|TestData/batchMapperTesting/a.pdf|1-3|a.pdf test|Linux|batchMapApp|pdfsBatch_2_14_threads_C
-  pdfs_to_test|TestData/batchMapperTesting/b.pdf|2-4|b.pdf test|Linux|batchMapApp|pdfsBatch_2_14_threads_D
+  filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
+  docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
+  docs/a.pdf|Test2|AppA||||x748|1-3|Layout
+  docs/b.pdf|Test3|AppB|||||2-5|  
   ```
   
   ###### For Documents (PDFs) only
