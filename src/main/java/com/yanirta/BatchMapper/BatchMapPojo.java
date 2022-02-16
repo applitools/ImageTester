@@ -4,40 +4,26 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.Objects;
 
-@JsonPropertyOrder({ "directory", "fileName", "pages", "testName", "os", "app", "batchName"})
+@JsonPropertyOrder({ "filePath", "testName", "app", "os", "browser", "viewport", "matchsize", "pages", "matchLevel"})
 public class BatchMapPojo {
-    public String directory;
-    public String fileName;
-    public String pages;
+    public String filePath;
     public String testName;
-    public String os;
     public String app;
-    public String batchName;
+    public String os;
+    public String browser;
+    public String viewport;
+    public String matchsize;
+    public String pages;
+    public String matchLevel;
 
-    public String getDirectory() {
-        return directory;
+    public String getFilePath() {
+        return filePath;
     }
 
-    public void setDirectory(String directory) {
-        this.directory = directory;
-    }
-
-    public String getPages() {
-        return pages;
-    }
-
-    public void setPages(String pages) {
-        this.pages = pages;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }    
+    
     public String getTestName() {
         return testName;
     }
@@ -45,15 +31,7 @@ public class BatchMapPojo {
     public void setTestName(String testName) {
         this.testName = testName;
     }
-
-    public String getOs() {
-        return os;
-    }
-
-    public void setOs(String os) {
-        this.os = os;
-    }
-
+    
     public String getApp() {
         return app;
     }
@@ -61,13 +39,53 @@ public class BatchMapPojo {
     public void setApp(String app) {
         this.app = app;
     }
-
-    public String getBatchName() {
-        return batchName;
+    
+    public String getOs() {
+        return os;
     }
 
-    public void setBatchName(String batchName) {
-        this.batchName = batchName;
+    public void setOs(String os) {
+        this.os = os;
+    }
+    
+    public String getBrowser() {
+        return browser;
+    }
+
+    public void setBrowser(String browser) {
+        this.browser = browser;
+    }
+
+    public String getViewport() {
+        return viewport;
+    }
+
+    public void setViewport(String viewport) {
+        this.viewport = viewport;
+    }
+
+    public String getMatchsize() {
+        return matchsize;
+    }
+
+    public void setMatchsize(String matchsize) {
+        this.matchsize = matchsize;
+    }
+    
+    public String getPages() {
+        return pages;
+    }
+
+    public void setPages(String pages) {
+        this.pages = pages;
+    }
+    
+    public String getMatchLevel() {
+        return matchLevel;
+    }
+
+    public void setMatchLevel(String matchLevel) {
+        this.matchLevel = matchLevel;
     }
 
     @Override
@@ -75,23 +93,24 @@ public class BatchMapPojo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BatchMapPojo that = (BatchMapPojo) o;
-        return Objects.equals(directory, that.directory) && Objects.equals(fileName, that.fileName) &&
-               Objects.equals(pages, that.pages) && Objects.equals(testName, that.testName) &&
-               Objects.equals(os, that.os) && Objects.equals(app, that.app) &&
-               Objects.equals(batchName, that.batchName);
+        return Objects.equals(filePath, that.filePath) && Objects.equals(testName, that.testName) && Objects.equals(app, that.app)
+        		&& Objects.equals(os, that.os) && Objects.equals(browser, that.browser) && Objects.equals(viewport, that.viewport)
+        		&& Objects.equals(matchsize, that.matchsize) && Objects.equals(pages, that.pages) && Objects.equals(matchLevel, that.matchLevel);               
     }
-
+    
     @Override
     public String toString() {
         return  "\n---------------------------------- \n" +
                 "Test being run: \n" +
-                "directory='" + directory + "'\n" +
-                "fileName='" + fileName + "'\n" +
-                "pages='" + pages + "'\n" +
+                "filePath='" + filePath + "'\n" +
                 "testName='" + testName + "'\n" +
-                "os='" + os + "'\n" +
                 "app='" + app + "'\n" +
-                "batchName='" + batchName + "'\n" +
+                "os='" + os + "'\n" +
+                "browser='" + browser + "'\n" +
+                "viewport='" + viewport + "'\n" +
+                "matchsize='" + matchsize + "'\n" +
+                "pages='" + pages + "'\n" +
+                "matchLevel='" + matchLevel + "'\n" +
                 "---------------------------------- \n";
     }
 }

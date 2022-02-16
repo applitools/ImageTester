@@ -104,21 +104,22 @@ The tool build in java and requires minimal set of parameters the minimal comman
     To use it, supply a path to a batch mapper configuration file (a '|' delimited CSV).
     <br><br>
     #### Batch Mapper parameters
-    - `directory` - The name of the directory where the tests are located
-    - `fileName`- The name of the pdf being tested
-    - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15)
+    - `filePath`- The location of files (PDF/Image) being tested
     - `testName` - The name of the test as it will appear on the Applitools dashboard (Optional)
-    - `os` - The operating system to be tested on. This is optional
     - `app` - The app name of the test as it will appear on the Applitools dashboard (Optional)
-    - `batchName` - The name of the batch as it will appear on the Applitools dashboard
-  
+    - `os` - The operating system to be tested on (Optional)
+    - `browser` - The browser to be tested on (Optional)
+    - `viewport` - The viewport for the test `-vs` flag (Optional)
+    - `matchsize` - The size to adjust the image , `-ms` flag (Optional)
+    - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
+    - `matchLevel`- The MatchLevel for the test (Optional)
+    
     #### Sample CSV:
   ```
-  directory|fileName|pages|testName|os|app|batchName
-  pdfs_to_test|TestData/batchMapperTesting/XYZABCDE.pdf|4-7|batchMapTest_2_14_Atest_threads|Linux|batchMapApp|pdfsBatch_2_14_threads_A
-  pdfs_to_test|TestData/batchMapperTesting/ABCDE.pdf|1-4|batchMapTest_2_14_Atest_threads_2|Linux|batchMapApp|pdfsBatch_2_14_threads_B
-  pdfs_to_test|TestData/batchMapperTesting/a.pdf|1-3|a.pdf test|Linux|batchMapApp|pdfsBatch_2_14_threads_C
-  pdfs_to_test|TestData/batchMapperTesting/b.pdf|2-4|b.pdf test|Linux|batchMapApp|pdfsBatch_2_14_threads_D
+  filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
+  docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
+  docs/a.pdf|Test2|AppA||||x748|1-3|Layout
+  docs/b.pdf|Test3|AppB|||||2-5|  
   ```
   
   ###### For Documents (PDFs) only
