@@ -16,11 +16,12 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 
 public class ImageTester {
     private static final String cur_ver = "2.3.1";
@@ -166,8 +167,8 @@ public class ImageTester {
                 currentConfiguration.forcedName = currentBatch.testName;
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
-                currentConfiguration.setViewport(currentBatch.viewport.length() == 0 ? null: currentBatch.viewport);
-                currentConfiguration.setMatchSize(currentBatch.matchsize.length() == 0 ? null: currentBatch.matchsize);
+                currentConfiguration.setViewport(StringUtils.isNoneBlank(currentBatch.viewport) ? currentBatch.viewport: null);
+                currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
                

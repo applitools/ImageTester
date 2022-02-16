@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.Objects;
 
-@JsonPropertyOrder({ "filePath", "testName", "app", "os", "browser", "viewport", "matchsize", "pages","matchLevel"})
+@JsonPropertyOrder({ "filePath", "testName", "app", "os", "browser", "viewport", "matchsize", "pages", "matchLevel"})
 public class BatchMapPojo {
     public String filePath;
     public String testName;
@@ -16,7 +16,7 @@ public class BatchMapPojo {
     public String pages;
     public String matchLevel;
 
-    public String filePath() {
+    public String getFilePath() {
         return filePath;
     }
 
@@ -95,8 +95,7 @@ public class BatchMapPojo {
         BatchMapPojo that = (BatchMapPojo) o;
         return Objects.equals(filePath, that.filePath) && Objects.equals(testName, that.testName) && Objects.equals(app, that.app)
         		&& Objects.equals(os, that.os) && Objects.equals(browser, that.browser) && Objects.equals(viewport, that.viewport)
-        		&& Objects.equals(matchsize, that.matchsize) && Objects.equals(pages, that.pages) && Objects.equals(matchLevel, that.matchLevel);
-               
+        		&& Objects.equals(matchsize, that.matchsize) && Objects.equals(pages, that.pages) && Objects.equals(matchLevel, that.matchLevel);               
     }
     
     @Override
