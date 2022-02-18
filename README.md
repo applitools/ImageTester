@@ -113,6 +113,8 @@ The tool build in java and requires minimal set of parameters the minimal comman
     - `matchsize` - The size to adjust the image , `-ms` flag (Optional)
     - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
     - `matchLevel`- The MatchLevel for the test (Optional)
+    #### Additional Notes
+    To have each of your tests appear in the same batch, set the `APPLITOOLS_BATCH_ID` environment variable in your CLI environment. 
     
     #### Sample CSV:
   ```
@@ -121,6 +123,8 @@ The tool build in java and requires minimal set of parameters the minimal comman
   docs/a.pdf|Test2|AppA||||x748|1-3|Layout
   docs/b.pdf|Test3|AppB|||||2-5|  
   ```
+
+    
   
   ###### For Documents (PDFs) only
     + `-di [dpi]` - Set the quality of the conversion on PDF files
