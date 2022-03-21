@@ -3,12 +3,15 @@ package com.yanirta.lib;
 import com.applitools.eyes.BatchInfo;
 import com.applitools.eyes.ProxySettings;
 import com.applitools.eyes.RectangleSize;
+import com.applitools.eyes.Region;
 import com.applitools.eyes.fluent.BatchClose;
 import com.applitools.eyes.fluent.EnabledBatchClose;
+import com.twelvemonkeys.util.IgnoreCaseMap;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.stream.IntStream;
 
 public class Config {
     public RectangleSize viewport;
@@ -32,7 +35,13 @@ public class Config {
     public boolean legacyFileOrder = false;
     public boolean dontCloseBatches = false;
     public String batchMapperPath = null;
+    public Region[] ignoreRegions = null;
+    public Region[] layoutRegions = null;
+    public Region[] contentRegions = null;
+
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
+
+
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
@@ -105,6 +114,77 @@ public class Config {
                 batchClose.setProxy(proxy_settings);
             EnabledBatchClose enabledBatchClose = batchClose.setBatchId(new ArrayList<>(batchesIdListForBatchClose));
             if (!dontCloseBatches) enabledBatchClose.close();
+        }
+    }
+
+    public void setIgnoreRegions(String ignoreRegionsOption) {
+        if (ignoreRegionsOption != null) {
+            try {
+                String[] regionStrings = ignoreRegionsOption.split("\\|");
+                Region[] ignoreRegionsArr = new Region[regionStrings.length];
+                for(int regionIndex = 0; regionIndex < regionStrings.length; regionIndex++) {
+                    String[] regionParameters = regionStrings[regionIndex].split(",");
+                    ignoreRegionsArr[regionIndex] =
+                            new Region(
+                                    Integer.parseInt(regionParameters[0]),
+                                    Integer.parseInt(regionParameters[1]),
+                                    Integer.parseInt(regionParameters[2]),
+                                    Integer.parseInt(regionParameters[3])
+                            );
+                }
+                this.ignoreRegions = ignoreRegionsArr;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for ignore regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+
+    public void setContentRegions(String contentRegionsOption) {
+        if (contentRegionsOption != null) {
+            try{
+                String[] regionStrings = contentRegionsOption.split("\\|");
+                Region[] ignoreRegionsArr = new Region[regionStrings.length];
+                String[] regionParameters;
+                for(int regionIndex = 0; regionIndex < regionStrings.length; regionIndex++) {
+                    regionParameters = regionStrings[regionIndex].split(",");
+                    ignoreRegionsArr[regionIndex] =
+                            new Region(
+                                    Integer.parseInt(regionParameters[0]),
+                                    Integer.parseInt(regionParameters[1]),
+                                    Integer.parseInt(regionParameters[2]),
+                                    Integer.parseInt(regionParameters[3])
+                            );
+                }
+                this.contentRegions = ignoreRegionsArr;
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for content regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+
+        }
+    }
+
+    public void setLayoutRegions(String layoutRegionsOption) {
+        if (layoutRegionsOption != null) {
+            try {
+                String[] regionStrings = layoutRegionsOption.split("\\|");
+                Region[] layoutRegionsArr = new Region[regionStrings.length];
+                for(int regionIndex = 0; regionIndex < regionStrings.length; regionIndex++) {
+                    String[] regionParameters = regionStrings[regionIndex].split(",");
+                    layoutRegionsArr[regionIndex] =
+                            new Region(
+                                    Integer.parseInt(regionParameters[0]),
+                                    Integer.parseInt(regionParameters[1]),
+                                    Integer.parseInt(regionParameters[2]),
+                                    Integer.parseInt(regionParameters[3])
+                            );
+                }
+                this.layoutRegions = layoutRegionsArr;
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for layout regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
         }
     }
 }

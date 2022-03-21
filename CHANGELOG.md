@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 2.3.2 - 2022/3/21
+- Added feature that allows users to add ignored regions, content regions, and layout regions
+- "-ir" allows for ignore regions, "-cr" allows for content regions, "-lr" allows for layout regions
+
 ## 2.3.1 - 2022/2/18
 - Changed BatchMapper metadata [filePath, testName, app, os, browser, viewport, viewport, matchsize, pages, matchLevel]
 - Added some extra checks for the BatchMapper CSV configuration

@@ -79,13 +79,10 @@ public class Suite {
                 currBatch.addTests(curr.tests_);
                 batches_.addAll(curr.batches_);
             }
-
             batches_.add(currBatch);
         } catch (Exception e) {
             conf.logger.reportException(e, file.getAbsolutePath());
         }
-
-
     }
 
     public void run() {

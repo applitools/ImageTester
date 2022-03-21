@@ -32,7 +32,10 @@ public class FolderTest extends TestBase {
                 BufferedImage image = getImage(img);
                 if (!eyes.getIsOpen())
                     eyes.open(appName(), name(), viewport(image));
-                eyes.checkImage(image, img.getName());
+                eyes.check(
+                        String.format("Page-%s", name()),
+                        new ImagesCheckSettingsFactory(image, config()).create()
+                );
                 image = null;
             } catch (IOException e) {
                 logger().reportException(e, img.getAbsolutePath());

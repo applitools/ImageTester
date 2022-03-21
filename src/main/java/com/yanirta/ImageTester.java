@@ -24,7 +24,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 public class ImageTester {
-    private static final String cur_ver = "2.3.1";
+    private static final String cur_ver = "2.3.2";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -66,7 +66,7 @@ public class ImageTester {
                     .parentBranch(cmd.getOptionValue("pb", null))
                     .baselineEnvName(cmd.getOptionValue("bn", null))
                     .logFile(cmd.getOptionValue("lf", null))
-                    .hostOs(cmd.getOptionValue("os", null))
+                    .hostOs(    cmd.getOptionValue("os", null))
                     .hostApp(cmd.getOptionValue("ap"))
                     .saveFaliedTests(cmd.hasOption("as"))
                     .ignoreDisplacement(cmd.hasOption("id"))
@@ -84,12 +84,16 @@ public class ImageTester {
             config.forcedName = cmd.getOptionValue("fn", null);
             config.sequenceName = cmd.getOptionValue("sq", null);
             config.legacyFileOrder = cmd.hasOption("lo");
+            config.dontCloseBatches = cmd.hasOption("dcb");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
             config.setBatchInfo(
                     cmd.getOptionValue("fb", null),
                     cmd.hasOption("nc"));
-            config.dontCloseBatches = cmd.hasOption("dcb");
+            config.setIgnoreRegions(cmd.getOptionValue("ir", null));
+            config.setContentRegions(cmd.getOptionValue("cr", null));
+            config.setLayoutRegions(cmd.getOptionValue("lr", null));
+
 
             File root = new File(cmd.getOptionValue("f", "."));
 
@@ -395,6 +399,21 @@ public class ImageTester {
         options.addOption(Option.builder("mp")
                 .longOpt("mapperPath")
                 .desc("Path to Batch Mapper CSV, to be used with BatchMapper jar")
+                .hasArgs()
+                .build());
+        options.addOption(Option.builder("ir")
+                .longOpt("ignoreRegions")
+                .desc("Parameters for ignore regions [x, y, width, height]")
+                .hasArgs()
+                .build());
+        options.addOption(Option.builder("cr")
+                .longOpt("contentRegions")
+                .desc("Parameters for content regions [x, y, width, height]")
+                .hasArgs()
+                .build());
+        options.addOption(Option.builder("lr")
+                .longOpt("layoutRegions")
+                .desc("Parameters for layout regions [x, y, width, height]")
                 .hasArgs()
                 .build());
 

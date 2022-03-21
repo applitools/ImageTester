@@ -1,15 +1,23 @@
 package com.yanirta.TestObjects;
 
+import com.applitools.ICheckSettings;
+import com.applitools.eyes.RectangleSize;
+import com.applitools.eyes.Region;
 import com.applitools.eyes.TestResults;
+import com.applitools.eyes.fluent.GetSimpleRegion;
 import com.applitools.eyes.images.Eyes;
+import com.applitools.eyes.images.ImagesCheckSettings;
+import com.applitools.eyes.images.Target;
 import com.yanirta.lib.Config;
 import com.yanirta.lib.Utils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class PdfFileTest extends DocumentTestBase {
 
@@ -29,7 +37,11 @@ public class PdfFileTest extends DocumentTestBase {
                     logger().logPage(bim, name(), page);
                     if (!eyes.getIsOpen())
                         eyes.open(appName(), name(), viewport(bim));
-                    eyes.checkImage(bim, String.format("Page-%s", page));
+                    //eyes.checkImage(bim, String.format("Page-%s", page));
+                    eyes.check(
+                            String.format("Page-%s", page),
+                            new ImagesCheckSettingsFactory(bim, config()).create()
+                    );
                     bim.getGraphics().dispose();
                     bim.flush();
                 } catch (IOException e) {

@@ -22,14 +22,16 @@ public class BatchMappedPdfFileTest extends DocumentTestBase {
             if (pageList_ == null || pageList_.isEmpty())
                 pageList_ = Utils.generateRanage(document.getNumberOfPages() + 1, 1);
             PDFRenderer pdfRenderer = new PDFRenderer(document);
-            int pageCount = 1;
             for (Integer page : pageList_) {
                 try {
                     BufferedImage bim = pdfRenderer.renderImageWithDPI(page - 1, config().DocumentConversionDPI);
                     logger().logPage(bim, name(), page);
                     if (!eyes.getIsOpen())
                         eyes.open(appName(), name(), viewport(bim));
-                    eyes.checkImage(bim, String.format("Page-%s", pageCount));
+                    eyes.check(
+                            String.format("Page-%s", name()),
+                            new ImagesCheckSettingsFactory(bim, config()).create()
+                    );
                     bim.getGraphics().dispose();
                     bim.flush();
                 } catch (IOException e) {

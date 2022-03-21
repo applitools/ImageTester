@@ -16,7 +16,10 @@ public class ImageFileTest extends TestBase {
     public TestResults run(Eyes eyes) throws Exception {
         BufferedImage image = getImage(file());
         eyes.open(appName(), name(), viewport(image));
-        eyes.checkImage(image, name());
+        eyes.check(
+                String.format("Page-%s", name()),
+                new ImagesCheckSettingsFactory(image, config()).create()
+        );
         image = null;
         return eyes.close(false);
     }

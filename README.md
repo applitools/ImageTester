@@ -90,9 +90,21 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-ac [Level:GuidelineVer]` - Set accessibility validation and optionally it's arguments split by semicolumns ':' default: "AA:WCAG_2_0", available options: [AA|AAA:WCAG_2_0|WCAG_2_1]
     + `-dcb` - ImageTester will not automatically close batch(es) when test is complete.
     + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
+    + `-ir` - Ignore regions will be applied to all pages. <br>
+      **Example:** `-ir "300,300,500,100|500,500,200,200"` will create ignored regions at <br> 
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
+    + `-cr` - Apply content regions to all pages. <br>
+      **Example:** `-cr "300,300,500,100|500,500,200,200"` will create content regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
+    + `-lr` - Layout regions will be applied to all pages. <br>
+      **Example:** `-ir "300,300,500,100|500,500,200,200"` will create layout regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>      
 
-    ### Using The Batch Mapper
-    The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.
+### Using The Batch Mapper
+The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.
     <br><br>
     A common use-case is the desire to run tests on a PDF that has changed it's composition.<br>
     Consider a PDF that initially contains 4 pages (Page 1, Page 2, Page 3, Page 4).<br>
@@ -117,12 +129,12 @@ The tool build in java and requires minimal set of parameters the minimal comman
     To have each of your tests appear in the same batch, set the `APPLITOOLS_BATCH_ID` environment variable in your CLI environment. 
     
     #### Sample CSV:
-  ```
-  filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
-  docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
-  docs/a.pdf|Test2|AppA||||x748|1-3|Layout
-  docs/b.pdf|Test3|AppB|||||2-5|  
-  ```
+    ```
+    filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
+    docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
+    docs/a.pdf|Test2|AppA||||x748|1-3|Layout
+    docs/b.pdf|Test3|AppB|||||2-5|  
+    ```
 
     
   
