@@ -94,7 +94,6 @@ public class ImageTester {
             config.setContentRegions(cmd.getOptionValue("cr", null));
             config.setLayoutRegions(cmd.getOptionValue("lr", null));
 
-
             File root = new File(cmd.getOptionValue("f", "."));
 
             int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
@@ -132,9 +131,8 @@ public class ImageTester {
 
         try {
             String batchMapperPath = cmd.getOptionValue("mp", null);
+
             // Split each of the batch POJOs into a parallel stream and let JVM handle multithreading
-           
-         
             BatchMapDeserializer.readFile(batchMapperPath).parallelStream().forEach(currentBatch -> {
                 logger.printBatchPojo(currentBatch);
                 Config currentConfiguration = new Config();

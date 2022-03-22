@@ -37,7 +37,6 @@ public class PdfFileTest extends DocumentTestBase {
                     logger().logPage(bim, name(), page);
                     if (!eyes.getIsOpen())
                         eyes.open(appName(), name(), viewport(bim));
-                    //eyes.checkImage(bim, String.format("Page-%s", page));
                     eyes.check(
                             String.format("Page-%s", page),
                             new ImagesCheckSettingsFactory(bim, config()).create()

@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BatchBase implements IBatch {
-    private List<TestBase> tests_ = new ArrayList<>();
-    private BatchInfo batchInfo_;
+    private final List<TestBase> tests_ = new ArrayList<>();
+    private final BatchInfo batchInfo_;
 
     public BatchBase(BatchInfo batchInfo) {
         this.batchInfo_ = batchInfo;
