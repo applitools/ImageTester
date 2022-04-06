@@ -145,8 +145,7 @@ The Batch Mapper is a feature that allows you to specify tests from a CSV instea
     + `-pn` - Preserve original directory test names when specifying pages
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/yanirta/EyesUtilities)
-By placing the Eyes-Utilities jar into the same folder as the com.yanirta.ImageTester, new enterprise api features
-made possible by providing an enterprise read-key.
+Enterprise api features are made possible by providing an enterprise read-key.
 
 >java -jar ImageTester.jar -k [api-key] -vk [view-key] [options]
 + Required parameters:
