@@ -105,44 +105,44 @@ The tool build in java and requires minimal set of parameters the minimal comman
 
 ### Using The Batch Mapper
 The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.
-    <br><br>
-    A common use-case is the desire to run tests on a PDF that has changed it's composition.<br>
-    Consider a PDF that initially contains 4 pages (Page 1, Page 2, Page 3, Page 4).<br>
-    Now imagine that this PDF changes over time, and 2 new pages are added to the beginning of the PDF.<br>
-    It can be difficult to test these pages given the current composition of the ImageTester. 
-    <br><br>
-    For this use case, it can be beneficial to use the Batch Mapper feature. 
-    <br><br>
-    To use it, supply a path to a batch mapper configuration file (a '|' delimited CSV).
-    <br><br>
-    #### Batch Mapper parameters
-    - `filePath`- The location of files (PDF/Image) being tested
-    - `testName` - The name of the test as it will appear on the Applitools dashboard (Optional)
-    - `app` - The app name of the test as it will appear on the Applitools dashboard (Optional)
-    - `os` - The operating system to be tested on (Optional)
-    - `browser` - The browser to be tested on (Optional)
-    - `viewport` - The viewport for the test `-vs` flag (Optional)
-    - `matchsize` - The size to adjust the image , `-ms` flag (Optional)
-    - `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
-    - `matchLevel`- The MatchLevel for the test (Optional)
-    #### Additional Notes
-    To have each of your tests appear in the same batch, set the `APPLITOOLS_BATCH_ID` environment variable in your CLI environment. 
-    
-    #### Sample CSV:
-    ```
-    filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
-    docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
-    docs/a.pdf|Test2|AppA||||x748|1-3|Layout
-    docs/b.pdf|Test3|AppB|||||2-5|  
-    ```
+<br><br>
+A common use-case is the desire to run tests on a PDF that has changed it's composition.<br>
+Consider a PDF that initially contains 4 pages (Page 1, Page 2, Page 3, Page 4).<br>
+Now imagine that this PDF changes over time, and 2 new pages are added to the beginning of the PDF.<br>
+It can be difficult to test these pages given the current composition of the ImageTester. 
+<br><br>
+For this use case, it can be beneficial to use the Batch Mapper feature. 
+<br><br>
+To use it, supply a path to a batch mapper configuration file (a '|' delimited CSV).
+<br><br>
+#### Batch Mapper parameters
+- `filePath`- The location of files (PDF/Image) being tested
+- `testName` - The name of the test as it will appear on the Applitools dashboard (Optional)
+- `app` - The app name of the test as it will appear on the Applitools dashboard (Optional)
+- `os` - The operating system to be tested on (Optional)
+- `browser` - The browser to be tested on (Optional)
+- `viewport` - The viewport for the test `-vs` flag (Optional)
+- `matchsize` - The size to adjust the image , `-ms` flag (Optional)
+- `pages`- Pages to be tested for this PDF. (ie: 1,2,5,7,10-15) (Optional)
+- `matchLevel`- The MatchLevel for the test (Optional)
+#### Additional Notes
+To have each of your tests appear in the same batch, set the `APPLITOOLS_BATCH_ID` environment variable in your CLI environment. 
 
-    
-  
-  ###### For Documents (PDFs) only
-    + `-di [dpi]` - Set the quality of the conversion on PDF files
-    + `-sp [pages]` - Comma separated page numbers\range to include in PDF testing (ie: 1,2,5,7,10-15); Default all included
-    + `-pp [password]` - The password if the PDF files protected
-    + `-pn` - Preserve original directory test names when specifying pages
+#### Sample CSV:
+```
+filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
+docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
+docs/a.pdf|Test2|AppA||||x748|1-3|Layout
+docs/b.pdf|Test3|AppB|||||2-5|  
+```
+
+
+
+###### For Documents (PDFs) only
++ `-di [dpi]` - Set the quality of the conversion on PDF files
++ `-sp [pages]` - Comma separated page numbers\range to include in PDF testing (ie: 1,2,5,7,10-15); Default all included
++ `-pp [password]` - The password if the PDF files protected
++ `-pn` - Preserve original directory test names when specifying pages
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/yanirta/EyesUtilities)
 Enterprise api features are made possible by providing an enterprise read-key.
