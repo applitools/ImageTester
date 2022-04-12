@@ -24,6 +24,7 @@ public class EyesFactory {
     private boolean saveNewTests = false;
     private int[] cutValues;
     private AccessibilitySettings accSettings = null;
+	private boolean logHandler;
 
     public EyesFactory(String ver, Logger logger) {
         this.version = ver;
@@ -74,6 +75,8 @@ public class EyesFactory {
             throw new RuntimeException("Parent Branches (pb) should be combined with branches (br).");
         if (this.accSettings != null)
             eyes.setAccessibilityValidation(this.accSettings);
+        if (logHandler)
+        	eyes.setLogHandler(new StdoutLogHandler(true));
 
         return eyes;
     }
@@ -169,4 +172,9 @@ public class EyesFactory {
         this.accSettings = new AccessibilitySettings(level, version);
         return this;
     }
+
+	public EyesFactory logHandler(boolean logHandler) {
+        this.logHandler = logHandler;
+        return this;
+	}
 }
