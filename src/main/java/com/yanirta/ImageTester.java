@@ -1,5 +1,18 @@
 package com.yanirta;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.StringUtils;
+
 import com.applitools.eyes.AccessibilityGuidelinesVersion;
 import com.applitools.eyes.AccessibilityLevel;
 import com.applitools.eyes.MatchLevel;
@@ -10,21 +23,9 @@ import com.yanirta.lib.EyesUtilitiesConfig;
 import com.yanirta.lib.Logger;
 import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
 public class ImageTester {
-    private static final String cur_ver = "2.3.2";
+    private static final String cur_ver = "2.3.3";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -72,7 +73,9 @@ public class ImageTester {
                     .ignoreDisplacement(cmd.hasOption("id"))
                     .saveNewTests(!cmd.hasOption("pn"))
                     .imageCut(cmd.getOptionValues("ic"))
-                    .accSettings(accessibilityOptions);
+                    .accSettings(accessibilityOptions)
+                    .logHandler(cmd.hasOption("log"));
+            
 
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
@@ -332,6 +335,10 @@ public class ImageTester {
         options.addOption(Option.builder("debug")
                 .hasArg(false)
                 .desc("Turn on debug prints")
+                .build());
+        options.addOption(Option.builder("log")
+                .hasArg(false)
+                .desc("Turn on log prints")
                 .build());
         options.addOption(Option.builder("pn")
                 .hasArg(false)
