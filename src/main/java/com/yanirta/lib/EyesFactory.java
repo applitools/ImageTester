@@ -24,7 +24,7 @@ public class EyesFactory {
     private boolean saveNewTests = false;
     private int[] cutValues;
     private AccessibilitySettings accSettings = null;
-	private boolean logHandler;
+    private boolean logHandler;
 
     public EyesFactory(String ver, Logger logger) {
         this.version = ver;
@@ -76,7 +76,7 @@ public class EyesFactory {
         if (this.accSettings != null)
             eyes.setAccessibilityValidation(this.accSettings);
         if (logHandler)
-        	eyes.setLogHandler(new StdoutLogHandler(true));
+            eyes.setLogHandler(new StdoutLogHandler(true));
 
         return eyes;
     }
@@ -173,7 +173,7 @@ public class EyesFactory {
         return this;
     }
 
-	public EyesFactory logHandler(boolean logHandler) {
+    public EyesFactory logHandler(boolean logHandler) {
         this.logHandler = logHandler;
         return this;
 	}
