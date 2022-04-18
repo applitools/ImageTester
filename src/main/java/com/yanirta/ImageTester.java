@@ -25,7 +25,7 @@ import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "2.3.3";
+    private static final String cur_ver = "2.3.4";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -52,8 +52,13 @@ public class ImageTester {
 
             Config config = new Config();
             config.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
-            config.serverUrl = cmd.getOptionValue("s", null);
-            config.setProxy(cmd.getOptionValues("p"));
+            config.serverUrl = cmd.getOptionValue("s", System.getenv("APPLITOOLS_SERVERL_URL"));
+            
+            String[] proxySettings = cmd.getOptionValues("p");
+            if(proxySettings==null)
+            	proxySettings=System.getenv("APPLITOOLS_PROXY")!=null ? System.getenv("APPLITOOLS_PROXY").split(",") : null;
+            config.setProxy(proxySettings); 
+            
             String[] accessibilityOptions = cmd.getOptionValues("ac");
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
@@ -140,8 +145,13 @@ public class ImageTester {
                 logger.printBatchPojo(currentBatch);
                 Config currentConfiguration = new Config();
                 currentConfiguration.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
-                currentConfiguration.serverUrl = cmd.getOptionValue("s", null);
-                currentConfiguration.setProxy(cmd.getOptionValues("p"));
+                currentConfiguration.serverUrl = cmd.getOptionValue("s", System.getenv("APPLITOOLS_SERVER_URL"));
+                
+                String[] proxySettings = cmd.getOptionValues("p");
+                if(proxySettings==null)
+                	proxySettings=System.getenv("APPLITOOLS_PROXY")!=null ? System.getenv("APPLITOOLS_PROXY").split(",") : null;
+                currentConfiguration.setProxy(proxySettings); 
+                                
                 String[] accessibilityOptions = cmd.getOptionValues("ac");
                 accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
