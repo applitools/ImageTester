@@ -59,12 +59,12 @@ The tool build in java and requires minimal set of parameters the minimal comman
 \* In the minimal set of parameters will assume that the search folder is the execution folder.
 
 + Required parameters:
-    + `-k [api-key]` - Applitools api key
+    + `-k [api-key]` - Applitools api key can also be set by environment variable APPLITOOLS_API_KEY
 + Optional parameters and flags:
     + `-f [path]` - A path to target folder or file
     + `-a [app-name]` - Set the application name under directoryTest; default = ImageTester
-    + `-p [http://proxy{,user,pass}]` - Set proxy and optional username + password
-    + `-s [server]` - Set Applitools server url
+    + `-p [http://proxy{,user,pass}]` - Set proxy and optional username + password, can also be set by environment variable APPLITOOLS_PROXY
+    + `-s [server]` - Set Applitools server url , can also be set by environment variable APPLITOOLS_SERVER_URL
     + `-ml [match-level]` - Set the comparison level, one from Strict/Content/Layout; Default = Strict
     + `-br [branch]` - Set the branch
     + `-pb [parent-branch]` - Set the parent branch
@@ -116,7 +116,7 @@ For this use case, it can be beneficial to use the Batch Mapper feature.
 To use it, supply a path to a batch mapper configuration file (a '|' delimited CSV).
 <br><br>
 #### Batch Mapper parameters
-- `filePath`- The location of files (PDF/Image) being tested
+- `filePath`- The location of files (PDF/Image) being tested, can also be a folder
 - `testName` - The name of the test as it will appear on the Applitools dashboard (Optional)
 - `app` - The app name of the test as it will appear on the Applitools dashboard (Optional)
 - `os` - The operating system to be tested on (Optional)

@@ -17,7 +17,7 @@ public class ImageFileTest extends TestBase {
         BufferedImage image = getImage(file());
         eyes.open(appName(), name(), viewport(image));
         eyes.check(
-                String.format("Page-%s", name()),
+                file().getName(),
                 new ImagesCheckSettingsFactory(image, config()).create()
         );
         image = null;

@@ -33,7 +33,7 @@ public class FolderTest extends TestBase {
                 if (!eyes.getIsOpen())
                     eyes.open(appName(), name(), viewport(image));
                 eyes.check(
-                        String.format("Page-%s", name()),
+                		img.getName(),
                         new ImagesCheckSettingsFactory(image, config()).create()
                 );
                 image = null;
