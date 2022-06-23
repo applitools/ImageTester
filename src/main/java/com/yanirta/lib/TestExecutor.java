@@ -54,6 +54,8 @@ public class TestExecutor {
                 config_.logger.printProgress(curr++, total);
                 ExecutorResult result = results_.remove().get();
                 config_.logger.reportResult(result);
+                if (thEyes_.get().getAccessibilityValidation() != null)
+                    config_.logger.reportResultAccessibility(result);
             } catch (Exception e) {
                 config_.logger.reportException(e);
             }
