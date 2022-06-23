@@ -80,6 +80,13 @@ public class Logger {
         out_.printf("[%s], %s \n", status, result.testResult);
     }
 
+    public void reportResultAccessibility(ExecutorResult result) {
+        String status = result.testResult != null ? result.testResult.getAccessibilityStatus().getStatus().toString() : "N/A";
+        String level = result.testResult != null ? result.testResult.getAccessibilityStatus().getLevel().toString() : "N/A";
+        String version = result.testResult != null ? result.testResult.getAccessibilityStatus().getVersion().toString() : "N/A";
+        out_.printf("Accessibility: [%s], Level: [%s], Version: [%s] \n", status, level, version);
+    }
+
     public void reportException(Throwable e) {
         reportException(e, null);
     }
