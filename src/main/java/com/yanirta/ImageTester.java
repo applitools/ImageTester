@@ -25,7 +25,7 @@ import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "2.3.5";
+    private static final String cur_ver = "2.3.7";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
