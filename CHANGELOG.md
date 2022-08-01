@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 3.0.0 - 2022/8/1
+- Removed dependencies that were presenting vulnerabilities
+- Removed EyesUtilities, so that EyesUtilities can be re-architected
+- This version is a regression: PostScript support is removed, and EyesUtilities commands are removed
+
 ## 2.3.2 - 2022/3/21
 - Added feature that allows users to add ignored regions, content regions, and layout regions
 - "-ir" allows for ignore regions, "-cr" allows for content regions, "-lr" allows for layout regions

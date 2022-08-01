@@ -2,7 +2,6 @@ package com.yanirta;
 
 import com.yanirta.BatchObjects.Batch;
 import com.yanirta.BatchObjects.BatchBase;
-import com.yanirta.BatchObjects.PostscriptFileBatch;
 import com.yanirta.TestObjects.*;
 import com.yanirta.BatchObjects.PDFFileBatch;
 import com.yanirta.lib.Config;
@@ -43,18 +42,12 @@ public class Suite {
                     if (is(file, Patterns.PDF)) {
                         batch = new PDFFileBatch(file, conf);
                     }
-                    if (is(file, Patterns.POSTSCRIPT)) {
-                        batch = new PostscriptFileBatch(file, conf);
-                    }
                     if (is(file, Patterns.IMAGE)) {
                         test = new ImageFileTest(file, conf);
                     }
                 } else {
                     if (is(file, Patterns.PDF)) {
                         test = conf.batchMapperPath == null ? new PdfFileTest(file, conf) : new BatchMappedPdfFileTest(file, conf);
-                    }
-                    if (is(file, Patterns.POSTSCRIPT)) {
-                        test = new PostscriptTest(file, conf);
                     }
                 }
                 if (batch != null && !batch.isEmpty())

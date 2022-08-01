@@ -1,10 +1,8 @@
 package com.yanirta.lib;
 
-import com.applitools.eyes.BatchInfo;
 import com.yanirta.BatchMapper.BatchMapPojo;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import org.apache.log4j.Level;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -27,8 +25,6 @@ public class Logger {
     public Logger(PrintStream out, boolean debug) {
         this.out_ = out;
         this.debug_ = debug;
-        // This part disables log4j warnings
-        org.apache.log4j.Logger.getRootLogger().setLevel(Level.OFF);
     }
 
     public void setDebug(boolean debug) {

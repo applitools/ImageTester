@@ -145,7 +145,7 @@ docs/b.pdf|Test3|AppB|||||2-5|
 + `-pn` - Preserve original directory test names when specifying pages
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/yanirta/EyesUtilities)
-Enterprise api features are made possible by providing an enterprise read-key.
+Note: EyesUtilities temporarily removed for security re-architecture.
 
 >java -jar ImageTester.jar -k [api-key] -vk [view-key] [options]
 + Required parameters:
