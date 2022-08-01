@@ -1,6 +1,9 @@
 package com.yanirta.lib;
 
 import com.applitools.eyes.TestResults;
+import com.yanirta.Commands.AnimatedDiffs;
+import com.yanirta.Commands.DownloadDiffs;
+import com.yanirta.Commands.DownloadImages;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
@@ -115,12 +118,12 @@ public class Utils {
         if (config == null) return;
         if (config.getDownloadDiffs() || config.getGetGifs() || config.getGetImages()) {
             if (config.getViewKey() == null) throw new RuntimeException("The view-key cannot be null");
-//            if (config.getDownloadDiffs() && !results.isNew() && !results.isPassed())
-//                new DownloadDiffs(results.getUrl(), config.getDestinationFolder(), config.getViewKey()).run();
-//            if (config.getGetGifs() && !results.isNew() && !results.isPassed())
-//                new AnimatedDiffs(results.getUrl(), config.getDestinationFolder(), config.getViewKey()).run();
-//            if (config.getGetImages())
-//                new DownloadImages(results.getUrl(), config.getDestinationFolder(), config.getViewKey(), false, false).run();
+            if (config.getDownloadDiffs() && !results.isNew() && !results.isPassed())
+                new DownloadDiffs(results.getUrl(), config.getDestinationFolder(), config.getViewKey()).run();
+            if (config.getGetGifs() && !results.isNew() && !results.isPassed())
+                new AnimatedDiffs(results.getUrl(), config.getDestinationFolder(), config.getViewKey()).run();
+            if (config.getGetImages())
+                new DownloadImages(results.getUrl(), config.getDestinationFolder(), config.getViewKey(), false, false).run();
         }
     }
 }

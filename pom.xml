@@ -6,7 +6,7 @@
 
     <groupId>com.yanirta</groupId>
     <artifactId>ImageTester</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -14,13 +14,13 @@
     </properties>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>com.yanirta</groupId>-->
-<!--            <artifactId>EyesUtilities</artifactId>-->
-<!--            <version> 1.4.5 </version>-->
-<!--            <scope>system</scope>-->
-<!--            <systemPath>${project.basedir}/jars/EyesUtilities_1.4.5.jar</systemPath>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.yanirta</groupId>
+            <artifactId>EyesUtilities</artifactId>
+            <version> 1.5.1 </version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/jars/EyesUtilities_1.5.1.jar</systemPath>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

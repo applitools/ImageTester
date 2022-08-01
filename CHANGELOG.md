@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 3.0.1 - 2022/8/1
+- Restored EyesUtilities functionality with updated dependencies
+
 ## 3.0.0 - 2022/8/1
 - Removed dependencies that were presenting vulnerabilities
 - Removed EyesUtilities, so that EyesUtilities can be re-architected
