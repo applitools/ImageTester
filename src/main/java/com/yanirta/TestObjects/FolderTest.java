@@ -19,7 +19,7 @@ public class FolderTest extends TestBase {
     public FolderTest(File folder, Config conf) {
         super(folder, conf);
         if (!folder.isDirectory())
-            throw new RuntimeException("FolderTest object can't process non folder object");
+            throw new RuntimeException("FolderTest object can't process non-folder object");
         FilenameFilter imageFilesFilter = (dir, name) -> Patterns.IMAGE.matcher(name).matches();
         this.steps_ = folder.listFiles(imageFilesFilter);
         if (!conf.legacyFileOrder)
@@ -30,8 +30,7 @@ public class FolderTest extends TestBase {
         for (File img : steps_) {
             try {
                 BufferedImage image = getImage(img);
-                if (!eyes.getIsOpen())
-                    eyes.open(appName(), name(), viewport(image));
+                if (!eyes.getIsOpen()) eyes.open(appName(), name(), viewport(image));
                 eyes.check(
                 		img.getName(),
                         new ImagesCheckSettingsFactory(image, config()).create()

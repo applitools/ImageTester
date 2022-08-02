@@ -7,6 +7,7 @@ import com.applitools.eyes.Region;
 import com.applitools.eyes.fluent.BatchClose;
 import com.applitools.eyes.fluent.EnabledBatchClose;
 import com.twelvemonkeys.util.IgnoreCaseMap;
+import com.yanirta.Constants.ApplitoolsConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -75,8 +76,8 @@ public class Config {
     public void setBatchInfo(String flatBatchArg, boolean notifyOnComplete) {
         this.notifyOnComplete = notifyOnComplete;
         //set batch- take flat batch if described- get environment variables values unless overwritten
-        String batchNameToAdd = System.getenv("JOB_NAME");
-        String batchIdToAdd = System.getenv("APPLITOOLS_BATCH_ID");
+        String batchNameToAdd = System.getenv(ApplitoolsConstants.APPLITOOLS_JOB_NAME);
+        String batchIdToAdd = System.getenv(ApplitoolsConstants.APPLITOOLS_BATCH_ID);
 
         //set flat batch- config.notify complete must be before this set
         if (StringUtils.isNoneBlank(flatBatchArg)) {

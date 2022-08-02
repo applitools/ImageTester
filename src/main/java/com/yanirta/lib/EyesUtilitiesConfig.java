@@ -1,5 +1,6 @@
 package com.yanirta.lib;
 
+import com.yanirta.Constants.ApplitoolsConstants;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -28,7 +29,7 @@ public class EyesUtilitiesConfig {
 
     public EyesUtilitiesConfig(CommandLine cmd) throws ParseException {
         if (cmd.hasOption("gd") || cmd.hasOption("gi") || cmd.hasOption("gg")) {
-            viewKey_ = cmd.getOptionValue("vk", System.getenv("APPLITOOLS_VIEW_KEY"));
+            viewKey_ = cmd.getOptionValue("vk", System.getenv(ApplitoolsConstants.APPLITOOLS_VIEW_KEY));
             if (viewKey_ == null || StringUtils.isEmpty(viewKey_))
                 throw new ParseException("gd|gi|gg must be called with enterprise view-key (vk)");
             destinationFolder_ = cmd.getOptionValue("of", DEFAULT_DEST_PATH_TEMPL);

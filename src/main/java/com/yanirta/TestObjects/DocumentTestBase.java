@@ -17,9 +17,7 @@ public abstract class DocumentTestBase extends TestBase {
     @Override
     public String name() {
     	String testName = super.name();
-
-        //Else
-        String pagesText = config().pages != null && config().includePageNumbers ? " pages [" + config().pages + "]" : "";
+        String pagesText = config().pages != null && config().includePageNumbers ? String.format(" pages [%s]", config().pages) : "";
         return testName + pagesText;
     }
 

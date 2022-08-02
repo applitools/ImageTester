@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+import com.yanirta.Constants.ApplitoolsConstants;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -51,13 +52,16 @@ public class ImageTester {
             }
 
             Config config = new Config();
-            config.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
-            config.serverUrl = cmd.getOptionValue("s", System.getenv("APPLITOOLS_SERVER_URL"));
-                       
-            
+            config.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
+            config.serverUrl = cmd.getOptionValue("s", System.getenv(ApplitoolsConstants.APPLITOOLS_SERVER_URL));
+
             String[] proxySettings = cmd.getOptionValues("p");
-            if(proxySettings==null)
-            	proxySettings=System.getenv("APPLITOOLS_PROXY")!=null ? System.getenv("APPLITOOLS_PROXY").split(",") : null;
+
+            if(proxySettings == null) {
+                String proxyString = System.getenv(ApplitoolsConstants.APPLITOOLS_PROXY);
+                proxySettings = proxyString != null ? proxyString.split(",") : null;
+            }
+
             config.setProxy(proxySettings);                     
             
             String[] accessibilityOptions = cmd.getOptionValues("ac");
@@ -73,7 +77,7 @@ public class ImageTester {
                     .parentBranch(cmd.getOptionValue("pb", null))
                     .baselineEnvName(cmd.getOptionValue("bn", null))
                     .logFile(cmd.getOptionValue("lf", null))
-                    .hostOs(    cmd.getOptionValue("os", null))
+                    .hostOs(cmd.getOptionValue("os", null))
                     .hostApp(cmd.getOptionValue("ap"))
                     .saveFaliedTests(cmd.hasOption("as"))
                     .ignoreDisplacement(cmd.hasOption("id"))
@@ -96,9 +100,7 @@ public class ImageTester {
             config.dontCloseBatches = cmd.hasOption("dcb");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
-            config.setBatchInfo(
-                    cmd.getOptionValue("fb", null),
-                    cmd.hasOption("nc"));
+            config.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
             config.setIgnoreRegions(cmd.getOptionValue("ir", null));
             config.setContentRegions(cmd.getOptionValue("cr", null));
             config.setLayoutRegions(cmd.getOptionValue("lr", null));
@@ -145,13 +147,16 @@ public class ImageTester {
             BatchMapDeserializer.readFile(batchMapperPath).parallelStream().forEach(currentBatch -> {
                 logger.printBatchPojo(currentBatch);
                 Config currentConfiguration = new Config();
-                currentConfiguration.apiKey = cmd.getOptionValue("k", System.getenv("APPLITOOLS_API_KEY"));
-                currentConfiguration.serverUrl = cmd.getOptionValue("s", System.getenv("APPLITOOLS_SERVER_URL"));
+                currentConfiguration.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
+                currentConfiguration.serverUrl = cmd.getOptionValue("s", System.getenv(ApplitoolsConstants.APPLITOOLS_SERVER_URL));
                                 
                 String[] proxySettings = cmd.getOptionValues("p");
-                if(proxySettings==null)
-                	proxySettings=System.getenv("APPLITOOLS_PROXY")!=null ? System.getenv("APPLITOOLS_PROXY").split(",") : null;
-                currentConfiguration.setProxy(proxySettings); 
+
+                if(proxySettings == null) {
+                    String proxyString = System.getenv(ApplitoolsConstants.APPLITOOLS_PROXY);
+                    proxySettings = proxyString != null ? proxyString.split(",") : null;
+                }
+                currentConfiguration.setProxy(proxySettings);
                                 
                 String[] accessibilityOptions = cmd.getOptionValues("ac");
                 accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;

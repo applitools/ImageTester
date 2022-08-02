@@ -2,8 +2,12 @@ package com.yanirta;
 
 import com.yanirta.BatchObjects.Batch;
 import com.yanirta.BatchObjects.BatchBase;
-import com.yanirta.TestObjects.*;
 import com.yanirta.BatchObjects.PDFFileBatch;
+import com.yanirta.TestObjects.BatchMappedPdfFileTest;
+import com.yanirta.TestObjects.FolderTest;
+import com.yanirta.TestObjects.ImageFileTest;
+import com.yanirta.TestObjects.PdfFileTest;
+import com.yanirta.TestObjects.TestBase;
 import com.yanirta.lib.Config;
 import com.yanirta.lib.Patterns;
 import com.yanirta.lib.TestExecutor;

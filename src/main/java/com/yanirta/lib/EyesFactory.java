@@ -165,7 +165,7 @@ public class EyesFactory {
         AccessibilityGuidelinesVersion version = AccessibilityGuidelinesVersion.WCAG_2_0;
         if (settings.length > 2)
             throw new IllegalArgumentException("incorrect Accessibility setting");
-        if (settings != null && settings.length > 0) {
+        if (settings.length > 0) {
             level = StringUtils.isNotBlank(settings[0]) ? Utils.parseEnum(AccessibilityLevel.class, settings[0], "_") : level;
             version = settings.length == 2 && StringUtils.isNotBlank(settings[1]) ? Utils.parseEnum(AccessibilityGuidelinesVersion.class, settings[1], "_") : version;
         }

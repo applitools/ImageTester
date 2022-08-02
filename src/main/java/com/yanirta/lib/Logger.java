@@ -100,10 +100,10 @@ public class Logger {
 
         switch (e.getClass().getSimpleName()) {
             case "FileNotFoundException":
-                out_.printf("The file was not found \n");
+                out_.print("The file was not found \n");
                 break;
             case "IOException":
-                out_.printf("Error, Please check that the file is accessible, readable and not exclusively locked. ");
+                out_.print("Error, Please check that the file is accessible, readable and not exclusively locked. ");
                 out_.printf("%s\n", e.getMessage());
                 break;
             case "DocumentException":
@@ -111,7 +111,7 @@ public class Logger {
                 out_.printf("Unable to process document, %s \n", e.getMessage());
                 break;
             case "UnsatisfiedLinkError":
-                out_.printf("Error, Please make sure tesseract and ghostscript are installed and in path! ");
+                out_.print("Error, Please make sure tesseract and ghostscript are installed and in path! ");
                 out_.printf("%s\n", e.getMessage());
                 break;
             default:

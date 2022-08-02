@@ -22,7 +22,6 @@ public class PDFFileBatch extends BatchBase {
     private final PDFRenderer pdfRenderer_;
     private final Logger logger_;
     private int disposeCountdown_;
-    private List<Integer> pageList_;
 
     private class PDFPageTest extends TestBase implements IDisposable {
         private final PDFFileBatch parent_;
@@ -68,8 +67,9 @@ public class PDFFileBatch extends BatchBase {
 
     public PDFFileBatch(File file, Config conf) throws IOException {
         super(new BatchInfo(file.getName()));
+        List<Integer> pageList_ = Utils.parsePagesNotation(conf.pages);
+
         this.logger_ = conf.logger;
-        this.pageList_ = Utils.parsePagesNotation(conf.pages);
         this.document_ = PDDocument.load(file, conf.pdfPass);
 
         int totalPages = document_.getNumberOfPages();
