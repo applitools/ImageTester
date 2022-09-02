@@ -26,7 +26,7 @@ import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.0.2";
+    private static final String cur_ver = "3.0.3";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -85,7 +85,6 @@ public class ImageTester {
                     .imageCut(cmd.getOptionValues("ic"))
                     .accSettings(accessibilityOptions)
                     .logHandler(cmd.hasOption("log"));
-            
 
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
@@ -98,6 +97,7 @@ public class ImageTester {
             config.sequenceName = cmd.getOptionValue("sq", null);
             config.legacyFileOrder = cmd.hasOption("lo");
             config.dontCloseBatches = cmd.hasOption("dcb");
+            config.shouldThrowException = cmd.hasOption("te");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
             config.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
@@ -124,7 +124,7 @@ public class ImageTester {
             logger.printHelp(options);
             System.exit(-1);
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            e.printStackTrace();
+            logger.reportException(e);
             System.exit(-1);
         }
     }
@@ -192,6 +192,7 @@ public class ImageTester {
                 currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
+                currentConfiguration.shouldThrowException = cmd.hasOption("te");
                
                 try {
                     File root = new File(currentBatch.filePath);
@@ -436,6 +437,10 @@ public class ImageTester {
                 .longOpt("layoutRegions")
                 .desc("Parameters for layout regions [x, y, width, height]")
                 .hasArgs()
+                .build());
+        options.addOption(Option.builder("te")
+                .longOpt("throwExceptions")
+                .desc("Throw exceptions on test failure")
                 .build());
 
         EyesUtilitiesConfig.injectOptions(options);

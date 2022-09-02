@@ -6,13 +6,11 @@ import com.applitools.eyes.RectangleSize;
 import com.applitools.eyes.Region;
 import com.applitools.eyes.fluent.BatchClose;
 import com.applitools.eyes.fluent.EnabledBatchClose;
-import com.twelvemonkeys.util.IgnoreCaseMap;
 import com.yanirta.Constants.ApplitoolsConstants;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.stream.IntStream;
 
 public class Config {
     public RectangleSize viewport;
@@ -39,6 +37,7 @@ public class Config {
     public Region[] ignoreRegions = null;
     public Region[] layoutRegions = null;
     public Region[] contentRegions = null;
+    public boolean shouldThrowException = false;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
 
     public void setViewport(String viewport) {

@@ -114,6 +114,9 @@ public class Logger {
                 out_.print("Error, Please make sure tesseract and ghostscript are installed and in path! ");
                 out_.printf("%s\n", e.getMessage());
                 break;
+            case "ExecutionException":
+                out_.printf("%s\n", e.getMessage());
+                break;
             default:
                 out_.printf("Unexpected error, %s, %s \n", e.getClass().getName(), e.getMessage());
                 break;

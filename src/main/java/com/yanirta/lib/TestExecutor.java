@@ -1,5 +1,6 @@
 package com.yanirta.lib;
 
+import com.applitools.eyes.exceptions.DiffsFoundException;
 import com.yanirta.TestObjects.IDisposable;
 import com.yanirta.TestObjects.TestBase;
 import com.applitools.eyes.BatchInfo;
@@ -19,7 +20,7 @@ public class TestExecutor {
 
     public TestExecutor(int threads, EyesFactory eyesFactory, Config conf) {
         this.executorService_ = Executors.newFixedThreadPool(threads);
-        this.thEyes_ = ThreadLocal.withInitial(() -> eyesFactory.build());
+        this.thEyes_ = ThreadLocal.withInitial(eyesFactory::build);
         this.config_ = conf;
     }
 
@@ -31,6 +32,10 @@ public class TestExecutor {
             setBatch(eyes, overrideBatch, config_);
             TestResults result = test.runSafe(eyes);
             eyes.abortIfNotClosed();
+
+            if (config_.shouldThrowException && result.isDifferent()) {
+                throw new DiffsFoundException(result, result.getId(), result.getName());
+            }
 
             //add batch to close
             config_.addBatchIdToCloseList(eyes.getBatch().getId());
@@ -50,15 +55,23 @@ public class TestExecutor {
         int total = results_.size();
         int curr = 1;
         while (!results_.isEmpty()) {
+            config_.logger.printProgress(curr++, total);
+            ExecutorResult result = null;
             try {
-                config_.logger.printProgress(curr++, total);
-                ExecutorResult result = results_.remove().get();
-                config_.logger.reportResult(result);
-                if (thEyes_.get().getAccessibilityValidation() != null)
-                    config_.logger.reportResultAccessibility(result);
-            } catch (Exception e) {
+                result = results_.remove().get();
+            } catch (InterruptedException e) {
                 config_.logger.reportException(e);
+            } catch (ExecutionException e) {
+                config_.logger.reportException(e);
+                if (config_.shouldThrowException) {
+                    throw new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
+                            "This exception is thrown because the '-te' flag was present, \n" +
+                            "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
+                }
             }
+            config_.logger.reportResult(result);
+            if (result != null && thEyes_.get().getAccessibilityValidation() != null)
+                config_.logger.reportResultAccessibility(result);
         }
 
         executorService_.shutdown();
