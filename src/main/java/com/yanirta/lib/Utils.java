@@ -17,18 +17,16 @@ import java.util.List;
 public class Utils {
 
     public static void disableCertValidation() throws KeyManagementException, NoSuchAlgorithmException {
+
         // Create a trust manager that does not validate certificate chains
-        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-            }
-
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-            }
+        TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return null;
         }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+            }
         };
 
         // Install the all-trusting trust manager
@@ -45,15 +43,6 @@ public class Utils {
 
         // Install the all-trusting host verifier
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-    }
-
-    //Not empty
-    public static boolean ne(String... strings) {
-        for (String s : strings) {
-            if (s == null) return false;
-            if (s.isEmpty()) return false;
-        }
-        return true;
     }
 
     public static <T extends Enum<T>> T parseEnum(Class<T> c, String string) {
@@ -89,9 +78,10 @@ public class Utils {
 
     public static List<Integer> parsePagesNotation(String input) {
         if (input == null || input.isEmpty()) return null;
-        ArrayList<Integer> pagesToInclude = new ArrayList<Integer>();
+        ArrayList<Integer> pagesToInclude = new ArrayList<>();
         String[] inputPages = input.split(",");
         for (String inputPage : inputPages) {
+            inputPage = inputPage.replaceAll("\\s", "");
             if (inputPage.contains("-")) {
                 String[] splits = inputPage.split("-");
                 int left = Integer.parseInt(splits[0]);
@@ -104,7 +94,6 @@ public class Utils {
                 pagesToInclude.add(Integer.valueOf(inputPage));
         }
         return pagesToInclude;
-
     }
 
     public static List<Integer> generateRanage(int range, int start) {

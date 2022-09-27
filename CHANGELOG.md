@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 3.0.4 - 2022/9/27
+- Refactor string parsing to be slightly more forgiving (whitespace is removed before parsing arguments like page numbers).
+
+## 3.0.3 - 2022/9/2
+- Add -te flag, which instructs ImageTester to throw an exception on mismatches or failed tests.
+
+## 3.0.2 - 2022/8/27
+- Slight optimizations. No change in function. 
+
 ## 3.0.1 - 2022/8/1
 - Restored EyesUtilities functionality with updated dependencies
 
