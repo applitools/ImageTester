@@ -40,6 +40,18 @@ public class Config {
     public boolean shouldThrowException = false;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
 
+    public Region[] accessibilityIgnoreRegions = null;
+    public Region[] accessibilityRegularTextRegions = null;
+    public Region[] accessibilityLargeTextRegions = null;
+    public Region[] accessibilityBoldTextRegions = null;
+    public Region[] accessibilityGraphicsRegions = null;
+
+    public boolean accessibilityRegularTextFullPage = false;
+    public boolean accessibilityLargeTextFullPage = false;
+    public boolean accessibilityBoldTextFullPage = false;
+    public boolean accessibilityGraphicsFullPage = false;
+
+
     public void setViewport(String viewport) {
         if (viewport == null) return;
         String[] dims = viewport.split("x");
@@ -159,6 +171,58 @@ public class Config {
                 this.layoutRegions = generateRegionsArray(layoutRegionsOption);
             } catch(ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for layout regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+
+    public void setAccessibilityIgnoreRegions(String accessibilityIgnoreRegions) {
+        if (accessibilityIgnoreRegions != null) {
+            try {
+                this.accessibilityIgnoreRegions = generateRegionsArray(accessibilityIgnoreRegions);
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for accessibility ignore regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+    public void setAccessibilityRegularTextRegions(String accessibilityRegularTextRegions) {
+        if (accessibilityRegularTextRegions != null) {
+            try {
+                this.accessibilityRegularTextRegions = generateRegionsArray(accessibilityRegularTextRegions);
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for accessibility regular text regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+
+    public void setAccessibilityLargeTextRegions(String accessibilityLargeTextRegions) {
+        if (accessibilityLargeTextRegions != null) {
+            try {
+                this.accessibilityLargeTextRegions = generateRegionsArray(accessibilityLargeTextRegions);
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for accessibility large text regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+    public void setAccessibilityBoldTextRegions(String accessibilityBoldTextRegions) {
+        if (accessibilityBoldTextRegions != null) {
+            try {
+                this.accessibilityBoldTextRegions = generateRegionsArray(accessibilityBoldTextRegions);
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for accessibility bold text regions. " +
+                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
+            }
+        }
+    }
+    public void setAccessibilityGraphicsRegions(String accessibilityGraphicsRegions) {
+        if (accessibilityGraphicsRegions != null) {
+            try {
+                this.accessibilityGraphicsRegions = generateRegionsArray(accessibilityGraphicsRegions);
+            } catch(ArrayIndexOutOfBoundsException e) {
+                logger.printMessage("Error parsing parameters for accessibility graphics regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
         }

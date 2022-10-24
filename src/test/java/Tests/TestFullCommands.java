@@ -188,7 +188,25 @@ public class TestFullCommands {
     }
 
     @Test
-    public void testAccessibilityAAA_WCAG21(){
+    public void testAccessibilityAAA_WCAG21() {
         ImageTester.main("-f TestData/b/Lorem1.pdf -ac AAA:WCAG21".split(" "));
     }
+
+    @Test
+    public void testRegions() {
+        ImageTester.main("-f TestData/b/Lorem1.pdf -ir \"100,100,100,100\" -cr \"200,200,200,200\" -lr \"300,300,300,300\"".split(" "));
+    }
+
+    @Test
+    public void testAccessibilityRegions() {
+        ImageTester.main("-f TestData/b/Lorem1.pdf -ac -ari \"100,100,100,100|150,150,150,150\" -arr \"200,200,200,200\" -arl \"250,250,250,250\" -arb \"300,300,300,300\" -arg \"350,350,350,350\" ".split(" "));
+    }
+
+    @Test
+    public void testAccessibilityRegions_FullPage() {
+        ImageTester.main("-f TestData/b/Lorem1.pdf -ac -arr".split(" "));
+    }
+
+
+
 }

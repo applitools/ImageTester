@@ -77,7 +77,7 @@ public class Logger {
     }
 
     public void reportResultAccessibility(ExecutorResult result) {
-        if (result.testResult == null) {
+        if (result.testResult == null || result.testResult.getAccessibilityStatus() == null) {
             out_.print("Accessibility: N/A, Level: N/A, Version: N/A \n");
         } else {
             out_.printf(
