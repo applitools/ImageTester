@@ -204,9 +204,7 @@ public class TestFullCommands {
 
     @Test
     public void testAccessibilityRegions_FullPage() {
-        ImageTester.main("-f TestData/b/Lorem1.pdf -ac -arr".split(" "));
+        ImageTester.main("-f TestData/b/Lorem1.pdf -ac -arr -st".split(" "));
     }
-
-
 
 }

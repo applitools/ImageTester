@@ -103,6 +103,26 @@ The tool build in java and requires minimal set of parameters the minimal comman
       **Example:** `-ir "300,300,500,100|500,500,200,200"` will create layout regions at <br>
       + x:300, y:300, with width:500, height:100 and <br>
       + x:500, y:500, with width:200, height:200 <br>
+    + `-ari` - Accessibility ignore regions will be applied to all pages. <br>
+      **Example:** `-ari "300,300,500,100|500,500,200,200"` will create accessibility ignore regions at <br>
+        + x:300, y:300, with width:500, height:100 and <br>
+        + x:500, y:500, with width:200, height:200 <br>
+    + `-arr` - Accessibility regular text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
+      **Example:** `-arr "300,300,500,100|500,500,200,200"` will create accessibility regular text regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
+    + `-arl` - Accessibility large text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
+      **Example:** `-arl "300,300,500,100|500,500,200,200"` will create accessibility large text regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
+    + `-arb` - Accessibility bold text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
+      **Example:** `-arb "300,300,500,100|500,500,200,200"` will create accessibility bold text regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
+    + `-arg` - Accessibility graphic regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
+      **Example:** `-arg "300,300,500,100|500,500,200,200"` will create accessibility graphics regions at <br>
+      + x:300, y:300, with width:500, height:100 and <br>
+      + x:500, y:500, with width:200, height:200 <br>
 
 ### Using The Batch Mapper
 The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.

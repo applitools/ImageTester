@@ -1,6 +1,8 @@
 package com.yanirta.BatchObjects;
 
+import com.applitools.eyes.images.ImagesCheckSettings;
 import com.yanirta.TestObjects.IDisposable;
+import com.yanirta.TestObjects.ImagesCheckSettingsFactory;
 import com.yanirta.TestObjects.TestBase;
 import com.applitools.eyes.BatchInfo;
 import com.applitools.eyes.TestResults;
@@ -39,7 +41,8 @@ public class PDFFileBatch extends BatchBase {
             BufferedImage bim = safeRender();
             if (!eyes.getIsOpen())
                 eyes.open(appName(), name(), viewport(bim));
-            eyes.checkImage(bim, name());
+            //eyes.checkImage(bim, name());
+            eyes.check(name(), new ImagesCheckSettingsFactory(bim, config(), viewport(bim)).create());
             return eyes.close(false);
         }
 
