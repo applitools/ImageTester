@@ -39,18 +39,15 @@ public class Config {
     public Region[] contentRegions = null;
     public boolean shouldThrowException = false;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
-
     public Region[] accessibilityIgnoreRegions = null;
     public Region[] accessibilityRegularTextRegions = null;
     public Region[] accessibilityLargeTextRegions = null;
     public Region[] accessibilityBoldTextRegions = null;
     public Region[] accessibilityGraphicsRegions = null;
-
     public boolean accessibilityRegularTextFullPage = false;
     public boolean accessibilityLargeTextFullPage = false;
     public boolean accessibilityBoldTextFullPage = false;
     public boolean accessibilityGraphicsFullPage = false;
-
 
     public void setViewport(String viewport) {
         if (viewport == null) return;

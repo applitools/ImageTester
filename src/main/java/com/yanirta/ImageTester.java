@@ -67,8 +67,6 @@ public class ImageTester {
             String[] accessibilityOptions = cmd.getOptionValues("ac");
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
-
-
             EyesFactory factory
                     = new EyesFactory(cur_ver, logger)
                     .apiKey(config.apiKey)
@@ -88,7 +86,6 @@ public class ImageTester {
                     .accSettings(accessibilityOptions)
                     .logHandler(cmd.hasOption("log"));
 
-
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
             config.appName = cmd.getOptionValue("a", "ImageTester");
@@ -107,7 +104,6 @@ public class ImageTester {
             config.setIgnoreRegions(cmd.getOptionValue("ir", null));
             config.setContentRegions(cmd.getOptionValue("cr", null));
             config.setLayoutRegions(cmd.getOptionValue("lr", null));
-
             config.setAccessibilityIgnoreRegions(cmd.getOptionValue("ari", null));
             config.setAccessibilityRegularTextRegions(cmd.getOptionValue("arr", null));
             config.setAccessibilityLargeTextRegions(cmd.getOptionValue("arl", null));

@@ -41,7 +41,6 @@ public class PDFFileBatch extends BatchBase {
             BufferedImage bim = safeRender();
             if (!eyes.getIsOpen())
                 eyes.open(appName(), name(), viewport(bim));
-            //eyes.checkImage(bim, name());
             eyes.check(name(), new ImagesCheckSettingsFactory(bim, config(), viewport(bim)).create());
             return eyes.close(false);
         }
