@@ -155,7 +155,7 @@ public class Config {
         if (contentRegionsOption != null) {
             try{
                 this.contentRegions = generateRegionsArray(contentRegionsOption);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for content regions. " +
                         "Please ensure that the content regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -166,7 +166,7 @@ public class Config {
         if (layoutRegionsOption != null) {
             try {
                 this.layoutRegions = generateRegionsArray(layoutRegionsOption);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for layout regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -177,7 +177,7 @@ public class Config {
         if (accessibilityIgnoreRegions != null) {
             try {
                 this.accessibilityIgnoreRegions = generateRegionsArray(accessibilityIgnoreRegions);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for accessibility ignore regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -187,7 +187,7 @@ public class Config {
         if (accessibilityRegularTextRegions != null) {
             try {
                 this.accessibilityRegularTextRegions = generateRegionsArray(accessibilityRegularTextRegions);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for accessibility regular text regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -198,7 +198,7 @@ public class Config {
         if (accessibilityLargeTextRegions != null) {
             try {
                 this.accessibilityLargeTextRegions = generateRegionsArray(accessibilityLargeTextRegions);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for accessibility large text regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -208,7 +208,7 @@ public class Config {
         if (accessibilityBoldTextRegions != null) {
             try {
                 this.accessibilityBoldTextRegions = generateRegionsArray(accessibilityBoldTextRegions);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for accessibility bold text regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
@@ -218,7 +218,7 @@ public class Config {
         if (accessibilityGraphicsRegions != null) {
             try {
                 this.accessibilityGraphicsRegions = generateRegionsArray(accessibilityGraphicsRegions);
-            } catch(ArrayIndexOutOfBoundsException e) {
+            } catch (ArrayIndexOutOfBoundsException e) {
                 logger.printMessage("Error parsing parameters for accessibility graphics regions. " +
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }

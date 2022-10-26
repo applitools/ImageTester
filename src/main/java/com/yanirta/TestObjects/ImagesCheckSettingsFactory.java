@@ -36,42 +36,42 @@ public class ImagesCheckSettingsFactory {
             this.imagesCheckSettings = this.imagesCheckSettings.content(config.contentRegions);
         }
 
-        if (config.accessibilityRegularTextFullPage == true) {
+        if (config.accessibilityRegularTextFullPage) {
             this.imagesCheckSettings = this.imagesCheckSettings.accessibility(viewPortRegion, AccessibilityRegionType.RegularText);
         }
-        if (config.accessibilityLargeTextFullPage == true) {
+        if (config.accessibilityLargeTextFullPage) {
             this.imagesCheckSettings = this.imagesCheckSettings.accessibility(viewPortRegion, AccessibilityRegionType.LargeText);
         }
-        if (config.accessibilityBoldTextFullPage == true) {
+        if (config.accessibilityBoldTextFullPage) {
             this.imagesCheckSettings = this.imagesCheckSettings.accessibility(viewPortRegion, AccessibilityRegionType.BoldText);
         }
-        if (config.accessibilityGraphicsFullPage == true) {
+        if (config.accessibilityGraphicsFullPage) {
             this.imagesCheckSettings = this.imagesCheckSettings.accessibility(viewPortRegion, AccessibilityRegionType.GraphicalObject);
         }
 
         if (config.accessibilityIgnoreRegions != null) {
             // We have to loop because Eyes Images doesn't support Regions array
-            for (Region acRegion :config.accessibilityIgnoreRegions ) {
+            for (Region acRegion : config.accessibilityIgnoreRegions ) {
                 this.imagesCheckSettings = this.imagesCheckSettings.accessibility(acRegion, AccessibilityRegionType.IgnoreContrast);
             }
         }
         if (config.accessibilityRegularTextRegions != null) {
-            for (Region acRegion:config.accessibilityRegularTextRegions) {
+            for (Region acRegion: config.accessibilityRegularTextRegions) {
                 this.imagesCheckSettings = this.imagesCheckSettings.accessibility(acRegion, AccessibilityRegionType.RegularText);
             }
         }
         if (config.accessibilityLargeTextRegions != null) {
-            for (Region acRegion :config.accessibilityLargeTextRegions) {
+            for (Region acRegion : config.accessibilityLargeTextRegions) {
                 this.imagesCheckSettings = this.imagesCheckSettings.accessibility(acRegion, AccessibilityRegionType.LargeText);
             }
         }
         if (config.accessibilityBoldTextRegions != null) {
-            for (Region acRegion :config.accessibilityBoldTextRegions) {
+            for (Region acRegion : config.accessibilityBoldTextRegions) {
                 this.imagesCheckSettings = this.imagesCheckSettings.accessibility(acRegion, AccessibilityRegionType.BoldText);
             }
         }
         if (config.accessibilityGraphicsRegions != null) {
-            for (Region acRegion :config.accessibilityGraphicsRegions) {
+            for (Region acRegion : config.accessibilityGraphicsRegions) {
                 this.imagesCheckSettings = this.imagesCheckSettings.accessibility(acRegion, AccessibilityRegionType.GraphicalObject);
             }
         }
