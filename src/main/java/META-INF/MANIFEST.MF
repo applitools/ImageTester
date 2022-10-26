@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
 Main-Class: com.yanirta.ImageTester
 Implementation-Version: 3.0.4
+

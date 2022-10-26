@@ -30,7 +30,7 @@ public class BatchMappedPdfFileTest extends DocumentTestBase {
                         eyes.open(appName(), name(), viewport(bim));
                     eyes.check(
                             String.format("Page-%s", name()),
-                            new ImagesCheckSettingsFactory(bim, config()).create()
+                            new ImagesCheckSettingsFactory(bim, config(), viewport(bim)).create()
                     );
                     bim.getGraphics().dispose();
                     bim.flush();

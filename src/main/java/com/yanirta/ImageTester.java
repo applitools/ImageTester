@@ -104,6 +104,25 @@ public class ImageTester {
             config.setIgnoreRegions(cmd.getOptionValue("ir", null));
             config.setContentRegions(cmd.getOptionValue("cr", null));
             config.setLayoutRegions(cmd.getOptionValue("lr", null));
+            config.setAccessibilityIgnoreRegions(cmd.getOptionValue("ari", null));
+            config.setAccessibilityRegularTextRegions(cmd.getOptionValue("arr", null));
+            config.setAccessibilityLargeTextRegions(cmd.getOptionValue("arl", null));
+            config.setAccessibilityBoldTextRegions(cmd.getOptionValue("arb", null));
+            config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
+
+            // Full page for ac regions capability
+            if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
+                config.accessibilityRegularTextFullPage = true;
+            }
+            if (cmd.hasOption("arl") && config.accessibilityLargeTextRegions == null) {
+                config.accessibilityLargeTextFullPage = true;
+            }
+            if (cmd.hasOption("arb") && config.accessibilityBoldTextRegions == null) {
+                config.accessibilityBoldTextFullPage = true;
+            }
+            if (cmd.hasOption("arg") && config.accessibilityGraphicsRegions== null) {
+                config.accessibilityGraphicsFullPage = true;
+            }
 
             File root = new File(cmd.getOptionValue("f", "."));
 
@@ -441,6 +460,36 @@ public class ImageTester {
         options.addOption(Option.builder("te")
                 .longOpt("throwExceptions")
                 .desc("Throw exceptions on test failure")
+                .build());
+        options.addOption(Option.builder("ari")
+                .longOpt("accessibility region: ignore")
+                .desc("Parameters for accessibility ignore regions [x, y, width, height]")
+                .hasArgs()
+                .optionalArg(true)
+                .build());
+        options.addOption(Option.builder("arr")
+                .longOpt("accessibility region: regular text")
+                .desc("Parameters for accessibility regular text regions [x, y, width, height]")
+                .hasArgs()
+                .optionalArg(true)
+                .build());
+        options.addOption(Option.builder("arl")
+                .longOpt("accessibility region: large text")
+                .desc("Parameters for accessibility large text regions [x, y, width, height]")
+                .hasArgs()
+                .optionalArg(true)
+                .build());
+        options.addOption(Option.builder("arb")
+                .longOpt("accessibility region: bold text")
+                .desc("Parameters for accessibility bold text regions [x, y, width, height]")
+                .hasArgs()
+                .optionalArg(true)
+                .build());
+        options.addOption(Option.builder("arg")
+                .longOpt("accessibility region: graphic")
+                .desc("Parameters for accessibility graphics regions [x, y, width, height]")
+                .hasArgs()
+                .optionalArg(true)
                 .build());
 
         EyesUtilitiesConfig.injectOptions(options);
