@@ -26,7 +26,7 @@ import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.1.0";
+    private static final String cur_ver = "3.1.1";
 
     public static void main(String[] args) {
         CommandLineParser parser = new DefaultParser();
@@ -79,6 +79,7 @@ public class ImageTester {
                     .logFile(cmd.getOptionValue("lf", null))
                     .hostOs(cmd.getOptionValue("os", null))
                     .hostApp(cmd.getOptionValue("ap"))
+                    .environmentName(cmd.getOptionValue("en"))
                     .saveFaliedTests(cmd.hasOption("as"))
                     .ignoreDisplacement(cmd.hasOption("id"))
                     .saveNewTests(!cmd.hasOption("pn"))
@@ -334,6 +335,12 @@ public class ImageTester {
                 .desc("Set Host-app identifier for the screens under test")
                 .hasArg()
                 .argName("app")
+                .build());
+        options.addOption(Option.builder("en")
+                .longOpt("environmentName")
+                .desc("Set environment name identifier for test")
+                .hasArg()
+                .argName("env")
                 .build());
         options.addOption(Option.builder("di")
                 .longOpt("dpi")

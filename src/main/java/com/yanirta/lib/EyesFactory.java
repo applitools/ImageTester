@@ -19,6 +19,7 @@ public class EyesFactory {
     private String logFilename;
     private String hostOs;
     private String hostApp;
+    private String environmentName;
     private boolean saveFailed = false;
     private boolean ignoreDisplacement = false;
     private boolean saveNewTests = false;
@@ -59,6 +60,8 @@ public class EyesFactory {
             eyes.setHostOS(this.hostOs);
         if (StringUtils.isNotBlank(this.hostApp))
             eyes.setHostApp(this.hostApp);
+        if (StringUtils.isNotBlank(this.environmentName))
+            eyes.setEnvName(this.environmentName);
         if (StringUtils.isNotBlank(this.logFilename))
             eyes.setLogHandler(new FileLogger(this.logFilename, true, true));
         if (this.proxySettings != null)
@@ -128,6 +131,11 @@ public class EyesFactory {
 
     public EyesFactory hostApp(String app) {
         this.hostApp = app;
+        return this;
+    }
+
+    public EyesFactory environmentName(String environmentName) {
+        this.environmentName = environmentName;
         return this;
     }
 
