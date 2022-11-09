@@ -26,12 +26,16 @@ import com.yanirta.lib.TestExecutor;
 import com.yanirta.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.1.2";
+    private static final String cur_ver = "3.1.3";
 
     public static void main(String[] args) {
+
         CommandLineParser parser = new DefaultParser();
         Options options = getOptions();
         Logger logger = new Logger();
+
+        // PDFBox generates fairly unhelpful logs - suppressing these by default
+        java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.OFF);
 
         try {
             CommandLine cmd = parser.parse(options, args);
@@ -113,7 +117,7 @@ public class ImageTester {
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
-                config.accessibilityRegularTextFullPage = true;
+                config.accessibilityRegularTextFullPage = cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null;
             }
             if (cmd.hasOption("arl") && config.accessibilityLargeTextRegions == null) {
                 config.accessibilityLargeTextFullPage = true;
