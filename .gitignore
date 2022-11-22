@@ -9,3 +9,6 @@ src/test/java/Private/
 TestData/Private/
 output
 dependency-reduced-pom.xml
+.classpath
+.project
+.settings/**

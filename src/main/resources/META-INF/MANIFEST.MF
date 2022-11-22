@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.yanirta.ImageTester
+Main-Class: com.applitools.imagetester.ImageTester
 Class-Path: ./EyesUtilities.jar ../EyesUtilities/out/artifacts/EyesUtilities_jar/EyesUtilities.jar
