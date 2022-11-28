@@ -1,7 +1,8 @@
 package Tests;
 
-import com.yanirta.ImageTester;
 import org.junit.Test;
+
+import com.applitools.imagetester.ImageTester;
 
 public class TestFullCommands {
 

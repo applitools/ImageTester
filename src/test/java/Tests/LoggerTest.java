@@ -1,7 +1,8 @@
 package Tests;
 
-import com.yanirta.lib.Logger;
 import org.junit.Test;
+
+import com.applitools.imagetester.lib.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

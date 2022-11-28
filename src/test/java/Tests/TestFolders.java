@@ -1,14 +1,16 @@
 package Tests;
 
-import com.yanirta.Suite;
-import com.yanirta.TestObjects.FolderTest;
 import com.applitools.eyes.BatchInfo;
 import com.applitools.eyes.RectangleSize;
+import com.applitools.imagetester.Suite;
+import com.applitools.imagetester.TestObjects.FolderTest;
+import com.applitools.imagetester.lib.Config;
+import com.applitools.imagetester.lib.EyesFactory;
+import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.TestExecutor;
+
 import infra.TestBase;
-import com.yanirta.lib.Config;
-import com.yanirta.lib.EyesFactory;
-import com.yanirta.lib.Logger;
-import com.yanirta.lib.TestExecutor;
+
 import org.junit.Test;
 
 import java.io.File;
