@@ -30,8 +30,6 @@
 			<groupId>com.github.applitools</groupId>
 			<artifactId>EyesUtilities</artifactId>
 			<version>latest</version>
-			<!-- scope>system</scope>
-            <systemPath>${project.basedir}/jars/EyesUtilities_1.5.10-SNAPSHOT.jar</systemPath -->
 		</dependency>
 		<dependency>
 			<groupId>org.apache.pdfbox</groupId>
