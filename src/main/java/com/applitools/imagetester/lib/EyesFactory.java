@@ -71,7 +71,7 @@ public class EyesFactory {
             int footer = cutValues.length > 1 ? cutValues[1] : 0;
             int left = cutValues.length > 2 ? cutValues[2] : 0;
             int right = cutValues.length == 4 ? cutValues[3] : 0;
-            eyes.setImageCut(new FixedCutProvider(header, footer, left, right));
+            eyes.setImageCut(new UnscaledFixedCutProvider(header, footer, left, right));
         }
 
         if (StringUtils.isNotBlank(this.parentBranch) && StringUtils.isBlank(this.branch))

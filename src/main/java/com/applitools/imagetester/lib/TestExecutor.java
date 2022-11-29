@@ -86,7 +86,7 @@ public class TestExecutor {
         } else if (overrideBatch != null) {
             batchToSet = overrideBatch;
         } else {
-            batchToSet = eyes.getBatch();
+            batchToSet = new BatchInfo();
         }
 
         batchToSet.setNotifyOnCompletion(config_.notifyOnComplete);
