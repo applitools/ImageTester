@@ -1,9 +1,9 @@
 package com.applitools.imagetester.lib;
 
 import com.applitools.eyes.TestResults;
-import com.applitools.commands.AnimatedDiffs;
-import com.applitools.commands.DownloadDiffs;
-import com.applitools.commands.DownloadImages;
+import com.yanirta.Commands.AnimatedDiffs;
+import com.yanirta.Commands.DownloadDiffs;
+import com.yanirta.Commands.DownloadImages;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.*;
