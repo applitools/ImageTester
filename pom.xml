@@ -25,7 +25,6 @@
 			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>com.github.applitools</groupId>
 			<artifactId>EyesUtilities</artifactId>
