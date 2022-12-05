@@ -110,7 +110,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- plugin>
+			<plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <version>7.1.1</version>
@@ -121,7 +121,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin -->
+            </plugin>
 			<plugin>
 				<!-- This plugin required to control version addition to the manifest so it will be consumable on runtime -->
 				<groupId>org.apache.maven.plugins</groupId>
