@@ -20,7 +20,9 @@ public class ImagesCheckSettingsFactory {
         this.config = config;
     }
     public ImagesCheckSettingsFactory(BufferedImage image, Config config, RectangleSize viewport) {
-        this.imagesCheckSettings = new ImagesCheckSettings(image);
+        this.imagesCheckSettings = config.captureRegion == null ?
+                new ImagesCheckSettings(image) :
+                new ImagesCheckSettings(image, config.captureRegion);
         this.config = config;
         this.viewPortRegion = new Region(0, 0, viewport.getWidth(), viewport.getHeight());
     }

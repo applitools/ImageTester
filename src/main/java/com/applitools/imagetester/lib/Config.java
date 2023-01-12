@@ -49,6 +49,7 @@ public class Config {
     public boolean accessibilityLargeTextFullPage = false;
     public boolean accessibilityBoldTextFullPage = false;
     public boolean accessibilityGraphicsFullPage = false;
+    public Region captureRegion;
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
@@ -58,6 +59,19 @@ public class Config {
         this.viewport = new RectangleSize(
                 Integer.parseInt(dims[0]),
                 Integer.parseInt(dims[1]));
+    }
+
+    public void setCaptureRegion(String captureRegionSpecs) {
+        if (captureRegionSpecs == null) return;
+        String[] regionSpecs = captureRegionSpecs.split(",");
+        if (regionSpecs.length != 4)
+            throw new RuntimeException("Invalid region capture values, make sure the call is -rc <left>,<top>,<width>,<height>");
+        this.captureRegion = new Region(
+                Integer.parseInt(regionSpecs[0]),
+                Integer.parseInt(regionSpecs[1]),
+                Integer.parseInt(regionSpecs[2]),
+                Integer.parseInt(regionSpecs[3])
+        );
     }
 
     public void setProxy(String[] proxy) {

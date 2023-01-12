@@ -114,6 +114,7 @@ public class ImageTester {
             config.setAccessibilityLargeTextRegions(cmd.getOptionValue("arl", null));
             config.setAccessibilityBoldTextRegions(cmd.getOptionValue("arb", null));
             config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
+            config.setCaptureRegion(cmd.getOptionValue("rc", null));
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
@@ -217,6 +218,7 @@ public class ImageTester {
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
+                currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
                
                 try {
                     File root = new File(currentBatch.filePath);
@@ -501,6 +503,12 @@ public class ImageTester {
                 .desc("Parameters for accessibility graphics regions [x, y, width, height]")
                 .hasArgs()
                 .optionalArg(true)
+                .build());
+        options.addOption(Option.builder("rc")
+                .longOpt("regionCapture")
+                .desc("Tests specific region of images and PDFs.\nexample: `-rc 0,200,1000,1000`")
+                .hasArgs()
+                .optionalArg(false)
                 .build());
 
         EyesUtilitiesConfig.injectOptions(options);
