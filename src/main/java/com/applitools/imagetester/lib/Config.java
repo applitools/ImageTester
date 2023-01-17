@@ -50,6 +50,7 @@ public class Config {
     public boolean accessibilityBoldTextFullPage = false;
     public boolean accessibilityGraphicsFullPage = false;
     public Region captureRegion;
+    public String matchTimeout;
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
@@ -238,5 +239,13 @@ public class Config {
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
         }
+    }
+
+    public void setMatchTimeout(String matchTimeout) {
+        this.matchTimeout = matchTimeout;
+    }
+
+    public String getMatchTimeout() {
+        return this.matchTimeout;
     }
 }

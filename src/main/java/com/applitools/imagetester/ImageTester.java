@@ -115,6 +115,7 @@ public class ImageTester {
             config.setAccessibilityBoldTextRegions(cmd.getOptionValue("arb", null));
             config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
             config.setCaptureRegion(cmd.getOptionValue("rc", null));
+            config.setMatchTimeout(cmd.getOptionValue("mt", null));
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
@@ -219,6 +220,7 @@ public class ImageTester {
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
                 currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
+                currentConfiguration.setMatchTimeout(cmd.getOptionValue("mt", null));
                
                 try {
                     File root = new File(currentBatch.filePath);
@@ -510,6 +512,13 @@ public class ImageTester {
                 .hasArgs()
                 .optionalArg(false)
                 .build());
+        options.addOption(Option.builder("mt")
+                .longOpt("matchTimeout")
+                .desc("Set value for match timeout and retry timeout in ms(minimum 500).\nexample: `-mt 2000`")
+                .hasArgs()
+                .optionalArg(false)
+                .build());
+
 
         EyesUtilitiesConfig.injectOptions(options);
         return options;
