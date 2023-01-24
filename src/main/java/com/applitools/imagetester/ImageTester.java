@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.1.5";
+    private static final String cur_ver = "3.2.2";
 
     public static void main(String[] args) {
 
@@ -66,8 +66,8 @@ public class ImageTester {
                 proxySettings = proxyString != null ? proxyString.split(",") : null;
             }
 
-            config.setProxy(proxySettings);                     
-            
+            config.setProxy(proxySettings);
+
             String[] accessibilityOptions = cmd.getOptionValues("ac");
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
