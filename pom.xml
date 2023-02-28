@@ -4,7 +4,7 @@
 
 	<groupId>com.applitools.imagetester</groupId>
 	<artifactId>ImageTester</artifactId>
-	<version>3.1.5</version>
+	<version>3.2.2</version>
 	<packaging>jar</packaging>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -76,6 +76,12 @@
 			<artifactId>jackson-dataformat-csv</artifactId>
 			<version>2.13.4</version>
 		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.32</version>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>../jars/${project.artifactId}_${project.version}</finalName>
@@ -110,7 +116,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- plugin>
+			<plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <version>7.1.1</version>
@@ -121,7 +127,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin -->
+            </plugin>
 			<plugin>
 				<!-- This plugin required to control version addition to the manifest so it will be consumable on runtime -->
 				<groupId>org.apache.maven.plugins</groupId>

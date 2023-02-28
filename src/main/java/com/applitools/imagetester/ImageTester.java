@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.1.5";
+    private static final String cur_ver = "3.2.2";
 
     public static void main(String[] args) {
 
@@ -66,8 +66,8 @@ public class ImageTester {
                 proxySettings = proxyString != null ? proxyString.split(",") : null;
             }
 
-            config.setProxy(proxySettings);                     
-            
+            config.setProxy(proxySettings);
+
             String[] accessibilityOptions = cmd.getOptionValues("ac");
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
@@ -114,6 +114,8 @@ public class ImageTester {
             config.setAccessibilityLargeTextRegions(cmd.getOptionValue("arl", null));
             config.setAccessibilityBoldTextRegions(cmd.getOptionValue("arb", null));
             config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
+            config.setCaptureRegion(cmd.getOptionValue("rc", null));
+            config.setMatchTimeout(cmd.getOptionValue("mt", null));
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
@@ -217,6 +219,8 @@ public class ImageTester {
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
+                currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
+                currentConfiguration.setMatchTimeout(cmd.getOptionValue("mt", null));
                
                 try {
                     File root = new File(currentBatch.filePath);
@@ -502,6 +506,19 @@ public class ImageTester {
                 .hasArgs()
                 .optionalArg(true)
                 .build());
+        options.addOption(Option.builder("rc")
+                .longOpt("regionCapture")
+                .desc("Tests specific region of images and PDFs.\nexample: `-rc 0,200,1000,1000`")
+                .hasArgs()
+                .optionalArg(false)
+                .build());
+        options.addOption(Option.builder("mt")
+                .longOpt("matchTimeout")
+                .desc("Set value for match timeout and retry timeout in ms(minimum 500).\nexample: `-mt 2000`")
+                .hasArgs()
+                .optionalArg(false)
+                .build());
+
 
         EyesUtilitiesConfig.injectOptions(options);
         return options;

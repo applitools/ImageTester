@@ -86,11 +86,12 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-id` - Ignore displacement of shifting elements.
     + `-pn` - Prompt new tests, new tests will not be saved automatically, the user will have to review and save manually.
     + `-dv` - Disable SSL certificate validation. !!!Unsecured!!!
-    + `-lo` - Use legacy files order to comply with baselines that were created with versions below 2.0
+    + `-lo` - Use legacy files order complying with baselines that were created with versions below 2.0
     + `-ac [Level:GuidelineVer]` - Set accessibility validation and optionally it's arguments split by semicolons ':' default: "AA:WCAG_2_0", available options: [AA|AAA:WCAG_2_0|WCAG_2_1]
     + `-dcb` - ImageTester will not automatically close batch(es) when test is complete.
     + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
     + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>
+    + `-mt` - Sets match timeout and retry timeout (default=500). <br> 
     + `-ir` - Ignore regions will be applied to all pages. <br>
       **Example:** `-ir "300,300,500,100|500,500,200,200"` will create ignored regions at <br> 
       + x:300, y:300, with width:500, height:100 and <br>
@@ -123,6 +124,9 @@ The tool build in java and requires minimal set of parameters the minimal comman
       **Example:** `-arg "300,300,500,100|500,500,200,200"` will create accessibility graphics regions at <br>
       + x:300, y:300, with width:500, height:100 and <br>
       + x:500, y:500, with width:200, height:200 <br>
+    + `-rc` - Capture only a particular region of PDFs/Images. <br>
+      **Example:** `-rc "200,500,1000,1000"` instructs ImageTester to only test region with: <br>
+      + x:200, y:500, with width:1000, height:1000
 
 ### Using The Batch Mapper
 The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.

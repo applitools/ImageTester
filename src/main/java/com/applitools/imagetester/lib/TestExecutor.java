@@ -31,6 +31,7 @@ public class TestExecutor {
             Eyes eyes = thEyes_.get();
             //set batch
             setBatch(eyes, overrideBatch, config_);
+            setTimeout(eyes, config_);
             TestResults result = test.runSafe(eyes);
             eyes.abortIfNotClosed();
 
@@ -97,5 +98,13 @@ public class TestExecutor {
         //set sequence name if necessary
         if (config_.sequenceName != null && !StringUtils.isEmpty(config_.sequenceName))
             eyes.getBatch().setSequenceName(config_.sequenceName);
+    }
+
+    //set eyes correct batch
+    public void setTimeout(Eyes eyes, Config config) {
+        if (config.getMatchTimeout() != null) {
+            int matchTimeoutValue = Integer.parseInt(config.getMatchTimeout());
+            if (matchTimeoutValue >= 500) eyes.setMatchTimeout(matchTimeoutValue);
+        }
     }
 }
