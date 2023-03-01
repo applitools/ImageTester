@@ -120,7 +120,12 @@ public class EyesFactory {
     }
 
     public EyesFactory logFile(String filename) {
-        this.logFilename = filename;
+    	this.logger.printMessage("Setting the log file using the 'lf' flag has been DEPRECATED. \n"
+    			+ "The log are automatically created and saved to: \n"
+    			+ "Mac/Linux - $TMPDIR/applitools-logs/ \n"
+    			+ "Windows - $env:TEMP/applitools-logs/ \n"
+    			+ "The log directory can now be specified using this environment variable: \n"
+    			+ "APPLITOOLS_LOG_DIR=<path>");
         return this;
     }
 
