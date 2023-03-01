@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.2.2";
+    private static final String cur_ver = "3.2.3";
 
     public static void main(String[] args) {
 
@@ -324,7 +324,7 @@ public class ImageTester {
         options.addOption(Option.builder("lf")
                 .longOpt("logFile")
                 .desc("Specify Applitools log-file")
-                .hasArg()
+                .hasArg().optionalArg(true)
                 .argName("file")
                 .build());
         options.addOption(Option.builder("as")
