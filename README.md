@@ -70,7 +70,12 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-pb [parent-branch]` - Set the parent branch
     + `-bn [baseline]` - Set custom baseline name
     + `-vs [WidthxHeight]` - Set the viewport size identifier
-    + `-lf [log-file]` - Set log fine name to enable logging
+    + `-lf [log-file]` - DEPRECATED. Please set log file path with the environment variable *APPLITOOLS_LOG_PATH* <br>
+      + **The logs are automatically created and saved to:**
+      + Mac/Linux - `$TMPDIR/applitools-logs/`
+      + Windows (PowerShell) - `$env:TEMP/applitools-logs/`
+      + **The log directory can now be specified using this environment variable:**
+      + `APPLITOOLS_LOG_DIR=<path>`
     + `-os [osname]` - Set custom os
     + `-ap [browser name]` - Set browser or equivalent hosting application name
     + `-th [number]` - Specify max. concurrent workers (Threads). default= 3

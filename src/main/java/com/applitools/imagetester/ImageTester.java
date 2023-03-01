@@ -324,7 +324,8 @@ public class ImageTester {
         options.addOption(Option.builder("lf")
                 .longOpt("logFile")
                 .desc("Specify Applitools log-file")
-                .hasArg().optionalArg(true)
+                .hasArg()
+                .optionalArg(true)
                 .argName("file")
                 .build());
         options.addOption(Option.builder("as")
