@@ -96,7 +96,8 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-dcb` - ImageTester will not automatically close batch(es) when test is complete.
     + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
     + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>
-    + `-mt` - Sets match timeout and retry timeout (default=500). <br> 
+    + `-mt` - Sets match timeout and retry timeout (default=500). <br>
+    + `-dn` - Sets device name for test in dashboard. <br>
     + `-ir` - Ignore regions will be applied to all pages. <br>
       **Example:** `-ir "300,300,500,100|500,500,200,200"` will create ignored regions at <br> 
       + x:300, y:300, with width:500, height:100 and <br>

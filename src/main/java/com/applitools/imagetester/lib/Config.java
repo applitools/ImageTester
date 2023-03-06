@@ -51,6 +51,7 @@ public class Config {
     public boolean accessibilityGraphicsFullPage = false;
     public Region captureRegion;
     public String matchTimeout;
+    public String deviceName;
 
     public void setViewport(String viewport) {
         if (viewport == null) return;

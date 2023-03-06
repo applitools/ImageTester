@@ -1,6 +1,14 @@
 package com.applitools.imagetester.lib;
 
-import com.applitools.eyes.*;
+import com.applitools.eyes.AccessibilityGuidelinesVersion;
+import com.applitools.eyes.AccessibilityLevel;
+import com.applitools.eyes.AccessibilitySettings;
+import com.applitools.eyes.FileLogger;
+import com.applitools.eyes.MatchLevel;
+import com.applitools.eyes.ProxySettings;
+import com.applitools.eyes.StdoutLogHandler;
+import com.applitools.eyes.UnscaledFixedCutProvider;
+import com.applitools.eyes.config.Configuration;
 import com.applitools.eyes.images.Eyes;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,6 +34,7 @@ public class EyesFactory {
     private int[] cutValues;
     private AccessibilitySettings accSettings = null;
     private boolean logHandler;
+    private String deviceName;
 
     public EyesFactory(String ver, Logger logger) {
         this.version = ver;
@@ -48,6 +57,12 @@ public class EyesFactory {
         eyes.setSaveFailedTests(saveFailed);
         eyes.setIgnoreDisplacements(ignoreDisplacement);
         eyes.setSaveNewTests(saveNewTests);
+
+        eyes.setConfiguration(
+            new Configuration().setDeviceInfo(this.deviceName)
+        );
+
+
         //String params
         if (StringUtils.isNotBlank(this.serverUrl))
             eyes.setServerUrl(this.serverUrl);
@@ -83,7 +98,6 @@ public class EyesFactory {
             eyes.setAccessibilityValidation(this.accSettings);
         if (logHandler)
             eyes.setLogHandler(new StdoutLogHandler(true));
-
         return eyes;
     }
 
@@ -197,4 +211,9 @@ public class EyesFactory {
         this.logHandler = logHandler;
         return this;
 	}
+
+	public EyesFactory deviceName(String deviceName) {
+        this.deviceName = deviceName;
+        return this;
+    }
 }

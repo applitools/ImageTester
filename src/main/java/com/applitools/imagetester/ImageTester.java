@@ -89,7 +89,8 @@ public class ImageTester {
                     .saveNewTests(!cmd.hasOption("pn"))
                     .imageCut(cmd.getOptionValues("ic"))
                     .accSettings(accessibilityOptions)
-                    .logHandler(cmd.hasOption("log"));
+                    .logHandler(cmd.hasOption("log"))
+                    .deviceName(cmd.getOptionValue("dn", null));
 
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
@@ -203,7 +204,8 @@ public class ImageTester {
                         .ignoreDisplacement(cmd.hasOption("id"))
                         .saveNewTests(!cmd.hasOption("pn"))
                         .imageCut(cmd.getOptionValues("ic"))
-                        .accSettings(accessibilityOptions);
+                        .accSettings(accessibilityOptions)
+                        .deviceName(cmd.getOptionValue("dn", null));
                 currentConfiguration.splitSteps = cmd.hasOption("st");
                 currentConfiguration.logger = logger;
                 currentConfiguration.appName = currentBatch.app;
@@ -221,7 +223,7 @@ public class ImageTester {
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
                 currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
                 currentConfiguration.setMatchTimeout(cmd.getOptionValue("mt", null));
-               
+
                 try {
                     File root = new File(currentBatch.filePath);
                     int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
@@ -516,6 +518,12 @@ public class ImageTester {
         options.addOption(Option.builder("mt")
                 .longOpt("matchTimeout")
                 .desc("Set value for match timeout and retry timeout in ms(minimum 500).\nexample: `-mt 2000`")
+                .hasArgs()
+                .optionalArg(false)
+                .build());
+        options.addOption(Option.builder("dn")
+                .longOpt("deviceName")
+                .desc("Set device name metadata.\nexample: `-dn 'my device'`")
                 .hasArgs()
                 .optionalArg(false)
                 .build());
