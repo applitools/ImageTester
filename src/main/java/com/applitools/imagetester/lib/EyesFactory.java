@@ -48,20 +48,26 @@ public class EyesFactory {
                 return String.format("ImageTester/%s [%s]", version, super.getBaseAgentId());
             }
 
+            @Override
+            public String getFullAgentId() {
+                return String.format("ImageTester/%s [%s]", version, super.getBaseAgentId());
+            }
+
         };
+
+        // We need to create a Configuration object to set the device info.
+        // setConfiguration() overrides several Eyes instance fields, so configuration
+        // should be set first
+        eyes.setConfiguration(
+            new Configuration()
+                .setDeviceInfo(this.deviceName)
+        );
 
         eyes.setApiKey(this.apiKey);
         eyes.setAgentId(String.format("ImageTester/%s", version));
-
-        //flags
         eyes.setSaveFailedTests(saveFailed);
         eyes.setIgnoreDisplacements(ignoreDisplacement);
         eyes.setSaveNewTests(saveNewTests);
-
-        eyes.setConfiguration(
-            new Configuration().setDeviceInfo(this.deviceName)
-        );
-
 
         //String params
         if (StringUtils.isNotBlank(this.serverUrl))
