@@ -203,7 +203,7 @@ public class EyesFactory {
 					: level;
 			version = settings.length == 2 && StringUtils.isNotBlank(settings[1])
 					? Utils.parseEnum(AccessibilityGuidelinesVersion.class, settings[1], "_")
-					: version;
+							: version;
 		}
 		this.accSettings = new AccessibilitySettings(level, version);
 		return this;
