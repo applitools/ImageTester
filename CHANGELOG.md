@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+## 3.3.2 - 2023/3/14
+- Add support for jbig images
 
 ## 3.0.4 - 2022/9/27
 - Refactor string parsing to be slightly more forgiving (whitespace is removed before parsing arguments like page numbers).
