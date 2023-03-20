@@ -1,24 +1,16 @@
 package com.applitools.imagetester.TestObjects;
 
-import com.applitools.ICheckSettings;
-import com.applitools.eyes.RectangleSize;
-import com.applitools.eyes.Region;
 import com.applitools.eyes.TestResults;
-import com.applitools.eyes.fluent.GetSimpleRegion;
 import com.applitools.eyes.images.Eyes;
-import com.applitools.eyes.images.ImagesCheckSettings;
-import com.applitools.eyes.images.Target;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Utils;
-
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
-
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import javax.imageio.spi.IIORegistry;
+import org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
 public class PdfFileTest extends DocumentTestBase {
 
@@ -27,6 +19,8 @@ public class PdfFileTest extends DocumentTestBase {
     }
 
     public TestResults run(Eyes eyes) throws Exception {
+        // Needed for PDFBox to display JBig images within PDF renders
+        IIORegistry.getDefaultInstance().registerServiceProvider(new JBIG2ImageReaderSpi());
 
         try (PDDocument document = PDDocument.load(file(), config().pdfPass)) {
             if (pageList_ == null || pageList_.isEmpty())
