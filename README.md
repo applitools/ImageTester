@@ -161,10 +161,10 @@ To have each of your tests appear in the same batch, set the `APPLITOOLS_BATCH_I
 
 #### Sample CSV:
 ```
-filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel
-docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict
-docs/a.pdf|Test2|AppA||||x748|1-3|Layout
-docs/b.pdf|Test3|AppB|||||2-5
+filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel|layoutRegions|contentRegions|ignoreRegions|
+docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict||800,800,100,100|300,300,300,100|
+docs/a.pdf|Test2|AppA||||x748|1-3|Layout|||500,500,500,100|
+docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 ```
 
 ###### For Documents (PDFs) only

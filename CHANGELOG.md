@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 3.4.0 - 2023/4/7
+- Added option to define layout regions, content regions, and ignore regions for individual tests using the batch mapper. 
+  
+    **Important:** Existing batch mapper CSVs must be updated to include these new parameters. 
+  
+
 ## 3.3.2 - 2023/3/14
 - Add support for jbig images
 

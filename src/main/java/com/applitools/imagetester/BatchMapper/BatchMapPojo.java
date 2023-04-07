@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.Objects;
 
-@JsonPropertyOrder({ "filePath", "testName", "app", "os", "browser", "viewport", "matchsize", "pages", "matchLevel"})
+@JsonPropertyOrder({ "filePath", "testName", "app", "os", "browser", "viewport", "matchsize",
+    "pages", "matchLevel", "layoutRegions", "contentRegions", "ignoreRegions"})
 public class BatchMapPojo {
     public String filePath;
     public String testName;
@@ -15,6 +16,9 @@ public class BatchMapPojo {
     public String matchsize;
     public String pages;
     public String matchLevel;
+    public String layoutRegions;
+    public String contentRegions;
+    public String ignoreRegions;
 
     public String getFilePath() {
         return filePath;
@@ -87,6 +91,18 @@ public class BatchMapPojo {
     public void setMatchLevel(String matchLevel) {
         this.matchLevel = matchLevel;
     }
+    public String getLayoutRegions() { return layoutRegions; }
+
+    public void setLayoutRegions() { this.layoutRegions = layoutRegions; }
+
+    public String getIgnoreRegions() { return ignoreRegions; }
+
+    public void setIgnoreRegions() { this.ignoreRegions = ignoreRegions; }
+
+    public String getContentRegions() { return contentRegions; }
+
+    public void setContentRegions() { this.contentRegions = contentRegions;}
+
 
     @Override
     public boolean equals(Object o) {
@@ -97,20 +113,19 @@ public class BatchMapPojo {
         		&& Objects.equals(os, that.os) && Objects.equals(browser, that.browser) && Objects.equals(viewport, that.viewport)
         		&& Objects.equals(matchsize, that.matchsize) && Objects.equals(pages, that.pages) && Objects.equals(matchLevel, that.matchLevel);               
     }
-    
     @Override
     public String toString() {
         return  "\n---------------------------------- \n" +
-                "Test being run: \n" +
-                "filePath='" + filePath + "'\n" +
-                "testName='" + testName + "'\n" +
-                "app='" + app + "'\n" +
-                "os='" + os + "'\n" +
-                "browser='" + browser + "'\n" +
-                "viewport='" + viewport + "'\n" +
-                "matchsize='" + matchsize + "'\n" +
-                "pages='" + pages + "'\n" +
-                "matchLevel='" + matchLevel + "'\n" +
-                "---------------------------------- \n";
+            "Running test with properties: \n" +
+            "filePath='" + filePath + "'\n" +
+            "testName='" + testName + "'\n" +
+            "app='" + app + "'\n" +
+            "os='" + os + "'\n" +
+            "browser='" + browser + "'\n" +
+            "viewport='" + viewport + "'\n" +
+            "matchsize='" + matchsize + "'\n" +
+            "pages='" + pages + "'\n" +
+            "matchLevel='" + matchLevel + "'\n" +
+            "---------------------------------- \n";
     }
 }

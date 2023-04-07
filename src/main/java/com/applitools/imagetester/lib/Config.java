@@ -8,6 +8,7 @@ import com.applitools.eyes.fluent.BatchClose;
 import com.applitools.eyes.fluent.EnabledBatchClose;
 import com.applitools.imagetester.Constants.ApplitoolsConstants;
 
+import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -142,19 +143,17 @@ public class Config {
 
     private Region[] generateRegionsArray(String regionOption) {
         String[] regionStrings = regionOption.split("\\|");
-        Region[] regionArr = new Region[regionStrings.length];
-        String[] regionParameters;
-        for(int regionIndex = 0; regionIndex < regionStrings.length; regionIndex++) {
-            regionParameters = regionStrings[regionIndex].split(",");
-            regionArr[regionIndex] =
-                    new Region(
-                            Integer.parseInt(regionParameters[0]),
-                            Integer.parseInt(regionParameters[1]),
-                            Integer.parseInt(regionParameters[2]),
-                            Integer.parseInt(regionParameters[3])
-                    );
-        }
-        return regionArr;
+        return Arrays.stream(regionStrings)
+            .map(regionString -> {
+                String[] regionParameters = regionString.split(",");
+                return new Region(
+                    Integer.parseInt(regionParameters[0]),
+                    Integer.parseInt(regionParameters[1]),
+                    Integer.parseInt(regionParameters[2]),
+                    Integer.parseInt(regionParameters[3])
+                );
+            })
+            .toArray(Region[]::new);
     }
 
     public void setIgnoreRegions(String ignoreRegionsOption) {

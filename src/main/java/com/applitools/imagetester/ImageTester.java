@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.3.3";
+    private static final String cur_ver = "3.4.0";
 
     public static void main(String[] args) {
 
@@ -165,7 +165,7 @@ public class ImageTester {
      */
     private static void runTestWithBatchMapper(final Logger logger, final CommandLine cmd) {
 
-        System.out.println("Running ImageTester with BatchMapper");
+        logger.printMessage("Running ImageTester with BatchMapper");
 
         try {
             String batchMapperPath = cmd.getOptionValue("mp", null);
@@ -219,10 +219,39 @@ public class ImageTester {
                 currentConfiguration.setViewport(StringUtils.isNoneBlank(currentBatch.viewport) ? currentBatch.viewport: null);
                 currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
+                currentConfiguration.setIgnoreRegions(
+                    StringUtils.isNoneBlank(currentBatch.ignoreRegions) ?
+                    currentBatch.ignoreRegions :
+                    cmd.getOptionValue("ir", null)
+                );
+                currentConfiguration.setContentRegions(
+                    StringUtils.isNoneBlank(currentBatch.contentRegions) ?
+                    currentBatch.contentRegions :
+                    cmd.getOptionValue("cr", null)
+                );
+                currentConfiguration.setLayoutRegions(
+                    StringUtils.isNoneBlank(currentBatch.layoutRegions) ?
+                    currentBatch.layoutRegions :
+                    cmd.getOptionValue("lr", null)
+                );
                 currentConfiguration.dontCloseBatches = cmd.hasOption("dcb");
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
                 currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
                 currentConfiguration.setMatchTimeout(cmd.getOptionValue("mt", null));
+
+                // Full page for ac regions capability
+                if (cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null) {
+                    currentConfiguration.accessibilityRegularTextFullPage = cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null;
+                }
+                if (cmd.hasOption("arl") && currentConfiguration.accessibilityLargeTextRegions == null) {
+                    currentConfiguration.accessibilityLargeTextFullPage = true;
+                }
+                if (cmd.hasOption("arb") && currentConfiguration.accessibilityBoldTextRegions == null) {
+                    currentConfiguration.accessibilityBoldTextFullPage = true;
+                }
+                if (cmd.hasOption("arg") && currentConfiguration.accessibilityGraphicsRegions== null) {
+                    currentConfiguration.accessibilityGraphicsFullPage = true;
+                }
 
                 try {
                     File root = new File(currentBatch.filePath);
