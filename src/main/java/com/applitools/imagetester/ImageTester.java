@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.4.0";
+    private static final String cur_ver = "3.5.0";
 
     public static void main(String[] args) {
 
@@ -104,6 +104,7 @@ public class ImageTester {
             config.legacyFileOrder = cmd.hasOption("lo");
             config.dontCloseBatches = cmd.hasOption("dcb");
             config.shouldThrowException = cmd.hasOption("te");
+            config.regexFileNameFilter = cmd.getOptionValue("rf");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
             config.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
@@ -216,6 +217,7 @@ public class ImageTester {
                 currentConfiguration.forcedName = currentBatch.testName;
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
+                currentConfiguration.regexFileNameFilter = cmd.getOptionValue("rf");
                 currentConfiguration.setViewport(StringUtils.isNoneBlank(currentBatch.viewport) ? currentBatch.viewport: null);
                 currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
                 currentConfiguration.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
@@ -556,6 +558,12 @@ public class ImageTester {
                 .hasArgs()
                 .optionalArg(false)
                 .build());
+        options.addOption(Option.builder("rf")
+            .longOpt("regexFilter")
+            .desc("Test files with name that matches regexFilter pattern.\nexample: `-rf 'Quarterly_Report_*'")
+            .hasArgs()
+            .optionalArg(false)
+            .build());
 
 
         EyesUtilitiesConfig.injectOptions(options);

@@ -5,6 +5,7 @@ import com.applitools.eyes.images.Eyes;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Patterns;
 
+import java.util.regex.Pattern;
 import org.apache.commons.io.comparator.NameFileComparator;
 
 import java.awt.image.BufferedImage;
@@ -21,7 +22,13 @@ public class FolderTest extends TestBase {
         super(folder, conf);
         if (!folder.isDirectory())
             throw new RuntimeException("FolderTest object can't process non-folder object");
-        FilenameFilter imageFilesFilter = (dir, name) -> Patterns.IMAGE.matcher(name).matches();
+        FilenameFilter imageFilesFilter = (dir, name) -> {
+            boolean matchesImagePattern = Patterns.IMAGE.matcher(name).matches();
+            boolean noRegexFilterOrNameMatches = conf.regexFileNameFilter == null
+                || Pattern.matches(conf.regexFileNameFilter, name);
+
+            return matchesImagePattern && noRegexFilterOrNameMatches;
+        };
         this.steps_ = folder.listFiles(imageFilesFilter);
         if (!conf.legacyFileOrder)
             Arrays.sort(Objects.requireNonNull(this.steps_), NameFileComparator.NAME_COMPARATOR);

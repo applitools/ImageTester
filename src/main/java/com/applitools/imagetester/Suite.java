@@ -41,6 +41,11 @@ public class Suite {
                     String.format("Fatal! The path %s does not exists \n", file.getAbsolutePath()));
         try {
             if (file.isFile()) {
+                // If regex filter exists and matches file name, don't process file
+                if (conf.regexFileNameFilter != null
+                    && !Pattern.matches(conf.regexFileNameFilter, file.getName())) {
+                    return;
+                }
                 BatchBase batch = null;
                 TestBase test = null;
                 if (conf.splitSteps) {

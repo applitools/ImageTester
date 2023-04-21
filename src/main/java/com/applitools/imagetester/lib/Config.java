@@ -53,6 +53,7 @@ public class Config {
     public Region captureRegion;
     public String matchTimeout;
     public String deviceName;
+    public String regexFileNameFilter;
 
     public void setViewport(String viewport) {
         if (viewport == null) return;

@@ -98,7 +98,9 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>
     + `-mt` - Sets match timeout and retry timeout (default=500). <br>
     + `-dn` - Sets device name for test in dashboard. <br>
+    + `-rf` - Only test files which match a specified regular expression. <br>
     + `-ir` - Ignore regions will be applied to all pages. <br>
+      **Example:** `-rf "Lorem.*"` will only test files that start with "Lorem" (e.g. Lorem1.pdf, Lorem2.pdf) <br>
       **Example:** `-ir "300,300,500,100|500,500,200,200"` will create ignored regions at <br> 
       + x:300, y:300, with width:500, height:100 and <br>
       + x:500, y:500, with width:200, height:200 <br>

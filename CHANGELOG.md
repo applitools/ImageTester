@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.0 - 2023/4/20
+- Added regex filtering for files. 
+- Passing `-rf "Lorem.*"` instructs ImageTester to only test files with names that start with "Lorem"
+
 ## 3.4.0 - 2023/4/7
 - Added option to define layout regions, content regions, and ignore regions for individual tests using the batch mapper. 
   
