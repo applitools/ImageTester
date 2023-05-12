@@ -176,7 +176,7 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 + `-pn` - Preserve original directory test names when specifying pages
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities)
-Note: EyesUtilities temporarily removed for security re-architecture.
+Several EyesUtilities functions are integrated into ImageTester.
 
 >java -jar ImageTester.jar -k [api-key] -vk [view-key] [options]
 + Required parameters:
