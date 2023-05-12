@@ -175,7 +175,7 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 + `-pp [password]` - The password if the PDF files protected
 + `-pn` - Preserve original directory test names when specifying pages
 
-## Enterprise features in combination with [Eyes Utilities](https://github.com/yanirta/EyesUtilities)
+## Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities)
 Note: EyesUtilities temporarily removed for security re-architecture.
 
 >java -jar ImageTester.jar -k [api-key] -vk [view-key] [options]
