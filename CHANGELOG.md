@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.5.3 - 2023/11/16
+- Add baselineBranchName argument (-bb)
+
+## 3.5.2 - 2023/7/24
+- Bump version of eyes-images, opencsv, and pdfbox
+
+## 3.5.1 - 2023/5/1 
+- Bump eyes-images version to 5.49.0
+
 ## 3.5.0 - 2023/4/20
 - Added regex filtering for files. 
 - Passing `-rf "Lorem.*"` instructs ImageTester to only test files with names that start with "Lorem"

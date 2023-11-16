@@ -68,6 +68,7 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-ml [match-level]` - Set the comparison level, one from Strict/Content/Layout; Default = Strict
     + `-br [branch]` - Set the branch
     + `-pb [parent-branch]` - Set the parent branch
+    + `-bb [baseline-branch]` - Set the baseline branch name branch
     + `-bn [baseline]` - Set custom baseline name
     + `-vs [WidthxHeight]` - Set the viewport size identifier
     + `-lf [log-file]` - DEPRECATED. Please set log file path with the environment variable *APPLITOOLS_LOG_PATH* <br>

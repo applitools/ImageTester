@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.5.2";
+    private static final String cur_ver = "3.5.3";
 
     public static void main(String[] args) {
 
@@ -80,6 +80,7 @@ public class ImageTester {
                     .branch(cmd.getOptionValue("br", null))
                     .parentBranch(cmd.getOptionValue("pb", null))
                     .baselineEnvName(cmd.getOptionValue("bn", null))
+                    .baselineBranchName(cmd.getOptionValue("bb", null))
                     .logFile(cmd.getOptionValue("lf", null))
                     .hostOs(cmd.getOptionValue("os", null))
                     .hostApp(cmd.getOptionValue("ap"))
@@ -198,6 +199,7 @@ public class ImageTester {
                         .branch(cmd.getOptionValue("br", null))
                         .parentBranch(cmd.getOptionValue("pb", null))
                         .baselineEnvName(cmd.getOptionValue("bn", null))
+                        .baselineBranchName(cmd.getOptionValue("bb", null))
                         .logFile(cmd.getOptionValue("lf", null))
                         .hostOs(currentBatch.os)
                         .hostApp(currentBatch.browser)
@@ -339,6 +341,12 @@ public class ImageTester {
         options.addOption(Option.builder("bn")
                 .longOpt("baseline")
                 .desc("Set baseline name")
+                .hasArg()
+                .argName("name")
+                .build());
+        options.addOption(Option.builder("bb")
+                .longOpt("baselineBranchName")
+                .desc("Set baseline branch name")
                 .hasArg()
                 .argName("name")
                 .build());

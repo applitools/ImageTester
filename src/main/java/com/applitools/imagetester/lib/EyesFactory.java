@@ -23,6 +23,7 @@ public class EyesFactory {
     private ProxySettings proxySettings;
     private String branch;
     private String parentBranch;
+    private String baselineBranchName;
     private String envName;
     private String logFilename;
     private String hostOs;
@@ -82,6 +83,8 @@ public class EyesFactory {
             eyes.setBaselineEnvName(this.envName);
         if (StringUtils.isNotBlank(this.hostOs))
             eyes.setHostOS(this.hostOs);
+        if (StringUtils.isNotBlank(baselineBranchName))
+            eyes.setBaselineBranchName(baselineBranchName);
         if (StringUtils.isNotBlank(this.hostApp))
             eyes.setHostApp(this.hostApp);
         if (StringUtils.isNotBlank(this.environmentName))
@@ -184,6 +187,11 @@ public class EyesFactory {
 
     public EyesFactory saveNewTests(boolean save) {
         this.saveNewTests = save;
+        return this;
+    }
+
+    public EyesFactory baselineBranchName(String baselineBranchName) {
+        this.baselineBranchName = baselineBranchName;
         return this;
     }
 
