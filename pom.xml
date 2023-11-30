@@ -4,7 +4,7 @@
 
 	<groupId>com.applitools.imagetester</groupId>
 	<artifactId>ImageTester</artifactId>
-	<version>3.5.3</version>
+	<version>3.5.4_Snapshot</version>
 	<packaging>jar</packaging>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -19,6 +19,31 @@
 	</repositories>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-win</artifactId>
+			<version>RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-mac</artifactId>
+			<version>RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-linux</artifactId>
+			<version>RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-alpine</artifactId>
+			<version>RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-arm</artifactId>
+			<version>RELEASE</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>

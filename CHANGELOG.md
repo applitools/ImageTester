@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.5.4 - 2023/11/30
+- Resolve issue relating to universal executables not being available for all OSs
+
 ## 3.5.3 - 2023/11/16
 - Add baselineBranchName argument (-bb)
 
