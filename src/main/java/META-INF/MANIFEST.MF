@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Main-Class: com.applitools.imagetester.ImageTester
-Implementation-Version: 3.5.4
+Implementation-Version: 3.5.5
 

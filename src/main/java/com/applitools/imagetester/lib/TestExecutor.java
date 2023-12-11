@@ -71,9 +71,13 @@ public class TestExecutor {
                             "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
                 }
             }
-            config_.logger.reportResult(result);
-            if (result != null && thEyes_.get().getAccessibilityValidation() != null)
-                config_.logger.reportResultAccessibility(result);
+
+            if (result != null) {
+                config_.logger.reportResult(result);
+                if (thEyes_.get().getAccessibilityValidation() != null) {
+                    config_.logger.reportResultAccessibility(result);
+                }
+            }
         }
 
         executorService_.shutdown();

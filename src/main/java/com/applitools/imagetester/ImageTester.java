@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.5.4";
+    private static final String cur_ver = "3.5.5";
 
     public static void main(String[] args) {
 
