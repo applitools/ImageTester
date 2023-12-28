@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.5.5";
+    private static final String cur_ver = "3.5.6";
 
     public static void main(String[] args) {
 
@@ -91,7 +91,7 @@ public class ImageTester {
                     .imageCut(cmd.getOptionValues("ic"))
                     .accSettings(accessibilityOptions)
                     .logHandler(cmd.hasOption("log"))
-                    .deviceName(cmd.getOptionValue("dn", null));
+                    .deviceName(cmd.getOptionValue("de", null));
 
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
@@ -571,6 +571,12 @@ public class ImageTester {
             .desc("Test files with name that matches regexFilter pattern.\nexample: `-rf 'Quarterly_Report_*'")
             .hasArgs()
             .optionalArg(false)
+            .build());
+        options.addOption(Option.builder("de")
+            .longOpt("deviceName")
+            .desc("Device Name")
+            .hasArg()
+            .argName("deviceNameArg")
             .build());
 
 

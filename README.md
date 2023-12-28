@@ -98,7 +98,7 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
     + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>
     + `-mt` - Sets match timeout and retry timeout (default=500). <br>
-    + `-dn` - Sets device name for test in dashboard. <br>
+    + `-de` - Sets device name for test in dashboard. <br>
     + `-rf` - Only test files which match a specified regular expression. <br>
     + `-ir` - Ignore regions will be applied to all pages. <br>
       **Example:** `-rf "Lorem.*"` will only test files that start with "Lorem" (e.g. Lorem1.pdf, Lorem2.pdf) <br>

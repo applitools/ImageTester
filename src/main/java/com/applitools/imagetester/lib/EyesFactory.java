@@ -60,10 +60,9 @@ public class EyesFactory {
         // setConfiguration() overrides several Eyes instance fields, so configuration
         // should be set first
         eyes.setConfiguration(
-            new Configuration()
+            eyes.getConfiguration()
                 .setDeviceInfo(this.deviceName)
         );
-
         eyes.setApiKey(this.apiKey);
         eyes.setAgentId(String.format("ImageTester/%s", version));
         eyes.setSaveFailedTests(saveFailed);
