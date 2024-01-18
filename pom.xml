@@ -4,7 +4,7 @@
 
 	<groupId>com.applitools.imagetester</groupId>
 	<artifactId>ImageTester</artifactId>
-	<version>3.5.6</version>
+	<version>3.5.7</version>
 	<packaging>jar</packaging>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -63,7 +63,7 @@
 		<dependency>
 			<groupId>com.applitools</groupId>
 			<artifactId>eyes-images-java5</artifactId>
-			<version>5.64.10</version>
+			<version>5.66.5</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
