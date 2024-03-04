@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.6.0";
+    private static final String cur_ver = "3.6.1";
 
     public static void main(String[] args) {
 
@@ -54,6 +54,7 @@ public class ImageTester {
             if (batchMapperPath != null) {
                 runTestWithBatchMapper(logger, cmd);
             }
+
 
             Config config = new Config();
             config.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
@@ -120,6 +121,7 @@ public class ImageTester {
             config.setCaptureRegion(cmd.getOptionValue("rc", null));
             config.setMatchTimeout(cmd.getOptionValue("mt", null));
             config.setProperties(cmd.getOptionValue("pr", null));
+
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {

@@ -31,7 +31,6 @@ public class Suite {
             conf.splitSteps = true;
         return new Suite(file, conf, executor);
     }
-
     private Suite(File file, Config conf, TestExecutor executor) {
         conf.logger.reportDiscovery(file);
         executor_ = executor;
@@ -40,6 +39,7 @@ public class Suite {
             throw new RuntimeException(
                     String.format("Fatal! The path %s does not exists \n", file.getAbsolutePath()));
         try {
+
             if (file.isFile()) {
                 // If regex filter exists and matches file name, don't process file
                 if (conf.regexFileNameFilter != null
