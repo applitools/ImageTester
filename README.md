@@ -136,6 +136,12 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-rc` - Capture only a particular region of PDFs/Images. <br>
       **Example:** `-rc "200,500,1000,1000"` instructs ImageTester to only test region with: <br>
       + x:200, y:500, with width:1000, height:1000
+    + `-pr` - Add properties to Eyes tests. Format is `key1:value1|key2:value2`.<br> 
+      Each property will have the format "key1:value1", and each subsequent format will be separated by a "|" character. <br>
+      **Example:** `-pr "prop1:value1|prop2:value2|prop3:value3"` will add properties: <br>
+      + prop1, value1
+      + prop2, value2
+      + prop3, value3
 
 ### Using The Batch Mapper
 The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.

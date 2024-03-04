@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.5.7";
+    private static final String cur_ver = "3.6.0";
 
     public static void main(String[] args) {
 
@@ -119,6 +119,7 @@ public class ImageTester {
             config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
             config.setCaptureRegion(cmd.getOptionValue("rc", null));
             config.setMatchTimeout(cmd.getOptionValue("mt", null));
+            config.setProperties(cmd.getOptionValue("pr", null));
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
@@ -242,6 +243,7 @@ public class ImageTester {
                 currentConfiguration.shouldThrowException = cmd.hasOption("te");
                 currentConfiguration.setCaptureRegion(cmd.getOptionValue("rc", null));
                 currentConfiguration.setMatchTimeout(cmd.getOptionValue("mt", null));
+                currentConfiguration.setProperties(cmd.getOptionValue("pr", null));
 
                 // Full page for ac regions capability
                 if (cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null) {
@@ -577,6 +579,11 @@ public class ImageTester {
             .desc("Device Name")
             .hasArg()
             .argName("deviceNameArg")
+            .build());
+        options.addOption(Option.builder("pr")
+            .longOpt("properties")
+            .desc("Eyes Properties")
+            .hasArgs()
             .build());
 
 

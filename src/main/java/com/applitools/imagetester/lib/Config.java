@@ -54,6 +54,7 @@ public class Config {
     public String matchTimeout;
     public String deviceName;
     public String regexFileNameFilter;
+    public String[][] properties = null;
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
@@ -240,6 +241,20 @@ public class Config {
                         "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
             }
         }
+    }
+
+    public void setProperties(String propArgument) {
+        boolean isValidFormat = Arrays.stream(propArgument.split("\\|"))
+            .allMatch(s -> s.matches("[^:]+:[^:]+"));
+
+        if (!isValidFormat) {
+            throw new IllegalArgumentException("Argument properties (-pr) does not follow the "
+                + "'key:value' format for all segments separated by \"|\".");
+        }
+
+        properties = Arrays.stream(propArgument.split("\\|"))
+            .map(prop -> prop.split(":", 2))
+            .toArray(String[][]::new);
     }
 
     public void setMatchTimeout(String matchTimeout) {
