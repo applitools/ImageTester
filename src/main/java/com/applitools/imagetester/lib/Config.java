@@ -244,6 +244,11 @@ public class Config {
     }
 
     public void setProperties(String propArgument) {
+
+        if (propArgument == null || propArgument.isEmpty()) {
+            return;
+        }
+
         boolean isValidFormat = Arrays.stream(propArgument.split("\\|"))
             .allMatch(s -> s.matches("[^:]+:[^:]+"));
 

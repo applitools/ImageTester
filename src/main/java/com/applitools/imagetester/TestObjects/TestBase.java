@@ -59,8 +59,10 @@ public abstract class TestBase implements ITest {
 
     public TestResults runSafe(Eyes eyes) {
         try {
-            for(int i = 0; i < conf_.properties.length; i++) {
-                eyes.addProperty(conf_.properties[i][0], conf_.properties[i][1]);
+            if (conf_.properties != null && conf_.properties.length > 0) {
+                for(int i = 0; i < conf_.properties.length; i++) {
+                    eyes.addProperty(conf_.properties[i][0], conf_.properties[i][1]);
+                }
             }
             eyes.addProperty(FILE_NAME_PROP, file_.getName());
             TestResults res = run(eyes);
