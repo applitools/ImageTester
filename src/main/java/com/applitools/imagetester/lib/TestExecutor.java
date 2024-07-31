@@ -56,6 +56,7 @@ public class TestExecutor {
     public void join() {
         int total = results_.size();
         int curr = 1;
+        boolean shouldExit = false;
         while (!results_.isEmpty()) {
             config_.logger.printProgress(curr++, total);
             ExecutorResult result = null;
@@ -65,10 +66,18 @@ public class TestExecutor {
                 config_.logger.reportException(e);
             } catch (ExecutionException e) {
                 config_.logger.reportException(e);
+                shouldExit = true;
                 if (config_.shouldThrowException) {
                     throw new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
-                            "This exception is thrown because the '-te' flag was present, \n" +
-                            "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
+                        "This exception is thrown because the '-te' flag was present, \n" +
+                        "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
+                }
+            } finally {
+                if (shouldExit) {
+                    executorService_.shutdown();
+                    if (config_.shouldThrowException) {
+                        System.exit(1);
+                    }
                 }
             }
 

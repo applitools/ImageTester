@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.6.3 - 2024/7/25
+- Fix issue in which using `-te` prevents Java process from exiting gracefully
+
 ## 3.5.4 - 2023/11/30
 - Resolve issue relating to universal executables not being available for all OSs
 
