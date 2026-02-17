@@ -73,7 +73,9 @@ public class EyesFactory {
         if (StringUtils.isNotBlank(this.serverUrl))
             eyes.setServerUrl(this.serverUrl);
         if (StringUtils.isNotBlank(this.matchLevel))
-            eyes.setMatchLevel(Utils.parseEnum(MatchLevel.class, this.matchLevel));
+            // accept both 'IgnoreColors' and 'IGNORE_COLORS' style inputs by
+            // ignoring '_' when matching enum names
+            eyes.setMatchLevel(Utils.parseEnum(MatchLevel.class, this.matchLevel, "_"));
         if (StringUtils.isNotBlank(this.branch))
             eyes.setBranchName(this.branch);
         if (StringUtils.isNotBlank(this.parentBranch))
