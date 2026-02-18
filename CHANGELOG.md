@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.8.0 - 2026/2/18
+- Add support for IgnoreColors match level 
+
 ## 3.6.3 - 2024/7/25
 - Fix issue in which using `-te` prevents Java process from exiting gracefully
 
