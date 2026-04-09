@@ -1,8 +1,6 @@
-package Tests;
+package com.applitools.imagetester.lib;
 
 import org.junit.Test;
-
-import com.applitools.imagetester.lib.Logger;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,7 +8,7 @@ import java.io.IOException;
 public class LoggerTest {
 
     @Test
-    public void reportException() {
+    public void reportException_handlesVariousExceptionTypes() {
         Logger logger = new Logger();
         logger.reportException(new Exception());
         logger.reportException(new IOException());

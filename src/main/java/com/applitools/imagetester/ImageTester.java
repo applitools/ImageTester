@@ -149,15 +149,11 @@ public class ImageTester {
             suite.run();
 
             config.closeBatches();
-
-            System.exit(0);
         } catch (ParseException | IOException e) {
             logger.reportException(e);
             logger.printHelp(options);
-            System.exit(-1);
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             logger.reportException(e);
-            System.exit(-1);
         }
     }
 
@@ -283,8 +279,6 @@ public class ImageTester {
         } catch (Exception e) {
             logger.reportException(e);
             e.printStackTrace();
-        } finally {
-            System.exit(0);
         }
     }
 
