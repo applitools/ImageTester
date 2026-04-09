@@ -1,0 +1,3 @@
+filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel|layoutRegions|contentRegions|ignoreRegions
+/path/to/file.pdf|Test One|MyApp|Windows|Chrome|1024x768|1000x|1-3|Strict|||10,20,100,50
+/path/to/file2.pdf|Test Two|MyApp|Linux|Firefox|800x600||5|Layout|10,20,30,40||

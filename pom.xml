@@ -51,6 +51,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>4.11.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.github.applitools</groupId>
 			<artifactId>EyesUtilities</artifactId>
 			<version>1.6.2</version>
@@ -131,7 +137,10 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M4</version>
 				<configuration>
-					<skipTests>true</skipTests>
+					<excludes>
+						<exclude>Tests/**</exclude>
+						<exclude>infra/TestBase.java</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 
