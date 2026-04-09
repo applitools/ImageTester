@@ -3,11 +3,11 @@ package Tests;
 import infra.TestBase;
 import org.junit.Test;
 
-import com.applitools.imagetester.ImageTester;
-
 /**
  * End-to-end Eyes integration tests. Requires APPLITOOLS_API_KEY env var.
- * Run with: mvn test -Peyes-tests
+ *
+ * Against compiled code:  mvn test -Peyes-tests
+ * Against packaged JAR:   mvn test -Peyes-tests -Djar=jars/ImageTester_3.9.0.jar
  */
 public class EyesIntegrationTest extends TestBase {
 
@@ -15,107 +15,107 @@ public class EyesIntegrationTest extends TestBase {
 
     @Test
     public void singlePdf() {
-        ImageTester.main("-f TestData/b/c/JustPDF/Lorem2.pdf".split(" "));
+        runImageTester("-f TestData/b/c/JustPDF/Lorem2.pdf");
     }
 
     @Test
     public void singleImage() {
-        ImageTester.main("-f TestData/b/c/googleforgoogle.png".split(" "));
+        runImageTester("-f TestData/b/c/googleforgoogle.png");
     }
 
     // --- Folder tests ---
 
     @Test
     public void folderWithMixedContent() {
-        ImageTester.main("-f TestData/b/c -th 10".split(" "));
+        runImageTester("-f TestData/b/c -th 10");
     }
 
     @Test
     public void imageFolder() {
-        ImageTester.main("-f TestData/a/".split(" "));
+        runImageTester("-f TestData/a/");
     }
 
     @Test
     public void pdfFolder() {
-        ImageTester.main("-f TestData/b/c/JustPDF/".split(" "));
+        runImageTester("-f TestData/b/c/JustPDF/");
     }
 
     // --- Split mode ---
 
     @Test
     public void pdfSplitMode() {
-        ImageTester.main("-f TestData/b/c/JustPDF/Lorem3.pdf -st -th 10".split(" "));
+        runImageTester("-f TestData/b/c/JustPDF/Lorem3.pdf -st -th 10");
     }
 
     // --- Page selection ---
 
     @Test
     public void pdfPageSelection() {
-        ImageTester.main("-f TestData/b/c/JustPDF/Lorem3.pdf -sp 1-2 -th 10".split(" "));
+        runImageTester("-f TestData/b/c/JustPDF/Lorem3.pdf -sp 1-2 -th 10");
     }
 
     // --- Forced name ---
 
     @Test
     public void forcedName() {
-        ImageTester.main("-f TestData/b/Lorem1.pdf -fn MyForcedName".split(" "));
+        runImageTester("-f TestData/b/Lorem1.pdf -fn MyForcedName");
     }
 
     // --- Flat batch ---
 
     @Test
     public void flatBatchWithId() {
-        ImageTester.main("-f TestData/b/Lorem1.pdf -fb TestBatch<>testBatchId".split(" "));
+        runImageTester("-f TestData/b/Lorem1.pdf -fb TestBatch<>testBatchId");
     }
 
     // --- Batch notifications ---
 
     @Test
     public void batchNotification() {
-        ImageTester.main("-f TestData/b/c/JustPDF/Lorem2.pdf -nc".split(" "));
+        runImageTester("-f TestData/b/c/JustPDF/Lorem2.pdf -nc");
     }
 
     // --- Image scaling ---
 
     @Test
     public void imageScaling() {
-        ImageTester.main("-f TestData/a/ -ms 1000x1000".split(" "));
+        runImageTester("-f TestData/a/ -ms 1000x1000");
     }
 
     // --- Image cut ---
 
     @Test
     public void imageCut() {
-        ImageTester.main("-f TestData/a/ -ic 10,20,30,40".split(" "));
+        runImageTester("-f TestData/a/ -ic 10,20,30,40");
     }
 
     // --- Ordering ---
 
     @Test
     public void imageOrderAlphabetic() {
-        ImageTester.main("-f TestData/jpegs/alphabetic".split(" "));
+        runImageTester("-f TestData/jpegs/alphabetic");
     }
 
     @Test
     public void imageOrderMixed() {
-        ImageTester.main("-f TestData/jpegs/mixed".split(" "));
+        runImageTester("-f TestData/jpegs/mixed");
     }
 
     // --- Accessibility ---
 
     @Test
     public void accessibilityWithRegions() {
-        ImageTester.main("-f TestData/b/Lorem1.pdf -ac AAA -ari \"100,100,100,100\" -arr \"200,200,200,200\"".split(" "));
+        runImageTester("-f TestData/b/Lorem1.pdf -ac AAA -ari \"100,100,100,100\" -arr \"200,200,200,200\"");
     }
 
     // --- Regions ---
 
     @Test
     public void ignoreContentLayoutRegions() {
-        ImageTester.main("-f TestData/b/Lorem1.pdf -ir \"100,100,100,100\" -cr \"200,200,200,200\" -lr \"300,300,300,300\"".split(" "));
+        runImageTester("-f TestData/b/Lorem1.pdf -ir \"100,100,100,100\" -cr \"200,200,200,200\" -lr \"300,300,300,300\"");
     }
 
-    // --- Whitebox: multithreaded folder ---
+    // --- Whitebox: multithreaded folder (always runs in-process) ---
 
     @Test
     public void multithreadedFolderTraversal() {

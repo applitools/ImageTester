@@ -4,7 +4,7 @@
 
 	<groupId>com.applitools.imagetester</groupId>
 	<artifactId>ImageTester</artifactId>
-	<version>3.8.0</version>
+	<version>3.9.0</version>
 	<packaging>jar</packaging>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -12,6 +12,11 @@
 	</properties>
 
 	<repositories>
+		<repository>
+			<id>central</id>
+			<url>https://repo1.maven.org/maven2</url>
+		</repository>
+
 		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
@@ -27,6 +32,11 @@
 		<dependency>
 			<groupId>com.applitools</groupId>
 			<artifactId>eyes-universal-core-mac</artifactId>
+			<version>5.77.10</version>
+		</dependency>
+		<dependency>
+			<groupId>com.applitools</groupId>
+			<artifactId>eyes-universal-core-mac-arm</artifactId>
 			<version>5.77.10</version>
 		</dependency>
 		<dependency>
@@ -117,11 +127,6 @@
 			<artifactId>slf4j-simple</artifactId>
 			<version>1.7.32</version>
 			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.twelvemonkeys.imageio</groupId>
-			<artifactId>imageio-jpeg</artifactId>
-			<version>3.12.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.applitools</groupId>

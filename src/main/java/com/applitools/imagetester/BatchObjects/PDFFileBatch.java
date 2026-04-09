@@ -77,7 +77,7 @@ public class PDFFileBatch extends BatchBase {
 
         int totalPages = document_.getNumberOfPages();
         if (pageList_ == null || pageList_.isEmpty())
-            pageList_ = Utils.generateRanage(totalPages + 1, 1);
+            pageList_ = Utils.generateRange(totalPages + 1, 1);
 
         this.disposeCountdown_ = pageList_.size();
 

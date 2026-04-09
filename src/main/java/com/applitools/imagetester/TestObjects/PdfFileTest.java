@@ -24,7 +24,7 @@ public class PdfFileTest extends DocumentTestBase {
 
         try (PDDocument document = PDDocument.load(file(), config().pdfPass)) {
             if (pageList_ == null || pageList_.isEmpty())
-                pageList_ = Utils.generateRanage(document.getNumberOfPages() + 1, 1);
+                pageList_ = Utils.generateRange(document.getNumberOfPages() + 1, 1);
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             for (Integer page : pageList_) {
                 try {

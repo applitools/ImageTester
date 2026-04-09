@@ -96,7 +96,7 @@ public class Utils {
         return pagesToInclude;
     }
 
-    public static List<Integer> generateRanage(int range, int start) {
+    public static List<Integer> generateRange(int range, int start) {
         List<Integer> retRange = new ArrayList<>(range);
         for (int i = start; i < range; ++i)
             retRange.add(i);

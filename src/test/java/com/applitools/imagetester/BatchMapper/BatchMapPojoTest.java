@@ -73,30 +73,25 @@ public class BatchMapPojoTest {
         assertEquals("Strict", pojo.getMatchLevel());
     }
 
-    // CONCERN: setLayoutRegions() is a no-arg setter — it ignores its caller's value
-    // and leaves the field null. The field can only be set by direct assignment or
-    // via Jackson's public-field access. The test below documents actual behavior.
     @Test
-    public void setter_layoutRegions_isNoArgAndLeavesFieldNull() {
+    public void setter_layoutRegions_roundTrip() {
         BatchMapPojo pojo = new BatchMapPojo();
-        pojo.setLayoutRegions();
-        assertNull(pojo.getLayoutRegions());
+        pojo.setLayoutRegions("10,20,30,40");
+        assertEquals("10,20,30,40", pojo.getLayoutRegions());
     }
 
-    // CONCERN: same broken no-arg setter for ignoreRegions.
     @Test
-    public void setter_ignoreRegions_isNoArgAndLeavesFieldNull() {
+    public void setter_ignoreRegions_roundTrip() {
         BatchMapPojo pojo = new BatchMapPojo();
-        pojo.setIgnoreRegions();
-        assertNull(pojo.getIgnoreRegions());
+        pojo.setIgnoreRegions("50,60,70,80");
+        assertEquals("50,60,70,80", pojo.getIgnoreRegions());
     }
 
-    // CONCERN: same broken no-arg setter for contentRegions.
     @Test
-    public void setter_contentRegions_isNoArgAndLeavesFieldNull() {
+    public void setter_contentRegions_roundTrip() {
         BatchMapPojo pojo = new BatchMapPojo();
-        pojo.setContentRegions();
-        assertNull(pojo.getContentRegions());
+        pojo.setContentRegions("90,100,110,120");
+        assertEquals("90,100,110,120", pojo.getContentRegions());
     }
 
     @Test

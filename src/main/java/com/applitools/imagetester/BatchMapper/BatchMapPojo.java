@@ -93,15 +93,15 @@ public class BatchMapPojo {
     }
     public String getLayoutRegions() { return layoutRegions; }
 
-    public void setLayoutRegions() { this.layoutRegions = layoutRegions; }
+    public void setLayoutRegions(String layoutRegions) { this.layoutRegions = layoutRegions; }
 
     public String getIgnoreRegions() { return ignoreRegions; }
 
-    public void setIgnoreRegions() { this.ignoreRegions = ignoreRegions; }
+    public void setIgnoreRegions(String ignoreRegions) { this.ignoreRegions = ignoreRegions; }
 
     public String getContentRegions() { return contentRegions; }
 
-    public void setContentRegions() { this.contentRegions = contentRegions;}
+    public void setContentRegions(String contentRegions) { this.contentRegions = contentRegions; }
 
 
     @Override

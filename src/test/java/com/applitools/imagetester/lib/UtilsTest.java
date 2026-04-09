@@ -53,18 +53,18 @@ public class UtilsTest {
     }
 
     @Test
-    public void generateRanage_normalRange() {
-        assertEquals(Arrays.asList(1, 2, 3, 4), Utils.generateRanage(5, 1));
+    public void generateRange_normalRange() {
+        assertEquals(Arrays.asList(1, 2, 3, 4), Utils.generateRange(5, 1));
     }
 
     @Test
-    public void generateRanage_emptyRange() {
-        assertTrue(Utils.generateRanage(1, 1).isEmpty());
+    public void generateRange_emptyRange() {
+        assertTrue(Utils.generateRange(1, 1).isEmpty());
     }
 
     @Test
-    public void generateRanage_startAtZero() {
-        assertEquals(Arrays.asList(0, 1, 2), Utils.generateRanage(3, 0));
+    public void generateRange_startAtZero() {
+        assertEquals(Arrays.asList(0, 1, 2), Utils.generateRange(3, 0));
     }
 
     @Test

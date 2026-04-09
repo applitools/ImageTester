@@ -176,7 +176,7 @@ public class EyesFactory {
         return this;
     }
 
-    public EyesFactory saveFaliedTests(boolean saveFailed) {
+    public EyesFactory saveFailedTests(boolean saveFailed) {
         this.saveFailed = saveFailed;
         return this;
     }

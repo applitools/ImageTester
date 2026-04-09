@@ -26,9 +26,14 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.8.0";
+    private static final String cur_ver = "3.9.0";
 
     public static void main(String[] args) {
+        run(args);
+        System.exit(0);
+    }
+
+    public static void run(String[] args) {
 
         CommandLineParser parser = new DefaultParser();
         Options options = getOptions();
@@ -53,8 +58,8 @@ public class ImageTester {
             String batchMapperPath = cmd.getOptionValue("mp", null);
             if (batchMapperPath != null) {
                 runTestWithBatchMapper(logger, cmd);
+                return;
             }
-
 
             Config config = new Config();
             config.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
@@ -86,13 +91,13 @@ public class ImageTester {
                     .hostOs(cmd.getOptionValue("os", null))
                     .hostApp(cmd.getOptionValue("ap"))
                     .environmentName(cmd.getOptionValue("en"))
-                    .saveFaliedTests(cmd.hasOption("as"))
+                    .saveFailedTests(cmd.hasOption("as"))
                     .ignoreDisplacement(cmd.hasOption("id"))
-                    .saveNewTests(!cmd.hasOption("pn"))
+                    .saveNewTests(!cmd.hasOption("pt"))
                     .imageCut(cmd.getOptionValues("ic"))
                     .accSettings(accessibilityOptions)
                     .logHandler(cmd.hasOption("log"))
-                    .deviceName(cmd.getOptionValue("de", null));
+                    .deviceName(cmd.getOptionValue("dn", null));
 
             config.splitSteps = cmd.hasOption("st");
             config.logger = logger;
@@ -202,9 +207,9 @@ public class ImageTester {
                         .logFile(cmd.getOptionValue("lf", null))
                         .hostOs(currentBatch.os)
                         .hostApp(currentBatch.browser)
-                        .saveFaliedTests(cmd.hasOption("as"))
+                        .saveFailedTests(cmd.hasOption("as"))
                         .ignoreDisplacement(cmd.hasOption("id"))
-                        .saveNewTests(!cmd.hasOption("pn"))
+                        .saveNewTests(!cmd.hasOption("pt"))
                         .imageCut(cmd.getOptionValues("ic"))
                         .accSettings(accessibilityOptions)
                         .deviceName(cmd.getOptionValue("dn", null));
@@ -431,7 +436,8 @@ public class ImageTester {
                 .hasArg(false)
                 .desc("Turn on log prints")
                 .build());
-        options.addOption(Option.builder("pn")
+        options.addOption(Option.builder("pt")
+                .longOpt("promptNewTests")
                 .hasArg(false)
                 .desc("Prompt new tests")
                 .build());
@@ -569,12 +575,6 @@ public class ImageTester {
             .desc("Test files with name that matches regexFilter pattern.\nexample: `-rf 'Quarterly_Report_*'")
             .hasArgs()
             .optionalArg(false)
-            .build());
-        options.addOption(Option.builder("de")
-            .longOpt("deviceName")
-            .desc("Device Name")
-            .hasArg()
-            .argName("deviceNameArg")
             .build());
         options.addOption(Option.builder("pr")
             .longOpt("properties")
