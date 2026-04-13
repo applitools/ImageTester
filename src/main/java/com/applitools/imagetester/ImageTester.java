@@ -26,7 +26,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.9.0";
+    private static final String cur_ver = "3.9.1";
 
     public static void main(String[] args) {
         run(args);
@@ -111,6 +111,7 @@ public class ImageTester {
             config.legacyFileOrder = cmd.hasOption("lo");
             config.dontCloseBatches = cmd.hasOption("dcb");
             config.shouldThrowException = cmd.hasOption("te");
+            config.normalizeFont = cmd.hasOption("nf");
             config.regexFileNameFilter = cmd.getOptionValue("rf");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
@@ -223,6 +224,7 @@ public class ImageTester {
                 currentConfiguration.forcedName = currentBatch.testName;
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
+                currentConfiguration.normalizeFont = cmd.hasOption("nf");
                 currentConfiguration.regexFileNameFilter = cmd.getOptionValue("rf");
                 currentConfiguration.setViewport(StringUtils.isNoneBlank(currentBatch.viewport) ? currentBatch.viewport: null);
                 currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
@@ -580,6 +582,11 @@ public class ImageTester {
             .longOpt("properties")
             .desc("Eyes Properties")
             .hasArgs()
+            .build());
+        options.addOption(Option.builder("nf")
+            .longOpt("normalizeFont")
+            .desc("Normalize all PDF fonts to Helvetica 12pt before rendering. Useful for ignoring font styling changes in visual comparisons.")
+            .hasArg(false)
             .build());
 
 

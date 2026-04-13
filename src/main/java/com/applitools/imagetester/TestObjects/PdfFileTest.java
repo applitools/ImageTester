@@ -4,6 +4,7 @@ import com.applitools.eyes.TestResults;
 import com.applitools.eyes.images.Eyes;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Utils;
+import com.applitools.imagetester.lib.PdfFontNormalizer;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +29,9 @@ public class PdfFileTest extends DocumentTestBase {
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             for (Integer page : pageList_) {
                 try {
-                    BufferedImage bim = pdfRenderer.renderImageWithDPI(page - 1, config().DocumentConversionDPI);
+                    BufferedImage bim = config().normalizeFont
+                            ? PdfFontNormalizer.renderNormalized(document.getPage(page - 1), config().DocumentConversionDPI)
+                            : pdfRenderer.renderImageWithDPI(page - 1, config().DocumentConversionDPI);
                     logger().logPage(bim, name(), page);
                     if (!eyes.getIsOpen())
                         eyes.open(appName(), name(), viewport(bim));

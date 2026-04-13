@@ -6,6 +6,7 @@ import com.applitools.imagetester.TestObjects.ImagesCheckSettingsFactory;
 import com.applitools.imagetester.TestObjects.TestBase;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.PdfFontNormalizer;
 import com.applitools.imagetester.lib.Utils;
 import com.applitools.eyes.BatchInfo;
 import com.applitools.eyes.TestResults;
@@ -48,7 +49,9 @@ public class PDFFileBatch extends BatchBase {
 
         private BufferedImage safeRender() throws IOException {
             synchronized (parent_) {
-                return parent_.pdfRenderer_.renderImageWithDPI(page_ - 1, config().DocumentConversionDPI);
+                return config().normalizeFont
+                        ? PdfFontNormalizer.renderNormalized(parent_.document_.getPage(page_ - 1), config().DocumentConversionDPI)
+                        : parent_.pdfRenderer_.renderImageWithDPI(page_ - 1, config().DocumentConversionDPI);
             }
         }
 

@@ -40,6 +40,7 @@ public class Config {
     public Region[] layoutRegions = null;
     public Region[] contentRegions = null;
     public boolean shouldThrowException = false;
+    public boolean normalizeFont = false;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
     public Region[] accessibilityIgnoreRegions = null;
     public Region[] accessibilityRegularTextRegions = null;

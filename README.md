@@ -181,6 +181,36 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 + `-sp [pages]` - Comma separated page numbers\range to include in PDF testing (ie: 1,2,5,7,10-15); Default all included
 + `-pp [password]` - The password if the PDF files protected
 + `-pn` - Preserve original directory test names when specifying pages
++ `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization) below.
+
+### Font Normalization
+Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
+false-positive diffs when comparing PDFs across document generation pipelines. The `-nf` / `--normalizeFont` flag provides
+a middle ground: before a PDF page is rasterized, all font references in the content stream are rewritten
+to **Helvetica 12pt**, producing a deterministic render that is insensitive to typographic changes while
+still catching structural differences (missing text, reordered content, layout regressions).
+
+**Usage:**
+```
+java -jar ImageTester.jar -k [api-key] -f report.pdf -nf
+```
+
+**Behavior:**
+- The original PDF document on disk is **never modified**. Normalization operates on a copy of the page's
+  content stream and resources; the baseline file and any downstream consumers are untouched.
+- Image content, vector graphics, and page geometry (media box, matrix) are preserved as-is.
+
+**When to use it:**
+- Baselines are breaking because the document generator upgraded a font library or switched a typeface.
+- You want to validate structural/layout correctness of a document independently of its typography.
+- You are comparing output from two rendering pipelines that embed fonts differently.
+
+**When *not* to use it:**
+- Typography is part of what you are validating (brand compliance, marketing collateral).
+- You need to verify that a specific font is present and rendered correctly.
+
+**Note:** Enabling `-nf` invalidates existing baselines — normalized renders will not match a baseline
+captured without normalization. Plan for a baseline refresh when rolling this out.
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities)
 Several EyesUtilities functions are integrated into ImageTester.
