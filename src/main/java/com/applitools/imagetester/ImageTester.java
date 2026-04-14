@@ -27,6 +27,7 @@ import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
     private static final String cur_ver = "3.9.1";
+    private static final String DEFAULT_THREADS = String.valueOf(Runtime.getRuntime().availableProcessors() * 2);
 
     public static void main(String[] args) {
         run(args);
@@ -145,7 +146,7 @@ public class ImageTester {
 
             File root = new File(cmd.getOptionValue("f", "."));
 
-            int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
+            int maxThreads = Integer.parseInt(cmd.getOptionValue("th", DEFAULT_THREADS));
             TestExecutor executor = new TestExecutor(maxThreads, factory, config);
 
             Suite suite = Suite.create(root.getCanonicalFile(), config, executor);
@@ -266,7 +267,7 @@ public class ImageTester {
 
                 try {
                     File root = new File(currentBatch.filePath);
-                    int maxThreads = Integer.parseInt(cmd.getOptionValue("th", "3"));
+                    int maxThreads = Integer.parseInt(cmd.getOptionValue("th", DEFAULT_THREADS));
                     Suite suite = Suite.create(
                             root.getCanonicalFile(),
                             currentConfiguration,
@@ -455,7 +456,7 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("th")
                 .longOpt("threads")
-                .desc("Specify how many threads will be running the suite")
+                .desc("Specify how many threads will be running the suite, default: 2 x available CPU cores")
                 .hasArg()
                 .argName("units")
                 .build());
