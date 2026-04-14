@@ -135,7 +135,6 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>../jars/${project.artifactId}_${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -163,10 +162,142 @@
 				</configuration>
 				<executions>
 					<execution>
+						<id>shade-universal</id>
 						<phase>package</phase>
 						<goals>
 							<goal>shade</goal>
 						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>universal</shadedClassifierName>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-windows</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_Windows.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>windows</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-mac</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac-arm</exclude>
+									<exclude>com.applitools:eyes-universal-core-linux</exclude>
+									<exclude>com.applitools:eyes-universal-core-alpine</exclude>
+									<exclude>com.applitools:eyes-universal-core-arm</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-mac</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_Mac.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>mac</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-win</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac-arm</exclude>
+									<exclude>com.applitools:eyes-universal-core-linux</exclude>
+									<exclude>com.applitools:eyes-universal-core-alpine</exclude>
+									<exclude>com.applitools:eyes-universal-core-arm</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-mac-arm</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_MacArm.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>mac-arm</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-win</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac</exclude>
+									<exclude>com.applitools:eyes-universal-core-linux</exclude>
+									<exclude>com.applitools:eyes-universal-core-alpine</exclude>
+									<exclude>com.applitools:eyes-universal-core-arm</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-linux</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_Linux.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>linux</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-win</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac-arm</exclude>
+									<exclude>com.applitools:eyes-universal-core-alpine</exclude>
+									<exclude>com.applitools:eyes-universal-core-arm</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-alpine</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_Alpine.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>alpine</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-win</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac-arm</exclude>
+									<exclude>com.applitools:eyes-universal-core-linux</exclude>
+									<exclude>com.applitools:eyes-universal-core-arm</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
+					</execution>
+					<execution>
+						<id>shade-arm</id>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<outputFile>${project.basedir}/jars/${project.artifactId}_${project.version}_Arm.jar</outputFile>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>arm</shadedClassifierName>
+							<artifactSet>
+								<excludes>
+									<exclude>com.applitools:eyes-universal-core-win</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac</exclude>
+									<exclude>com.applitools:eyes-universal-core-mac-arm</exclude>
+									<exclude>com.applitools:eyes-universal-core-linux</exclude>
+									<exclude>com.applitools:eyes-universal-core-alpine</exclude>
+								</excludes>
+							</artifactSet>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
