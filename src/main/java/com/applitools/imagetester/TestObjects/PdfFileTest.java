@@ -19,6 +19,10 @@ public class PdfFileTest extends DocumentTestBase {
         super(file, conf);
     }
 
+    public PdfFileTest(File file, Config conf, File source) {
+        super(file, conf, source);
+    }
+
     public TestResults run(Eyes eyes) throws Exception {
         // Needed for PDFBox to display JBig images within PDF renders
         IIORegistry.getDefaultInstance().registerServiceProvider(new JBIG2ImageReaderSpi());

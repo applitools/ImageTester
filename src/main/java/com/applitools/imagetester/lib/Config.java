@@ -7,6 +7,7 @@ import com.applitools.eyes.Region;
 import com.applitools.eyes.fluent.BatchClose;
 import com.applitools.eyes.fluent.EnabledBatchClose;
 import com.applitools.imagetester.Constants.ApplitoolsConstants;
+import com.applitools.imagetester.lib.converters.SkipTracker;
 
 import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,7 @@ public class Config {
     public String pdfPass = null;
     public boolean includePageNumbers = false;
     public Logger logger = new Logger();
+    public SkipTracker skipTracker = new SkipTracker();
     public EyesUtilitiesConfig eyesUtilsConf;
     public BatchInfo flatBatch = null;
     public String forcedName = null;

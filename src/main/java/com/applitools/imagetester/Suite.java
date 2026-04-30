@@ -13,15 +13,38 @@ import com.applitools.imagetester.TestObjects.TestBase;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Patterns;
 import com.applitools.imagetester.lib.TestExecutor;
+import com.applitools.imagetester.lib.converters.ConversionRegistry;
+import com.applitools.imagetester.lib.converters.FormatConverter;
+import com.applitools.imagetester.lib.converters.LibreOfficeConverter;
+import com.applitools.imagetester.lib.converters.MarkdownToPdfConverter;
+import com.applitools.imagetester.lib.converters.RtfToPdfConverter;
+import com.applitools.imagetester.lib.converters.SkippedFileException;
+import com.applitools.imagetester.lib.converters.TxtToPdfConverter;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class Suite {
+
+    private static final ConversionRegistry REGISTRY = buildRegistry();
+
+    private static ConversionRegistry buildRegistry() {
+        ConversionRegistry r = new ConversionRegistry();
+        r.register(new TxtToPdfConverter());
+        r.register(new MarkdownToPdfConverter());
+        r.register(new RtfToPdfConverter());
+        r.register(new LibreOfficeConverter());
+        return r;
+    }
+
     private final TestExecutor executor_;
     private final List<TestBase> tests_ = new ArrayList<>();
     private final List<BatchBase> batches_ = new ArrayList<>();
@@ -31,6 +54,7 @@ public class Suite {
             conf.splitSteps = true;
         return new Suite(file, conf, executor);
     }
+
     private Suite(File file, Config conf, TestExecutor executor) {
         conf.logger.reportDiscovery(file);
         executor_ = executor;
@@ -39,9 +63,7 @@ public class Suite {
             throw new RuntimeException(
                     String.format("Fatal! The path %s does not exists \n", file.getAbsolutePath()));
         try {
-
             if (file.isFile()) {
-                // If regex filter exists and matches file name, don't process file
                 if (conf.regexFileNameFilter != null
                     && !Pattern.matches(conf.regexFileNameFilter, file.getName())) {
                     return;
@@ -58,6 +80,8 @@ public class Suite {
                 } else {
                     if (is(file, Patterns.PDF)) {
                         test = conf.batchMapperPath == null ? new PdfFileTest(file, conf) : new BatchMappedPdfFileTest(file, conf);
+                    } else {
+                        test = tryConvert(file, conf);
                     }
                 }
                 if (batch != null && !batch.isEmpty())
@@ -85,6 +109,27 @@ public class Suite {
             batches_.add(currBatch);
         } catch (Exception e) {
             conf.logger.reportException(e, file.getAbsolutePath());
+        }
+    }
+
+    private static TestBase tryConvert(File file, Config conf) {
+        Optional<FormatConverter> match = REGISTRY.find(file);
+        if (!match.isPresent()) return null;
+        try {
+            Path tempDir = Files.createTempDirectory("imagetester-");
+            tempDir.toFile().deleteOnExit();
+            File pdfTemp = match.get().convertToPdf(file, tempDir);
+            pdfTemp.deleteOnExit();
+            return new PdfFileTest(pdfTemp, conf, file);
+        } catch (SkippedFileException e) {
+            conf.skipTracker.record(e.getFile(), e.getReason());
+            conf.logger.printMessage(String.format("Skipping %s: %s",
+                    e.getFile().getName(), e.getReason()));
+            return null;
+        } catch (IOException e) {
+            conf.logger.reportException(e, file.getAbsolutePath());
+            conf.skipTracker.record(file, "conversion error: " + e.getMessage());
+            return null;
         }
     }
 

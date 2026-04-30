@@ -14,6 +14,11 @@ public abstract class DocumentTestBase extends TestBase {
         this.pageList_ = Utils.parsePagesNotation(conf.pages);
     }
 
+    public DocumentTestBase(File file, Config conf, File source) {
+        super(file, conf, source);
+        this.pageList_ = Utils.parsePagesNotation(conf.pages);
+    }
+
     @Override
     public String name() {
     	String testName = super.name();

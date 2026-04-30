@@ -30,11 +30,10 @@ public class ImageTester {
     private static final String DEFAULT_THREADS = String.valueOf(Runtime.getRuntime().availableProcessors() * 2);
 
     public static void main(String[] args) {
-        run(args);
-        System.exit(0);
+        System.exit(run(args));
     }
 
-    public static void run(String[] args) {
+    public static int run(String[] args) {
 
         CommandLineParser parser = new DefaultParser();
         Options options = getOptions();
@@ -50,7 +49,7 @@ public class ImageTester {
 
             if (cmd.getOptions().length == 0) {
                 logger.printHelp(options);
-                return;
+                return 0;
             }
 
             if (cmd.hasOption("dv"))
@@ -59,7 +58,7 @@ public class ImageTester {
             String batchMapperPath = cmd.getOptionValue("mp", null);
             if (batchMapperPath != null) {
                 runTestWithBatchMapper(logger, cmd);
-                return;
+                return 0;
             }
 
             Config config = new Config();
@@ -156,12 +155,40 @@ public class ImageTester {
             suite.run();
 
             config.closeBatches();
+            return computeExitCode(config, logger);
         } catch (ParseException | IOException e) {
             logger.reportException(e);
             logger.printHelp(options);
+            return 1;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             logger.reportException(e);
+            return 1;
         }
+    }
+
+    private static int computeExitCode(Config config, Logger logger) {
+        if (config.skipTracker.isEmpty()) return 0;
+        printSkipSummary(config, logger);
+        if (config.skipTracker.hasLibreOfficeMissing()) {
+            printInstallHint(logger);
+        }
+        return 2;
+    }
+
+    private static void printSkipSummary(Config config, Logger logger) {
+        logger.printMessage(String.format("Skipped %d file(s):", config.skipTracker.skips().size()));
+        config.skipTracker.skips().forEach(skip ->
+            logger.printMessage(String.format("  - %s: %s", skip.file.getName(), skip.reason))
+        );
+    }
+
+    private static void printInstallHint(Logger logger) {
+        logger.printMessage("");
+        logger.printMessage("Some files required LibreOffice for conversion but it was not found on PATH.");
+        logger.printMessage("Install LibreOffice to enable support for .doc/.docx/.ppt/.pptx and other office formats:");
+        logger.printMessage("  macOS:   brew install --cask libreoffice");
+        logger.printMessage("  Windows: winget install TheDocumentFoundation.LibreOffice");
+        logger.printMessage("  Linux:   sudo apt-get install libreoffice");
     }
 
     /**

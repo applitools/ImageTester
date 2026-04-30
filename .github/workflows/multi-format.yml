@@ -1,0 +1,31 @@
+name: multi-format-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  multi-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: maven
+
+      - name: Install LibreOffice
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice
+
+      - name: Verify LibreOffice is on PATH
+        run: soffice --version
+
+      - name: Run multi-format integration tests
+        run: mvn -P multi-format-tests test -B

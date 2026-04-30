@@ -19,10 +19,16 @@ import java.io.IOException;
 public abstract class TestBase implements ITest {
     private static final String FILE_NAME_PROP = "Filename";
     private final File file_;
+    private final File source_;
     private final Config conf_;
 
     public TestBase(File file, Config conf) {
+        this(file, conf, file);
+    }
+
+    public TestBase(File file, Config conf, File source) {
         this.file_ = file;
+        this.source_ = source != null ? source : file;
         this.conf_ = conf;
     }
 
@@ -54,7 +60,7 @@ public abstract class TestBase implements ITest {
         if (conf_.forcedName != null)
             return conf_.forcedName;
         else
-            return file_.getName();
+            return source_.getName();
     }
 
     public TestResults runSafe(Eyes eyes) {
@@ -64,7 +70,7 @@ public abstract class TestBase implements ITest {
                     eyes.addProperty(conf_.properties[i][0], conf_.properties[i][1]);
                 }
             }
-            eyes.addProperty(FILE_NAME_PROP, file_.getName());
+            eyes.addProperty(FILE_NAME_PROP, source_.getName());
             TestResults res = run(eyes);
             Utils.handleResultsDownload(conf_.eyesUtilsConf, res);
             return res;
