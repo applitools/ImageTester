@@ -10,126 +10,126 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class Logger {
     private final PrintStream out_;
     private boolean debug_;
     private final SimpleDateFormat dateFormatter_ = new SimpleDateFormat("HH:mm:ss");
+    private final List<Consumer<String>> listeners_ = new CopyOnWriteArrayList<>();
 
-    public Logger() {
-        this(System.out, false);
-    }
+    public Logger() { this(System.out, false); }
 
     public Logger(PrintStream out, boolean debug) {
         this.out_ = out;
         this.debug_ = debug;
     }
 
-    public void setDebug(boolean debug) {
-        this.debug_ = debug;
-    }
+    public void setDebug(boolean debug) { this.debug_ = debug; }
+    public void setDebug() { setDebug(true); }
 
-    public void setDebug() {
-        setDebug(true);
-    }
+    public void addListener(Consumer<String> listener) { listeners_.add(listener); }
+    public void removeListener(Consumer<String> listener) { listeners_.remove(listener); }
 
-    public void printBatchPojo(BatchMapPojo batchMapPojo) {
-        out_.printf("%s \n", batchMapPojo);
-    }
-
-    public void printProgress(int curr, int total) {
-        out_.printf("[%s/%s] \n", curr, total);
-    }
-
-    private void printPrefix() {
-        if (debug_) {
-            Date date = new Date(System.currentTimeMillis());
-            out_.printf("[%s] [%s] ", dateFormatter_.format(date), Thread.currentThread().getName());
+    private void emit(String message) {
+        out_.print(message);
+        for (Consumer<String> l : listeners_) {
+            try { l.accept(message); } catch (Throwable ignored) { /* never let a listener disrupt logging */ }
         }
     }
 
+    public void printBatchPojo(BatchMapPojo batchMapPojo) {
+        emit(String.format("%s \n", batchMapPojo));
+    }
+
+    public void printProgress(int curr, int total) {
+        emit(String.format("[%s/%s] \n", curr, total));
+    }
+
+    private String prefix() {
+        if (!debug_) return "";
+        Date date = new Date(System.currentTimeMillis());
+        return String.format("[%s] [%s] ", dateFormatter_.format(date), Thread.currentThread().getName());
+    }
+
     public void printMessage(String msg) {
-        out_.print(msg);
+        emit(msg);
     }
 
     public void reportDebug(String format, Object... args) {
         if (!debug_) return;
-        printPrefix();
-        out_.printf(format, args);
+        emit(prefix() + String.format(format, args));
     }
 
     public void reportDiscovery(File file) {
         if (!debug_) return;
-        printPrefix();
         if (file.isDirectory())
-            out_.printf("Discovering folder %s \n", file.getAbsolutePath());
+            emit(prefix() + String.format("Discovering folder %s \n", file.getAbsolutePath()));
         else
-            out_.printf("Enqueuing file %s \n", file.getAbsolutePath());
+            emit(prefix() + String.format("Enqueuing file %s \n", file.getAbsolutePath()));
     }
 
     public void reportResult(ExecutorResult result) {
-        printPrefix();
-        if (debug_) out_.printf("[%d Msec] ", TimeUnit.NANOSECONDS.toMillis(result.runTimeNs));
+        StringBuilder sb = new StringBuilder(prefix());
+        if (debug_) sb.append(String.format("[%d Msec] ", TimeUnit.NANOSECONDS.toMillis(result.runTimeNs)));
         String status = result.testResult != null ? result.testResult.getStatus().toString() : "N/A";
-        out_.printf("[%s], %s \n", status, result.testResult);
+        sb.append(String.format("[%s], %s \n", status, result.testResult));
+        emit(sb.toString());
     }
 
     public void reportResultAccessibility(ExecutorResult result) {
         if (result.testResult == null || result.testResult.getAccessibilityStatus() == null) {
-            out_.print("Accessibility: N/A, Level: N/A, Version: N/A \n");
+            emit("Accessibility: N/A, Level: N/A, Version: N/A \n");
         } else {
-            out_.printf(
-                    "Accessibility: [%s], Level: [%s], Version: [%s] \n",
-                    result.testResult.getAccessibilityStatus().getStatus().toString(),
-                    result.testResult.getAccessibilityStatus().getLevel().toString(),
-                    result.testResult.getAccessibilityStatus().getVersion().toString()
-            );
+            emit(String.format(
+                "Accessibility: [%s], Level: [%s], Version: [%s] \n",
+                result.testResult.getAccessibilityStatus().getStatus().toString(),
+                result.testResult.getAccessibilityStatus().getLevel().toString(),
+                result.testResult.getAccessibilityStatus().getVersion().toString()
+            ));
         }
     }
 
-    public void reportException(Throwable e) {
-        reportException(e, null);
-    }
+    public void reportException(Throwable e) { reportException(e, null); }
 
     public void reportException(Throwable e, String filename) {
-        printPrefix();
+        StringBuilder sb = new StringBuilder(prefix());
         if (filename != null && !filename.isEmpty())
-            out_.printf("File: %s \n", filename);
-
+            sb.append(String.format("File: %s \n", filename));
         switch (e.getClass().getSimpleName()) {
             case "FileNotFoundException":
-                out_.print("The file was not found \n");
-                break;
+                sb.append("The file was not found \n"); break;
             case "IOException":
-                out_.print("Error, Please check that the file is accessible, readable and not exclusively locked. ");
-                out_.printf("%s\n", e.getMessage());
-                break;
+                sb.append("Error, Please check that the file is accessible, readable and not exclusively locked. ");
+                sb.append(String.format("%s\n", e.getMessage())); break;
             case "DocumentException":
             case "RendererException":
-                out_.printf("Unable to process document, %s \n", e.getMessage());
-                break;
+                sb.append(String.format("Unable to process document, %s \n", e.getMessage())); break;
             case "UnsatisfiedLinkError":
-                out_.print("Error, Please make sure tesseract and ghostscript are installed and in path! ");
-                out_.printf("%s\n", e.getMessage());
-                break;
+                sb.append("Error, Please make sure tesseract and ghostscript are installed and in path! ");
+                sb.append(String.format("%s\n", e.getMessage())); break;
             case "ExecutionException":
-                out_.printf("%s\n", e.getMessage());
-                break;
+                sb.append(String.format("%s\n", e.getMessage())); break;
             default:
-                out_.printf("Unexpected error, %s, %s \n", e.getClass().getName(), e.getMessage());
-                break;
+                sb.append(String.format("Unexpected error, %s, %s \n", e.getClass().getName(), e.getMessage())); break;
         }
-
         if (debug_) {
-            e.printStackTrace(out_);
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            sb.append(sw.toString());
         }
+        emit(sb.toString());
     }
 
     public void printVersion(String cur_ver) {
-        out_.printf("ImageTester version %s \n", cur_ver);
+        emit(String.format("ImageTester version %s \n", cur_ver));
     }
 
     public void printHelp(Options options) {
@@ -138,19 +138,13 @@ public class Logger {
     }
 
     public void logPage(BufferedImage bim, String testname, Integer page) {
-        try {
-            logPage_(bim, testname, page);
-        } catch (IOException e) {
-            reportException(e);
-        }
+        try { logPage_(bim, testname, page); } catch (IOException e) { reportException(e); }
     }
 
     private void logPage_(BufferedImage bim, String testname, Integer page) throws IOException {
         if (!debug_) return;
         File debugOutFolder = new File(System.getProperty("user.dir"), "debug");
-        if (!debugOutFolder.exists())
-            debugOutFolder.mkdir();
-
+        if (!debugOutFolder.exists()) debugOutFolder.mkdir();
         File pageImg = new File(debugOutFolder, String.format("%s_page_%s.png", testname, page));
         ImageIO.write(bim, "png", pageImg);
     }
