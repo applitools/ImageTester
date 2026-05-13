@@ -12,17 +12,23 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 public class TestExecutor {
     private final Config config_;
     private ExecutorService executorService_;
     private ThreadLocal<Eyes> thEyes_;
     private Queue<Future<ExecutorResult>> results_ = new LinkedList<>();
+    private volatile Consumer<ExecutorResult> completionListener_ = null;
 
     public TestExecutor(int threads, EyesFactory eyesFactory, Config conf) {
         this.executorService_ = Executors.newFixedThreadPool(threads);
         this.thEyes_ = ThreadLocal.withInitial(eyesFactory::build);
         this.config_ = conf;
+    }
+
+    public void setTestCompletionListener(Consumer<ExecutorResult> listener) {
+        this.completionListener_ = listener;
     }
 
     public void enqueue(TestBase test, BatchInfo overrideBatch) {
@@ -47,7 +53,12 @@ public class TestExecutor {
                 ((IDisposable) test).dispose();
             long endTime = System.nanoTime();
 
-            return new ExecutorResult(result, (endTime - startTime));
+            ExecutorResult er = new ExecutorResult(result, (endTime - startTime));
+            Consumer<ExecutorResult> listener = completionListener_;
+            if (listener != null) {
+                try { listener.accept(er); } catch (Throwable ignored) { /* never let a listener disrupt the worker */ }
+            }
+            return er;
         });
 
         results_.add(f);
