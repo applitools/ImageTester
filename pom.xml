@@ -148,6 +148,21 @@
 			<artifactId>jna-platform</artifactId>
 			<version>5.18.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-server</artifactId>
+			<version>11.0.20</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-servlet</artifactId>
+			<version>11.0.20</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.javakeyring</groupId>
+			<artifactId>java-keyring</artifactId>
+			<version>1.0.4</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -169,6 +184,16 @@
 				<artifactId>maven-shade-plugin</artifactId>
 				<version>3.4.1</version>
 				<configuration>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
 					<transformers>
 						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<MainClass>com.applitools.imagetester.ImageTester</MainClass>
