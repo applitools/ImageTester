@@ -1,6 +1,6 @@
 # Image Tester [ ![Download](https://img.shields.io/github/v/tag/applitools/ImageTester?label=Download&style=plastic) ](https://github.com/applitools/ImageTester/releases/latest)
 
-ImageTester is a Cli tool to perform visual tests on images or PDF files. 
+ImageTester is a Cli tool to perform visual tests on images, PDF files, Office files, and more!
 
 If you don't have your Applitools account yet, 
 please [sign up first]("https://applitools.com/sign-up/") 
