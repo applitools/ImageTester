@@ -42,6 +42,22 @@ public class ImageTester {
         // PDFBox generates fairly unhelpful logs - suppressing these by default
         java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.OFF);
 
+        if (java.util.Arrays.asList(args).contains("--gui")) {
+            if (args.length != 1) {
+                System.err.println("--gui must be the only argument. Got: " + java.util.Arrays.toString(args));
+                return 2;
+            }
+            try {
+                com.applitools.imagetester.gui.GuiServer server = com.applitools.imagetester.gui.GuiServer.start();
+                com.applitools.imagetester.gui.GuiLauncher.open("http://localhost:" + server.port());
+                server.join();
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return 1;
+            }
+        }
+
         try {
             CommandLine cmd = parser.parse(options, args);
             logger.setDebug(cmd.hasOption("debug"));
