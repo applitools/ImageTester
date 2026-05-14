@@ -468,5 +468,52 @@
 				</plugins>
 			</build>
 		</profile>
+		<profile>
+			<!--
+				gui-installers profile: builds per-OS installers via jpackage.
+				Requires JDK 14+ on PATH (jpackage was introduced in JDK 14).
+				Local JDK 11 cannot run this profile; intended for CI on JDK 17.
+				Run with: mvn -Pgui-installers -DskipTests -Dowasp.skip=true clean verify
+				Output: target/installers/ImageTester-*.{msi|dmg|deb}
+			-->
+			<id>gui-installers</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<id>run-jpackage</id>
+								<phase>verify</phase>
+								<goals><goal>exec</goal></goals>
+								<configuration>
+									<executable>jpackage</executable>
+									<arguments>
+										<argument>--input</argument>
+										<argument>${project.basedir}/jars</argument>
+										<argument>--name</argument>
+										<argument>ImageTester</argument>
+										<argument>--main-jar</argument>
+										<argument>ImageTester_${project.version}.jar</argument>
+										<argument>--main-class</argument>
+										<argument>com.applitools.imagetester.ImageTester</argument>
+										<argument>--arguments</argument>
+										<argument>--gui</argument>
+										<argument>--app-version</argument>
+										<argument>${project.version}</argument>
+										<argument>--dest</argument>
+										<argument>${project.build.directory}/installers</argument>
+										<argument>--vendor</argument>
+										<argument>Applitools</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 </project>
