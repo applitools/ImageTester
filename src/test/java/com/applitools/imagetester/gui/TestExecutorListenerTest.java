@@ -55,6 +55,97 @@ public class TestExecutorListenerTest {
     }
 
     @Test
+    public void startedListenerFiresSynchronouslyBeforeWorkerRuns() throws Exception {
+        Config config = new Config();
+        config.shouldThrowException = false;
+
+        EyesFactory factory = mock(EyesFactory.class);
+        com.applitools.eyes.images.Eyes eyes = mock(com.applitools.eyes.images.Eyes.class);
+        when(factory.build()).thenReturn(eyes);
+        when(eyes.getBatch()).thenReturn(new com.applitools.eyes.BatchInfo("t"));
+
+        CountDownLatch gate = new CountDownLatch(1);
+        TestBase t = mock(TestBase.class);
+        TestResults r = mock(TestResults.class);
+        when(r.getStatus()).thenReturn(TestResultsStatus.Passed);
+        when(t.name()).thenReturn("foo.png");
+        // Worker blocks until we release the gate; if started-listener didn't fire pre-submit, the assertion below would fail.
+        when(t.runSafe(any())).thenAnswer(inv -> { gate.await(); return r; });
+
+        TestExecutor executor = new TestExecutor(1, factory, config);
+        List<String> started = new ArrayList<>();
+        executor.setTestStartedListener(started::add);
+
+        executor.enqueue(t, null);
+        assertEquals(1, started.size());
+        assertEquals("foo.png", started.get(0));
+
+        gate.countDown();
+        executor.join();
+    }
+
+    @Test
+    public void startedListenerThatThrowsDoesNotPreventEnqueue() throws Exception {
+        Config config = new Config();
+        config.shouldThrowException = false;
+
+        EyesFactory factory = mock(EyesFactory.class);
+        com.applitools.eyes.images.Eyes eyes = mock(com.applitools.eyes.images.Eyes.class);
+        when(factory.build()).thenReturn(eyes);
+        when(eyes.getBatch()).thenReturn(new com.applitools.eyes.BatchInfo("t"));
+
+        TestBase t = mock(TestBase.class);
+        TestResults r = mock(TestResults.class);
+        when(r.getStatus()).thenReturn(TestResultsStatus.Passed);
+        when(t.name()).thenReturn("foo.png");
+        when(t.runSafe(any())).thenReturn(r);
+
+        TestExecutor executor = new TestExecutor(1, factory, config);
+        executor.setTestStartedListener(name -> { throw new RuntimeException("boom"); });
+        executor.enqueue(t, null);
+        executor.join();
+    }
+
+    @Test
+    public void cancelReturnsJoinEvenWhileWorkerIsStillRunning() throws Exception {
+        Config config = new Config();
+        config.shouldThrowException = false;
+
+        EyesFactory factory = mock(EyesFactory.class);
+        com.applitools.eyes.images.Eyes eyes = mock(com.applitools.eyes.images.Eyes.class);
+        when(factory.build()).thenReturn(eyes);
+        when(eyes.getBatch()).thenReturn(new com.applitools.eyes.BatchInfo("t"));
+
+        CountDownLatch workerEntered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        TestBase t = mock(TestBase.class);
+        TestResults r = mock(TestResults.class);
+        when(r.getStatus()).thenReturn(TestResultsStatus.Passed);
+        when(t.name()).thenReturn("hangs.png");
+        // Soft-cancel must NOT interrupt this worker; it should keep running until we release it.
+        when(t.runSafe(any())).thenAnswer(inv -> {
+            workerEntered.countDown();
+            release.await();
+            return r;
+        });
+
+        TestExecutor executor = new TestExecutor(1, factory, config);
+        executor.enqueue(t, null);
+
+        Thread joiner = new Thread(executor::join, "joiner");
+        joiner.setDaemon(true);
+        joiner.start();
+
+        assertTrue("worker never started", workerEntered.await(5, TimeUnit.SECONDS));
+        executor.cancel();
+        joiner.join(5_000);
+        assertTrue("join did not return after cancel", !joiner.isAlive());
+        assertTrue(executor.isCancelled());
+
+        release.countDown(); // let the background worker finish naturally so the test thread doesn't leak it
+    }
+
+    @Test
     public void listenerThatThrowsDoesNotKillTheWorker() throws Exception {
         Config config = new Config();
         config.shouldThrowException = false;

@@ -9,7 +9,6 @@ import com.applitools.imagetester.TestObjects.TestBase;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -18,8 +17,12 @@ public class TestExecutor {
     private final Config config_;
     private ExecutorService executorService_;
     private ThreadLocal<Eyes> thEyes_;
-    private Queue<Future<ExecutorResult>> results_ = new LinkedList<>();
+    // ConcurrentLinkedQueue: enqueue() runs on the suite thread, cancel() runs on the HTTP thread,
+    // join() runs on the run thread. Lock-free FIFO keeps add/poll/iterate safe across all three.
+    private final Queue<Future<ExecutorResult>> results_ = new ConcurrentLinkedQueue<>();
     private volatile Consumer<ExecutorResult> completionListener_ = null;
+    private volatile Consumer<String> startedListener_ = null;
+    private volatile boolean cancelled_ = false;
 
     public TestExecutor(int threads, EyesFactory eyesFactory, Config conf) {
         this.executorService_ = Executors.newFixedThreadPool(threads);
@@ -31,7 +34,34 @@ public class TestExecutor {
         this.completionListener_ = listener;
     }
 
+    public void setTestStartedListener(Consumer<String> listener) {
+        this.startedListener_ = listener;
+    }
+
+    /**
+     * Soft-cancel: stops accepting new work, cancels not-yet-started futures, and frees join()
+     * to return immediately. Running workers are NOT interrupted — interrupting an Eyes-SDK call
+     * mid-flight corrupts the shared universal-core session and the *next* run gets
+     * "For input string: 'null'" when the core returns garbage for parsed fields. We let in-flight
+     * work finish in the background; the listeners are nulled so it can't leak ghost SSE events.
+     */
+    public void cancel() {
+        cancelled_ = true;
+        startedListener_ = null;
+        completionListener_ = null;
+        // mayInterruptIfRunning=false: only pending tasks are cancelled; running ones complete.
+        for (Future<ExecutorResult> f : results_) f.cancel(false);
+        executorService_.shutdown();
+    }
+
+    public boolean isCancelled() { return cancelled_; }
+
     public void enqueue(TestBase test, BatchInfo overrideBatch) {
+        if (cancelled_) return;
+        Consumer<String> sl = startedListener_;
+        if (sl != null) {
+            try { sl.accept(test.name()); } catch (Throwable ignored) { /* never let a listener disrupt enqueue */ }
+        }
         Future<ExecutorResult> f = executorService_.submit(() -> {
             long startTime = System.nanoTime();
             Eyes eyes = thEyes_.get();
@@ -69,29 +99,40 @@ public class TestExecutor {
         int curr = 1;
         boolean shouldExit = false;
         while (!results_.isEmpty()) {
+            if (cancelled_) return;
             config_.logger.printProgress(curr++, total);
+            Future<ExecutorResult> head = results_.poll();
+            if (head == null) break;
             ExecutorResult result = null;
-            try {
-                result = results_.remove().get();
-            } catch (InterruptedException e) {
-                config_.logger.reportException(e);
-            } catch (ExecutionException e) {
-                config_.logger.reportException(e);
-                shouldExit = true;
-                if (config_.shouldThrowException) {
-                    throw new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
-                        "This exception is thrown because the '-te' flag was present, \n" +
-                        "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
-                }
-            } finally {
-                if (shouldExit) {
-                    executorService_.shutdown();
+            // Poll for this test's result so cancel() can break us out without interrupting the worker.
+            // Soft-cancel deliberately does not interrupt — see cancel() for why.
+            while (true) {
+                if (cancelled_) return;
+                try {
+                    result = head.get(250, TimeUnit.MILLISECONDS);
+                    break;
+                } catch (TimeoutException e) {
+                    continue;
+                } catch (CancellationException e) {
+                    break;
+                } catch (InterruptedException e) {
+                    config_.logger.reportException(e);
+                    break;
+                } catch (ExecutionException e) {
+                    config_.logger.reportException(e);
+                    shouldExit = true;
                     if (config_.shouldThrowException) {
-                        System.exit(1);
+                        throw new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
+                            "This exception is thrown because the '-te' flag was present, \n" +
+                            "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
                     }
+                    break;
                 }
             }
-
+            if (shouldExit) {
+                executorService_.shutdown();
+                if (config_.shouldThrowException) System.exit(1);
+            }
             if (result != null) {
                 config_.logger.reportResult(result);
                 if (thEyes_.get().getAccessibilityValidation() != null) {

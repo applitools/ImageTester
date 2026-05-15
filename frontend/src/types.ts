@@ -5,6 +5,7 @@ export interface TestRow {
   status: "running" | "pass" | "fail";
   durationMs?: number;
   dashboardUrl?: string;
+  startedAtMs?: number;
 }
 
 export type RunStateSnapshot =

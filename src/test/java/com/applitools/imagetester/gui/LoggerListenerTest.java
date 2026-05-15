@@ -34,6 +34,20 @@ public class LoggerListenerTest {
     }
 
     @Test
+    public void printProgressBypassesListenersButStillWritesToStdout() {
+        ByteArrayOutputStream sink = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(sink), false);
+
+        List<String> received = new ArrayList<>();
+        logger.addListener(received::add);
+
+        logger.printProgress(1, 2);
+
+        assertTrue("printProgress should not reach GUI listeners", received.isEmpty());
+        assertTrue("printProgress should still appear on stdout", sink.toString().contains("[1/2]"));
+    }
+
+    @Test
     public void removedListenerNoLongerReceivesMessages() {
         Logger logger = new Logger(new PrintStream(new ByteArrayOutputStream()), false);
         List<String> received = new ArrayList<>();

@@ -46,6 +46,7 @@ public final class RunController {
     private final RunStream runStream_;
     private final EyesFactoryBuilder factoryBuilder_;
     private final AtomicReference<RunState> state_ = new AtomicReference<>(RunState.Idle.INSTANCE);
+    private final AtomicReference<TestExecutor> currentExecutor_ = new AtomicReference<>();
     private final ExecutorService runExecutor_ = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "RunController-run");
         t.setDaemon(true);
@@ -81,13 +82,17 @@ public final class RunController {
             if (state_.compareAndSet(current, running)) break;
         }
 
+        // Wipe SSE replay history so a tab that connects mid-run only sees events from *this* run.
+        runStream_.resetReplay();
         runExecutor_.submit(() -> executeRun(validated.toFile(), matchLevelStr, apiKey, running));
         return new StartResult(running.runId);
     }
 
-    // Best-effort cancel — TestExecutor has no public cancel API in v1.
-    // TODO(gui-team): wire interrupt when TestExecutor exposes a cancel hook (#issue).
-    public void cancel() {}
+    public void cancel() {
+        TestExecutor executor = currentExecutor_.get();
+        if (executor == null) return;
+        executor.cancel();
+    }
 
     private void executeRun(File source, String matchLevelStr, String apiKey, RunState.Running running) {
         long startedNs = System.nanoTime();
@@ -104,7 +109,10 @@ public final class RunController {
         int failed = 0;
         try {
             EyesFactory factory = factoryBuilder_.build(apiKey, matchLevelStr, config.logger);
+            factory.logHandlerInstance(new EyesLogBridge(config.logger));
             TestExecutor executor = new TestExecutor(2, factory, config);
+            currentExecutor_.set(executor);
+            executor.setTestStartedListener(name -> runStream_.emit(new SseEvent.TestStarted(name)));
             executor.setTestCompletionListener(result -> {
                 String name = result.testResult != null ? result.testResult.getName() : "(unknown)";
                 String status = result.testResult != null && result.testResult.isDifferent() ? "fail" : "pass";
@@ -117,11 +125,17 @@ public final class RunController {
                 row.dashboardUrl = dashboard;
                 running.tests.add(row);
             });
+            config.logger.printMessage(String.format("Scanning source: %s%n", source.getAbsolutePath()));
             Suite suite = Suite.create(source.getCanonicalFile(), config, executor);
+            config.logger.printMessage("Starting tests" + System.lineSeparator());
             suite.run();
         } catch (Throwable t) {
             config.logger.reportException(t);
         } finally {
+            TestExecutor executor = currentExecutor_.getAndSet(null);
+            if (executor != null && executor.isCancelled()) {
+                config.logger.printMessage("Run cancelled" + System.lineSeparator());
+            }
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
                 if ("pass".equals(r.status)) passed++;

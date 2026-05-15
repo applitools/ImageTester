@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { RunStateSnapshot } from "../types";
 import { TestRow } from "./TestRow";
 
@@ -7,8 +7,18 @@ interface Props {
   logLines: string[];
 }
 
+const TICK_INTERVAL_MS = 500;
+
 export function StatusPane({ state, logLines }: Props) {
-  const [showLog, setShowLog] = useState(false);
+  const [showLog, setShowLog] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  const hasRunning = state.kind === "running" && state.tests.some((t) => t.status === "running");
+  useEffect(() => {
+    if (!hasRunning) return;
+    const id = window.setInterval(() => setNow(Date.now()), TICK_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [hasRunning]);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -23,7 +33,7 @@ export function StatusPane({ state, logLines }: Props) {
 
       {state.kind !== "idle" && (
         <div className="space-y-0.5">
-          {state.tests.map((t) => <TestRow key={t.name} row={t} />)}
+          {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}
         </div>
       )}
 

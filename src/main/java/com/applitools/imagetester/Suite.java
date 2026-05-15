@@ -62,6 +62,8 @@ public class Suite {
         if (!file.exists())
             throw new RuntimeException(
                     String.format("Fatal! The path %s does not exists \n", file.getAbsolutePath()));
+        if (file.isDirectory())
+            conf.logger.printMessage(String.format("Discovering folder: %s%n", file.getName()));
         try {
             if (file.isFile()) {
                 if (conf.regexFileNameFilter != null
@@ -116,6 +118,7 @@ public class Suite {
         Optional<FormatConverter> match = REGISTRY.find(file);
         if (!match.isPresent()) return null;
         try {
+            conf.logger.printMessage(String.format("Converting %s to PDF...%n", file.getName()));
             Path tempDir = Files.createTempDirectory("imagetester-");
             tempDir.toFile().deleteOnExit();
             File pdfTemp = match.get().convertToPdf(file, tempDir);

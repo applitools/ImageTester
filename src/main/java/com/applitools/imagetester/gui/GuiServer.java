@@ -85,6 +85,9 @@ public final class GuiServer {
         int port = connector.getLocalPort();
         filterRef[0] = new TokenAuthFilter(token, port);
 
+        // Skip in test mode — Swing init can be problematic on headless CI.
+        if (!testMode) NativePathChooser.prewarm();
+
         return new GuiServer(server, token, port, controller);
     }
 
@@ -151,7 +154,8 @@ public final class GuiServer {
         private void handleChoosePath(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             Map<?, ?> body = json_.readValue(req.getInputStream(), Map.class);
             String type = body.get("type") == null ? null : body.get("type").toString();
-            String chosen = "folder".equals(type) ? NativePathChooser.chooseFolder() : NativePathChooser.chooseFile();
+            String start = body.get("start") == null ? null : body.get("start").toString();
+            String chosen = "folder".equals(type) ? NativePathChooser.chooseFolder(start) : NativePathChooser.chooseFile(start);
             if (chosen != null) {
                 writeJson(resp, Map.of("path", chosen));
             } else {

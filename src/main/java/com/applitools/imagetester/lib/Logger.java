@@ -50,7 +50,8 @@ public class Logger {
     }
 
     public void printProgress(int curr, int total) {
-        emit(String.format("[%s/%s] \n", curr, total));
+        // CLI-only progress: GUI surfaces this via test-started/finished rows, where "[N/total]" is redundant noise.
+        out_.print(String.format("[%s/%s] \n", curr, total));
     }
 
     private String prefix() {

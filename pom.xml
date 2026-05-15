@@ -475,10 +475,36 @@
 				Local JDK 11 cannot run this profile; intended for CI on JDK 17.
 				Run with: mvn -Pgui-installers -DskipTests -Dowasp.skip=true clean verify
 				Output: target/installers/ImageTester-*.{msi|dmg|deb}
+
+				The os-* sub-profiles (below) auto-activate based on the host and pick the
+				slim per-OS shaded JAR (e.g. ImageTester_3.10.0_Windows.jar, ~62MB) instead
+				of the fat universal one (~233MB).
 			-->
 			<id>gui-installers</id>
 			<build>
 				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>stage-installer-input</id>
+								<phase>pre-integration-test</phase>
+								<goals><goal>copy-resources</goal></goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/installer-input</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.basedir}/jars</directory>
+											<includes>
+												<include>${installer.input.jar}</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
@@ -492,21 +518,25 @@
 									<executable>jpackage</executable>
 									<arguments>
 										<argument>--input</argument>
-										<argument>${project.basedir}/jars</argument>
+										<argument>${project.build.directory}/installer-input</argument>
 										<argument>--name</argument>
 										<argument>ImageTester</argument>
 										<argument>--main-jar</argument>
-										<argument>ImageTester_${project.version}.jar</argument>
+										<argument>${installer.input.jar}</argument>
 										<argument>--main-class</argument>
 										<argument>com.applitools.imagetester.ImageTester</argument>
 										<argument>--arguments</argument>
 										<argument>--gui</argument>
 										<argument>--app-version</argument>
 										<argument>${project.version}</argument>
-										<argument>--dest</argument>
-										<argument>${project.build.directory}/installers</argument>
+										<argument>--description</argument>
+										<argument>Visual testing tool — uploads screenshots and PDF pages to Applitools Eyes</argument>
+										<argument>--copyright</argument>
+										<argument>Copyright © Applitools</argument>
 										<argument>--vendor</argument>
 										<argument>Applitools</argument>
+										<argument>--dest</argument>
+										<argument>${project.build.directory}/installers</argument>
 									</arguments>
 								</configuration>
 							</execution>
@@ -514,6 +544,40 @@
 					</plugin>
 				</plugins>
 			</build>
+		</profile>
+
+		<!--
+			OS-detection sub-profiles for gui-installers: each auto-activates on its host and
+			sets ${installer.input.jar} to the correct slim shade. Only consumed when -Pgui-installers
+			is also active; harmless property otherwise.
+		-->
+		<profile>
+			<id>installer-os-windows</id>
+			<activation><os><family>windows</family></os></activation>
+			<properties>
+				<installer.input.jar>ImageTester_${project.version}_Windows.jar</installer.input.jar>
+			</properties>
+		</profile>
+		<profile>
+			<id>installer-os-mac-arm</id>
+			<activation><os><family>mac</family><arch>aarch64</arch></os></activation>
+			<properties>
+				<installer.input.jar>ImageTester_${project.version}_MacArm.jar</installer.input.jar>
+			</properties>
+		</profile>
+		<profile>
+			<id>installer-os-mac-x64</id>
+			<activation><os><family>mac</family><arch>x86_64</arch></os></activation>
+			<properties>
+				<installer.input.jar>ImageTester_${project.version}_Mac.jar</installer.input.jar>
+			</properties>
+		</profile>
+		<profile>
+			<id>installer-os-linux</id>
+			<activation><os><family>unix</family><name>linux</name></os></activation>
+			<properties>
+				<installer.input.jar>ImageTester_${project.version}_Linux.jar</installer.input.jar>
+			</properties>
 		</profile>
 	</profiles>
 </project>

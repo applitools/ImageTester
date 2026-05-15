@@ -5,6 +5,16 @@ import { api } from "./lib/api";
 import { connectSse } from "./lib/sse";
 import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow } from "./types";
 
+const LAST_SOURCE_PATH_KEY = "imagetester.lastSourcePath";
+
+function readLastSourcePath(): string {
+  try { return window.localStorage.getItem(LAST_SOURCE_PATH_KEY) ?? ""; } catch { return ""; }
+}
+
+function writeLastSourcePath(value: string) {
+  try { window.localStorage.setItem(LAST_SOURCE_PATH_KEY, value); } catch { /* private mode / disabled */ }
+}
+
 type Action =
   | { type: "set"; snapshot: RunStateSnapshot }
   | { type: "sse"; event: SseEvent };
@@ -15,7 +25,7 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
   if (state.kind !== "running") return state;
   switch (e.type) {
     case "test-started":
-      return { ...state, tests: [...state.tests, { name: e.name, status: "running" }] };
+      return { ...state, tests: [...state.tests, { name: e.name, status: "running", startedAtMs: Date.now() }] };
     case "test-finished": {
       const exists = state.tests.some((t) => t.name === e.name);
       const tests: TestRow[] = exists
@@ -33,7 +43,7 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
 export function App() {
   const [snapshot, dispatch] = useReducer(reducer, { kind: "idle" } as RunStateSnapshot);
   const [hasKey, setHasKey] = useState(false);
-  const [sourcePath, setSourcePath] = useState("");
+  const [sourcePath, setSourcePath] = useState(readLastSourcePath);
   const [matchLevel, setMatchLevel] = useState<MatchLevel>("Strict");
   const [logLines, setLogLines] = useState<string[]>([]);
   const esRef = useRef<EventSource | null>(null);
@@ -62,14 +72,23 @@ export function App() {
           matchLevel={matchLevel}
           running={snapshot.kind === "running"}
           onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
-          onChoosePath={async (t) => { const r = await api.choosePath(t); if (r.path) setSourcePath(r.path); }}
+          onChoosePath={async (t) => {
+            const r = await api.choosePath(t, sourcePath || undefined);
+            if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); }
+          }}
           onMatchLevel={setMatchLevel}
           onRun={async () => {
             setLogLines([]);
             const r = await api.run(sourcePath, matchLevel);
             dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
           }}
-          onCancel={() => api.cancel()}
+          onCancel={() => {
+            api.cancel();
+            // Wipe the right pane immediately — the user expects a clean slate, not a frozen final state.
+            // The reducer ignores SSE events when not in "running", so any in-flight test-finished is dropped.
+            dispatch({ type: "set", snapshot: { kind: "idle" } });
+            setLogLines([]);
+          }}
         />
         <StatusPane state={snapshot} logLines={logLines} />
       </div>
