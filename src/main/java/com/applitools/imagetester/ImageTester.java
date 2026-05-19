@@ -161,7 +161,7 @@ public class ImageTester {
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
-                config.accessibilityRegularTextFullPage = cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null;
+                config.accessibilityRegularTextFullPage = true;
             }
             if (cmd.hasOption("arl") && config.accessibilityLargeTextRegions == null) {
                 config.accessibilityLargeTextFullPage = true;
@@ -349,7 +349,7 @@ public class ImageTester {
 
                 // Full page for ac regions capability
                 if (cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null) {
-                    currentConfiguration.accessibilityRegularTextFullPage = cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null;
+                    currentConfiguration.accessibilityRegularTextFullPage = true;
                 }
                 if (cmd.hasOption("arl") && currentConfiguration.accessibilityLargeTextRegions == null) {
                     currentConfiguration.accessibilityLargeTextFullPage = true;

@@ -14,15 +14,19 @@ import java.util.Queue;
 import java.util.concurrent.*;
 
 public class TestExecutor {
+    private static final long SHUTDOWN_TIMEOUT_MINUTES = 5;
+
     private final Config config_;
     private ExecutorService executorService_;
     private ThreadLocal<Eyes> thEyes_;
     private Queue<Future<ExecutorResult>> results_ = new LinkedList<>();
+    private final boolean hasAccessibilityValidation_;
 
     public TestExecutor(int threads, EyesFactory eyesFactory, Config conf) {
         this.executorService_ = Executors.newFixedThreadPool(threads);
         this.thEyes_ = ThreadLocal.withInitial(eyesFactory::build);
         this.config_ = conf;
+        this.hasAccessibilityValidation_ = eyesFactory.hasAccessibilityValidation();
     }
 
     public void enqueue(TestBase test, BatchInfo overrideBatch) {
@@ -56,7 +60,8 @@ public class TestExecutor {
     public void join() {
         int total = results_.size();
         int curr = 1;
-        boolean shouldExit = false;
+        RuntimeException pendingThrow = null;
+
         while (!results_.isEmpty()) {
             config_.logger.printProgress(curr++, total);
             ExecutorResult result = null;
@@ -64,32 +69,40 @@ public class TestExecutor {
                 result = results_.remove().get();
             } catch (InterruptedException e) {
                 config_.logger.reportException(e);
+                Thread.currentThread().interrupt();
+                break;
             } catch (ExecutionException e) {
                 config_.logger.reportException(e);
-                shouldExit = true;
                 if (config_.shouldThrowException) {
-                    throw new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
+                    // Defer throw until in-flight workers drain. Interrupting them mid-RPC
+                    // corrupts the shared universal-core session and breaks subsequent runs.
+                    pendingThrow = new RuntimeException("Eyes has reported a mismatch or test failure. \n" +
                         "This exception is thrown because the '-te' flag was present, \n" +
                         "which instructs ImageTester to throw exceptions if a test fails, or a mismatch is detected");
-                }
-            } finally {
-                if (shouldExit) {
-                    executorService_.shutdown();
-                    if (config_.shouldThrowException) {
-                        System.exit(1);
-                    }
+                    break;
                 }
             }
 
             if (result != null) {
                 config_.logger.reportResult(result);
-                if (thEyes_.get().getAccessibilityValidation() != null) {
+                if (hasAccessibilityValidation_) {
                     config_.logger.reportResultAccessibility(result);
                 }
             }
         }
 
+        // Cancel only pending (not-yet-started) tasks; let running workers finish their RPCs.
+        for (Future<ExecutorResult> f : results_) f.cancel(false);
+        results_.clear();
+
         executorService_.shutdown();
+        try {
+            executorService_.awaitTermination(SHUTDOWN_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        if (pendingThrow != null) throw pendingThrow;
     }
 
     //set eyes correct batch
