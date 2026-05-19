@@ -182,6 +182,9 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 + `-pp [password]` - The password if the PDF files protected
 + `-pn` - Preserve original directory test names when specifying pages
 + `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization) below.
++ `-rw [text]` - Remove text watermarks matching the given string from PDFs before rendering (case-insensitive, exact match after trim). See [Watermark Removal](#watermark-removal) below.
++ `-rwauto` - Auto-detect a vector watermark across PDFs. ImageTester groups PDFs by their containing directory and fingerprints each group separately, so a parent folder with one subfolder per environment (e.g. `pre/`, `uat/`) cleans correctly in one run. Each group needs at least 2 PDFs. See [Watermark Removal](#watermark-removal).
++ `-rwo [dir]` - Standalone output mode. Write cleaned PDFs to the given directory and exit without uploading to Applitools. Combine with `-rw` or `-rwauto`.
 
 ### Font Normalization
 Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
@@ -211,6 +214,34 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf
 
 **Note:** Enabling `-nf` invalidates existing baselines — normalized renders will not match a baseline
 captured without normalization. Plan for a baseline refresh when rolling this out.
+
+### Watermark Removal
+
+Strips pre-production watermarks ("DRAFT", "PRE-Proof", etc.) from PDFs in memory before uploading
+to Eyes. Original PDFs on disk are never modified.
+
+**Run it:**
+
+```
+java -jar ImageTester.jar -k YOUR_API_KEY -f pdfs/ -rwauto -a YourApp -fb YourBatch
+```
+
+If your PDFs are organized into subfolders by environment (`pre/`, `uat/`, `staging/`), point at the
+parent — each subfolder is handled independently.
+
+**Preview locally before uploading:**
+
+```
+java -jar ImageTester.jar -f pdfs/ -rwauto -rwo cleaned/
+```
+
+Open the cleaned PDFs to verify, then re-run without `-rwo` to upload.
+
+**Single PDF, or watermark still visible after running** — ImageTester prints a notice with next
+steps. If unclear, contact Applitools support (support@applitools.com) with a sample PDF.
+
+**Note:** cleaning changes what Eyes sees, so it invalidates baselines captured before cleaning was
+enabled. Plan a baseline refresh on rollout.
 
 ## Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities)
 Several EyesUtilities functions are integrated into ImageTester.
