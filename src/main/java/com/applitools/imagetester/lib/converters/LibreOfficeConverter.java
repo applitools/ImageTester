@@ -16,15 +16,22 @@ public class LibreOfficeConverter implements FormatConverter {
 
     private final LibreOfficeLocator locator;
     private final ProcessRunner runner;
+    private final XlsxWatermarkStamper watermarkStamper;
     private volatile Path userProfileDir;
 
     public LibreOfficeConverter() {
-        this(new LibreOfficeLocator(), ProcessRunner.forPlatform());
+        this(new LibreOfficeLocator(), ProcessRunner.forPlatform(), new XlsxWatermarkStamper());
     }
 
     LibreOfficeConverter(LibreOfficeLocator locator, ProcessRunner runner) {
+        this(locator, runner, new XlsxWatermarkStamper());
+    }
+
+    LibreOfficeConverter(LibreOfficeLocator locator, ProcessRunner runner,
+                         XlsxWatermarkStamper watermarkStamper) {
         this.locator = locator;
         this.runner = runner;
+        this.watermarkStamper = watermarkStamper;
     }
 
     @Override
@@ -67,6 +74,9 @@ public class LibreOfficeConverter implements FormatConverter {
         if (!produced.exists() || produced.length() == 0) {
             throw new SkippedFileException(file,
                     "soffice produced no output pdf for " + file.getName());
+        }
+        if (Patterns.SPREADSHEET.matcher(file.getName()).matches()) {
+            return watermarkStamper.stampIfPresent(file, produced, tempDir);
         }
         return produced;
     }
