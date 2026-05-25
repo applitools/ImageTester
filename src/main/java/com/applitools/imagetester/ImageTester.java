@@ -2,6 +2,7 @@ package com.applitools.imagetester;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
@@ -22,11 +23,13 @@ import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
 import com.applitools.imagetester.lib.EyesUtilitiesConfig;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.PdfVectorWatermarkAutoMode;
+import com.applitools.imagetester.lib.PdfWatermarkOutMode;
 import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.10.0";
+    private static final String cur_ver = "3.11.1";
     private static final String DEFAULT_THREADS = String.valueOf(Runtime.getRuntime().availableProcessors() * 2);
 
     public static void main(String[] args) {
@@ -70,6 +73,31 @@ public class ImageTester {
 
             if (cmd.hasOption("dv"))
                 Utils.disableCertValidation();
+
+            int watermarkValidation = validateWatermarkFlags(cmd, logger);
+            if (watermarkValidation != 0) return watermarkValidation;
+
+            if (cmd.hasOption("rwauto") && cmd.hasOption("rwo")) {
+                File inputRoot = new File(cmd.getOptionValue("f", "."));
+                File outDir = new File(cmd.getOptionValue("rwo"));
+                return PdfVectorWatermarkAutoMode.run(inputRoot, outDir, cmd.getOptionValue("rw"), logger);
+            }
+
+            if (cmd.hasOption("rwo")) {
+                File inputRoot = new File(cmd.getOptionValue("f", "."));
+                File outDir = new File(cmd.getOptionValue("rwo"));
+                return PdfWatermarkOutMode.run(inputRoot, cmd.getOptionValue("rw"), outDir, logger);
+            }
+
+            File rwAutoCleanedDir = null;
+            if (cmd.hasOption("rwauto")) {
+                File originalRoot = new File(cmd.getOptionValue("f", "."));
+                rwAutoCleanedDir = Files.createTempDirectory("imagetester-rwauto-").toFile();
+                Runtime.getRuntime().addShutdownHook(new Thread(deleteRecursively(rwAutoCleanedDir)));
+                int cleanResult = PdfVectorWatermarkAutoMode.run(
+                        originalRoot, rwAutoCleanedDir, cmd.getOptionValue("rw"), logger);
+                if (cleanResult != 0) return cleanResult;
+            }
 
             String batchMapperPath = cmd.getOptionValue("mp", null);
             if (batchMapperPath != null) {
@@ -128,6 +156,8 @@ public class ImageTester {
             config.dontCloseBatches = cmd.hasOption("dcb");
             config.shouldThrowException = cmd.hasOption("te");
             config.normalizeFont = cmd.hasOption("nf");
+            config.removeWatermarkText = cmd.getOptionValue("rw");
+            config.removeWatermarkOutDir = cmd.getOptionValue("rwo");
             config.regexFileNameFilter = cmd.getOptionValue("rf");
             config.setViewport(cmd.getOptionValue("vs", null));
             config.setMatchSize(cmd.getOptionValue("ms", null));
@@ -147,7 +177,7 @@ public class ImageTester {
 
             // Full page for ac regions capability
             if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
-                config.accessibilityRegularTextFullPage = cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null;
+                config.accessibilityRegularTextFullPage = true;
             }
             if (cmd.hasOption("arl") && config.accessibilityLargeTextRegions == null) {
                 config.accessibilityLargeTextFullPage = true;
@@ -159,7 +189,9 @@ public class ImageTester {
                 config.accessibilityGraphicsFullPage = true;
             }
 
-            File root = new File(cmd.getOptionValue("f", "."));
+            File root = rwAutoCleanedDir != null
+                    ? rwAutoCleanedDir
+                    : new File(cmd.getOptionValue("f", "."));
 
             int maxThreads = Integer.parseInt(cmd.getOptionValue("th", DEFAULT_THREADS));
             TestExecutor executor = new TestExecutor(maxThreads, factory, config);
@@ -180,6 +212,41 @@ public class ImageTester {
             logger.reportException(e);
             return 1;
         }
+    }
+
+    private static Runnable deleteRecursively(final File dir) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (dir == null || !dir.exists()) return;
+                deleteTree(dir);
+            }
+
+            private void deleteTree(File entry) {
+                if (entry.isDirectory()) {
+                    File[] children = entry.listFiles();
+                    if (children != null) {
+                        for (File child : children) deleteTree(child);
+                    }
+                }
+                if (!entry.delete()) entry.deleteOnExit();
+            }
+        };
+    }
+
+    private static int validateWatermarkFlags(CommandLine cmd, Logger logger) {
+        if (cmd.hasOption("rwo") && !cmd.hasOption("rw") && !cmd.hasOption("rwauto")) {
+            logger.printMessage("ERROR: -rwo requires -rw or -rwauto to be specified.");
+            return 1;
+        }
+        if (cmd.hasOption("rw")) {
+            String rw = cmd.getOptionValue("rw");
+            if (rw == null || rw.trim().isEmpty()) {
+                logger.printMessage("ERROR: -rw value cannot be blank.");
+                return 1;
+            }
+        }
+        return 0;
     }
 
     private static int computeExitCode(Config config, Logger logger) {
@@ -269,6 +336,8 @@ public class ImageTester {
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
                 currentConfiguration.normalizeFont = cmd.hasOption("nf");
+                currentConfiguration.removeWatermarkText = cmd.getOptionValue("rw");
+                currentConfiguration.removeWatermarkOutDir = cmd.getOptionValue("rwo");
                 currentConfiguration.regexFileNameFilter = cmd.getOptionValue("rf");
                 currentConfiguration.setViewport(StringUtils.isNoneBlank(currentBatch.viewport) ? currentBatch.viewport: null);
                 currentConfiguration.setMatchSize(StringUtils.isNoneBlank(currentBatch.matchsize)? currentBatch.matchsize : null);
@@ -296,7 +365,7 @@ public class ImageTester {
 
                 // Full page for ac regions capability
                 if (cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null) {
-                    currentConfiguration.accessibilityRegularTextFullPage = cmd.hasOption("arr") && currentConfiguration.accessibilityRegularTextRegions == null;
+                    currentConfiguration.accessibilityRegularTextFullPage = true;
                 }
                 if (cmd.hasOption("arl") && currentConfiguration.accessibilityLargeTextRegions == null) {
                     currentConfiguration.accessibilityLargeTextFullPage = true;
@@ -618,9 +687,9 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("rf")
             .longOpt("regexFilter")
-            .desc("Test files with name that matches regexFilter pattern.\nexample: `-rf 'Quarterly_Report_*'")
-            .hasArgs()
-            .optionalArg(false)
+            .desc("Test files with name that matches regexFilter pattern.\nexample: `-rf 'Quarterly_Report.*'`")
+            .hasArg()
+            .argName("regex")
             .build());
         options.addOption(Option.builder("pr")
             .longOpt("properties")
@@ -633,6 +702,32 @@ public class ImageTester {
             .hasArg(false)
             .build());
 
+        options.addOption(Option.builder("rw")
+            .longOpt("removeWatermark")
+            .desc("Remove text watermarks matching the given string from PDFs " +
+                  "before rendering (case-insensitive, exact match). Body text " +
+                  "matching the hint is also removed — pick a distinctive watermark word.")
+            .hasArg()
+            .argName("text")
+            .build());
+
+        options.addOption(Option.builder("rwo")
+            .longOpt("removeWatermarkOut")
+            .desc("Standalone mode: render watermark-cleaned PDFs to PNG files " +
+                  "in the given directory and exit. Requires -rw. No upload to Applitools.")
+            .hasArg()
+            .argName("dir")
+            .build());
+
+        options.addOption(Option.builder("rwauto")
+            .longOpt("removeWatermarkAuto")
+            .desc("Auto-detect a vector watermark template by intersecting path " +
+                  "shapes across all PDFs in the input directory, then strip the " +
+                  "template from each. Requires at least 2 input PDFs. With -rwo, " +
+                  "writes cleaned PDFs to that directory and exits. Without -rwo, " +
+                  "cleans to a temp directory and uploads cleaned PDFs to Applitools.")
+            .hasArg(false)
+            .build());
 
         EyesUtilitiesConfig.injectOptions(options);
         return options;

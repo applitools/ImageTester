@@ -43,6 +43,8 @@ public class Config {
     public Region[] contentRegions = null;
     public boolean shouldThrowException = false;
     public boolean normalizeFont = false;
+    public String removeWatermarkText = null;
+    public String removeWatermarkOutDir = null;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();
     public Region[] accessibilityIgnoreRegions = null;
     public Region[] accessibilityRegularTextRegions = null;
@@ -161,89 +163,55 @@ public class Config {
             .toArray(Region[]::new);
     }
 
-    public void setIgnoreRegions(String ignoreRegionsOption) {
-        if (ignoreRegionsOption != null) {
-            try {
-                this.ignoreRegions = generateRegionsArray(ignoreRegionsOption);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for ignore regions. " +
-                        "Please ensure that the ignore regions are in the format x,y,width,height|x,y,width,height...");
-            }
+    private Region[] parseRegions(String input, String label) {
+        if (input == null) return null;
+        try {
+            return generateRegionsArray(input);
+        } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+            logger.printMessage("Error parsing parameters for " + label + ". " +
+                    "Please ensure that the " + label + " are in the format x,y,width,height|x,y,width,height...");
+            return null;
         }
+    }
+
+    public void setIgnoreRegions(String ignoreRegionsOption) {
+        Region[] parsed = parseRegions(ignoreRegionsOption, "ignore regions");
+        if (parsed != null) this.ignoreRegions = parsed;
     }
 
     public void setContentRegions(String contentRegionsOption) {
-        if (contentRegionsOption != null) {
-            try{
-                this.contentRegions = generateRegionsArray(contentRegionsOption);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for content regions. " +
-                        "Please ensure that the content regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(contentRegionsOption, "content regions");
+        if (parsed != null) this.contentRegions = parsed;
     }
 
     public void setLayoutRegions(String layoutRegionsOption) {
-        if (layoutRegionsOption != null) {
-            try {
-                this.layoutRegions = generateRegionsArray(layoutRegionsOption);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for layout regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(layoutRegionsOption, "layout regions");
+        if (parsed != null) this.layoutRegions = parsed;
     }
 
     public void setAccessibilityIgnoreRegions(String accessibilityIgnoreRegions) {
-        if (accessibilityIgnoreRegions != null) {
-            try {
-                this.accessibilityIgnoreRegions = generateRegionsArray(accessibilityIgnoreRegions);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for accessibility ignore regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(accessibilityIgnoreRegions, "accessibility ignore regions");
+        if (parsed != null) this.accessibilityIgnoreRegions = parsed;
     }
+
     public void setAccessibilityRegularTextRegions(String accessibilityRegularTextRegions) {
-        if (accessibilityRegularTextRegions != null) {
-            try {
-                this.accessibilityRegularTextRegions = generateRegionsArray(accessibilityRegularTextRegions);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for accessibility regular text regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(accessibilityRegularTextRegions, "accessibility regular text regions");
+        if (parsed != null) this.accessibilityRegularTextRegions = parsed;
     }
 
     public void setAccessibilityLargeTextRegions(String accessibilityLargeTextRegions) {
-        if (accessibilityLargeTextRegions != null) {
-            try {
-                this.accessibilityLargeTextRegions = generateRegionsArray(accessibilityLargeTextRegions);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for accessibility large text regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(accessibilityLargeTextRegions, "accessibility large text regions");
+        if (parsed != null) this.accessibilityLargeTextRegions = parsed;
     }
+
     public void setAccessibilityBoldTextRegions(String accessibilityBoldTextRegions) {
-        if (accessibilityBoldTextRegions != null) {
-            try {
-                this.accessibilityBoldTextRegions = generateRegionsArray(accessibilityBoldTextRegions);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for accessibility bold text regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(accessibilityBoldTextRegions, "accessibility bold text regions");
+        if (parsed != null) this.accessibilityBoldTextRegions = parsed;
     }
+
     public void setAccessibilityGraphicsRegions(String accessibilityGraphicsRegions) {
-        if (accessibilityGraphicsRegions != null) {
-            try {
-                this.accessibilityGraphicsRegions = generateRegionsArray(accessibilityGraphicsRegions);
-            } catch (ArrayIndexOutOfBoundsException e) {
-                logger.printMessage("Error parsing parameters for accessibility graphics regions. " +
-                        "Please ensure that the layout regions are in the format x,y,width,height|x,y,width,height...");
-            }
-        }
+        Region[] parsed = parseRegions(accessibilityGraphicsRegions, "accessibility graphics regions");
+        if (parsed != null) this.accessibilityGraphicsRegions = parsed;
     }
 
     public void setProperties(String propArgument) {

@@ -121,6 +121,10 @@ public class EyesFactory {
         return this;
     }
 
+    public boolean hasAccessibilityValidation() {
+        return accSettings != null;
+    }
+
     public EyesFactory apiKey(String key) {
         this.apiKey = key;
         return this;
