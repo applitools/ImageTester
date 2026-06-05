@@ -67,15 +67,33 @@ public final class VaryingFormFinder {
 
     private static boolean looksLikeStamp(String formName, List<Map<String, FormUsage>> perDoc) {
         String contentHash = null;
-        Set<String> placements = new HashSet<>();
+        Set<String> referencePlacements = null;
+        boolean positionVariesAcrossDocs = false;
+
         for (Map<String, FormUsage> docMap : perDoc) {
             FormUsage usage = docMap.get(formName);
             if (usage == null) return false;
+
+            // Condition 1: identical drawn content across every doc
             if (contentHash == null) contentHash = usage.contentHash;
             else if (!contentHash.equals(usage.contentHash)) return false;
-            placements.addAll(usage.cmKeys);
+
+            // Condition 2: within each doc the form must appear at exactly one
+            // distinct cm position. Template elements (section dividers, content
+            // containers) are placed at many positions within a single document as
+            // the content flows, while a watermark stamp is anchored to a fixed
+            // page location and therefore appears at only one position per doc.
+            if (usage.cmKeys.size() != 1) return false;
+
+            // Condition 3: that single position must differ between at least two docs
+            if (referencePlacements == null) {
+                referencePlacements = usage.cmKeys;
+            } else if (!referencePlacements.equals(usage.cmKeys)) {
+                positionVariesAcrossDocs = true;
+            }
         }
-        return placements.size() > 1;
+
+        return positionVariesAcrossDocs;
     }
 
     private static Map<String, FormUsage> usageIn(File pdf) throws IOException {
@@ -97,9 +115,11 @@ public final class VaryingFormFinder {
                     FormUsage existing = result.get(entry.getKey());
                     if (existing == null) {
                         result.put(entry.getKey(), new FormUsage(hash, new HashSet<>(entry.getValue())));
-                    } else {
+                    } else if (existing.contentHash.equals(hash)) {
                         existing.cmKeys.addAll(entry.getValue());
                     }
+                    // else: same resource name on different pages maps to different content
+                    // (page-specific forms re-using a slot name); treat as not a stamp.
                 }
             }
         }

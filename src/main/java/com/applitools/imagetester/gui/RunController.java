@@ -1,5 +1,6 @@
 package com.applitools.imagetester.gui;
 
+import com.applitools.imagetester.ImageTester;
 import com.applitools.imagetester.Suite;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
@@ -36,11 +37,9 @@ public final class RunController {
         EyesFactory build(String apiKey, String matchLevel, Logger logger);
     }
 
-    private static final String CUR_VER = "3.10.0";
-
     private static final EyesFactoryBuilder PRODUCTION_BUILDER =
         (apiKey, matchLevel, logger) ->
-            new EyesFactory(CUR_VER, logger).apiKey(apiKey).matchLevel(matchLevel);
+            new EyesFactory(ImageTester.CUR_VER, logger).apiKey(apiKey).matchLevel(matchLevel);
 
     private final SecretsStore secrets_;
     private final RunStream runStream_;
@@ -110,7 +109,7 @@ public final class RunController {
         try {
             EyesFactory factory = factoryBuilder_.build(apiKey, matchLevelStr, config.logger);
             factory.logHandlerInstance(new EyesLogBridge(config.logger));
-            TestExecutor executor = new TestExecutor(2, factory, config);
+            TestExecutor executor = new TestExecutor(ImageTester.DEFAULT_THREAD_COUNT, factory, config);
             currentExecutor_.set(executor);
             executor.setTestStartedListener(name -> runStream_.emit(new SseEvent.TestStarted(name)));
             executor.setTestCompletionListener(result -> {

@@ -90,10 +90,11 @@ The tool build in java and requires minimal set of parameters the minimal comman
     + `-as` - Set automatic save on failures
     + `-st` - Split steps to individual tests
     + `-id` - Ignore displacement of shifting elements.
-    + `-pn` - Prompt new tests, new tests will not be saved automatically, the user will have to review and save manually.
+    + `-pt` - Prompt new tests, new tests will not be saved automatically, the user will have to review and save manually.
     + `-dv` - Disable SSL certificate validation. !!!Unsecured!!!
     + `-lo` - Use legacy files order complying with baselines that were created with versions below 2.0
-    + `-ac [Level:GuidelineVer]` - Set accessibility validation and optionally it's arguments split by semicolons ':' default: "AA:WCAG_2_0", available options: [AA|AAA:WCAG_2_0|WCAG_2_1]
+    + `-ac [Level:GuidelineVer]` - Set accessibilit
+    + y validation and optionally it's arguments split by semicolons ':' default: "AA:WCAG_2_0", available options: [AA|AAA:WCAG_2_0|WCAG_2_1]
     + `-dcb` - ImageTester will not automatically close batch(es) when test is complete.
     + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
     + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>

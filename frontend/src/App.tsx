@@ -3,6 +3,7 @@ import { SetupCard } from "./components/SetupCard";
 import { StatusPane } from "./components/StatusPane";
 import { api } from "./lib/api";
 import { connectSse } from "./lib/sse";
+import { getVersion } from "./lib/version";
 import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow } from "./types";
 
 const LAST_SOURCE_PATH_KEY = "imagetester.lastSourcePath";
@@ -63,7 +64,7 @@ export function App() {
       <header className="mb-6 flex items-center gap-2">
         <span className="inline-block h-7 w-7 rounded-lg bg-gradient-to-br from-brand-teal to-brand-tealDark"></span>
         <span className="font-semibold text-brand-navy">ImageTester</span>
-        <span className="text-xs text-gray-500">v3.10</span>
+        {getVersion() && <span className="text-xs text-gray-500">v{getVersion()}</span>}
       </header>
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <SetupCard

@@ -1,5 +1,7 @@
 package com.applitools.imagetester.gui;
 
+import com.applitools.imagetester.ImageTester;
+
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +25,8 @@ public final class IndexHtmlServlet extends HttpServlet {
         resp.setContentType("text/html; charset=utf-8");
         resp.setHeader("Cache-Control", "no-store");
         String html = new String(cachedHtml_, StandardCharsets.UTF_8)
-            .replace("__GUI_TOKEN__", token_.value());
+            .replace("__GUI_TOKEN__", token_.value())
+            .replace("__GUI_VERSION__", ImageTester.CUR_VER);
         resp.getWriter().write(html);
     }
 

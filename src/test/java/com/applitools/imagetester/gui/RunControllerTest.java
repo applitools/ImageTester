@@ -98,12 +98,21 @@ public class RunControllerTest {
 
         Object r1 = f1.get(5, TimeUnit.SECONDS);
         Object r2 = f2.get(5, TimeUnit.SECONDS);
-        // Exactly one should be a StartResult, the other a RunInProgressException.
-        // Edge case: if the first run completed before the second call, both may succeed — that is acceptable.
-        boolean oneOk = (r1 instanceof RunController.StartResult) ^ (r2 instanceof RunController.StartResult);
-        boolean oneRejected = (r1 instanceof RunController.RunInProgressException) ^ (r2 instanceof RunController.RunInProgressException);
-        assertTrue("Expected exactly one success and one rejection (or two successes in fast-completion edge case)",
-            oneOk == oneRejected);
+
+        // Both results must be one of the two expected types — nothing else is allowed.
+        assertTrue("r1 unexpected: " + r1,
+            r1 instanceof RunController.StartResult || r1 instanceof RunController.RunInProgressException);
+        assertTrue("r2 unexpected: " + r2,
+            r2 instanceof RunController.StartResult || r2 instanceof RunController.RunInProgressException);
+
+        boolean r1Ok = r1 instanceof RunController.StartResult;
+        boolean r2Ok = r2 instanceof RunController.StartResult;
+
+        // At least one call must have started a run — both being rejected would mean nothing ran at all.
+        assertTrue("Both calls were rejected; expected at least one StartResult", r1Ok || r2Ok);
+
+        // Valid outcomes: (Ok, Rejected), (Rejected, Ok), or (Ok, Ok) for the fast-completion edge case
+        // where the first run finished before the second call arrived. (Ok, Ok) is allowed but rare.
         es.shutdownNow();
     }
 

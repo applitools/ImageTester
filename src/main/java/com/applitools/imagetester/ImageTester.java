@@ -29,8 +29,9 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.11.1";
-    private static final String DEFAULT_THREADS = String.valueOf(Runtime.getRuntime().availableProcessors() * 2);
+    public static final String CUR_VER = "3.11.1";
+    public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
+    private static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
     public static void main(String[] args) {
         System.exit(run(args));
@@ -64,7 +65,7 @@ public class ImageTester {
         try {
             CommandLine cmd = parser.parse(options, args);
             logger.setDebug(cmd.hasOption("debug"));
-            logger.printVersion(cur_ver);
+            logger.printVersion(CUR_VER);
 
             if (cmd.getOptions().length == 0) {
                 logger.printHelp(options);
@@ -122,7 +123,7 @@ public class ImageTester {
             accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
             EyesFactory factory
-                    = new EyesFactory(cur_ver, logger)
+                    = new EyesFactory(CUR_VER, logger)
                     .apiKey(config.apiKey)
                     .serverUrl(config.serverUrl)
                     .proxySettings(config.proxy_settings)
@@ -307,7 +308,7 @@ public class ImageTester {
                 accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
                 EyesFactory factory
-                        = new EyesFactory(cur_ver, logger)
+                        = new EyesFactory(CUR_VER, logger)
                         .apiKey(currentConfiguration.apiKey)
                         .serverUrl(currentConfiguration.serverUrl)
                         .proxySettings(currentConfiguration.proxy_settings)

@@ -26,24 +26,20 @@ public class VectorWatermarkRemoverTest {
         File source = tempFolder.newFile("src.pdf");
         writeBodyAndStamp(source);
 
-        // First learn the stamp's fingerprint by intersecting two PDFs that share it
         File second = tempFolder.newFile("src2.pdf");
         writeDifferentBodyAndStamp(second);
         Set<String> fingerprint = PathFingerprinter.intersection(Arrays.asList(source, second));
         assertEquals("Fingerprint should hold the stamp shape", 1, fingerprint.size());
 
-        // Apply removal to a fresh PDDocument loaded from source
         try (PDDocument doc = PDDocument.load(source)) {
             VectorWatermarkRemover.removeFromAllPages(doc, fingerprint);
 
-            // After removal, the page's path-hash list should not include the fingerprint
             PDFStreamParser parser = new PDFStreamParser(doc.getPage(0));
             parser.parse();
             java.util.List<String> remainingHashes = PathFingerprint.hashesFor(parser.getTokens());
             for (String h : remainingHashes) {
                 assertFalse("Fingerprinted path should be stripped", fingerprint.contains(h));
             }
-            // The body line should still be there (1 path remains)
             assertEquals(1, remainingHashes.size());
         }
     }
@@ -53,10 +49,8 @@ public class VectorWatermarkRemoverTest {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                cs.moveTo(72f, 720f);
-                cs.lineTo(540f, 720f);
-                cs.stroke();
-                drawStamp(cs, 100f, 400f);
+                drawUniquePolyline(cs, 72f, 720f, 540f, 720f);
+                drawPolygonStamp(cs, 100f, 400f);
             }
             doc.save(file);
         }
@@ -67,19 +61,38 @@ public class VectorWatermarkRemoverTest {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                cs.moveTo(72f, 600f);
-                cs.lineTo(380f, 605f);
-                cs.stroke();
-                drawStamp(cs, 250f, 300f);
+                drawUniquePolyline(cs, 72f, 600f, 380f, 605f);
+                drawPolygonStamp(cs, 250f, 300f);
             }
             doc.save(file);
         }
     }
 
-    private void drawStamp(PDPageContentStream cs, float originX, float originY) throws IOException {
-        cs.moveTo(originX, originY);
-        cs.lineTo(originX + 50f, originY + 80f);
-        cs.lineTo(originX + 100f, originY);
+    /** 101-op zigzag polyline whose normalized shape depends on dx/dy between endpoints. */
+    private void drawUniquePolyline(PDPageContentStream cs,
+                                    float x1, float y1, float x2, float y2) throws IOException {
+        int steps = 100;
+        cs.moveTo(x1, y1);
+        for (int i = 1; i < steps; i++) {
+            float t = (float) i / steps;
+            float x = x1 + (x2 - x1) * t + (i % 2 == 0 ? 5f : -5f);
+            float y = y1 + (y2 - y1) * t + (i % 3 == 0 ? 3f : -3f);
+            cs.lineTo(x, y);
+        }
+        cs.stroke();
+    }
+
+    /** 101-op 100-gon whose normalized shape is position-invariant. */
+    private void drawPolygonStamp(PDPageContentStream cs, float cx, float cy) throws IOException {
+        int sides = 100;
+        float r = 30f;
+        for (int i = 0; i < sides; i++) {
+            double angle = 2 * Math.PI * i / sides;
+            float x = cx + (float) (r * Math.cos(angle));
+            float y = cy + (float) (r * Math.sin(angle));
+            if (i == 0) cs.moveTo(x, y);
+            else cs.lineTo(x, y);
+        }
         cs.closeAndStroke();
     }
 }
