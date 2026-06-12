@@ -705,11 +705,12 @@ public class ImageTester {
 
         options.addOption(Option.builder("rwauto")
             .longOpt("removeWatermarkAuto")
-            .desc("Auto-detect a vector watermark template by intersecting path " +
-                  "shapes across all PDFs in the input directory, then strip the " +
-                  "template from each. Requires at least 2 input PDFs. With -rwo, " +
-                  "writes cleaned PDFs to that directory and exits. Without -rwo, " +
-                  "cleans to a temp directory and uploads cleaned PDFs to Applitools.")
+            .desc("Auto-detect a vector watermark shared across all PDFs in the input " +
+                  "directory by its fill color, then strip only paths in that color " +
+                  "from each PDF, leaving all other content intact. Requires at least " +
+                  "2 input PDFs from the same source. With -rwo, writes cleaned PDFs to " +
+                  "that directory and exits. Without -rwo, cleans to a temp directory " +
+                  "and uploads cleaned PDFs to Applitools.")
             .hasArg(false)
             .build());
 

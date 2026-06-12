@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -27,6 +26,9 @@ import org.apache.pdfbox.pdmodel.PDPage;
  * Output preserves the input's directory structure under outDir.
  */
 public final class PdfVectorWatermarkAutoMode {
+
+    /** Per-channel RGB tolerance when matching a path's fill color to the detected watermark color. */
+    private static final float WATERMARK_COLOR_TOLERANCE = 0.05f;
 
     static final String SINGLE_PDF_NOTICE =
         "\nHeads up: you're testing one PDF on its own." +
@@ -80,22 +82,24 @@ public final class PdfVectorWatermarkAutoMode {
             List<File> pdfs = entry.getValue();
             String groupLabel = groupLabel(inputRoot, groupDir);
 
-            Set<String> pathFingerprint;
-            Set<String> varyingOpSeqs;
-            Set<String> varyingForms;
+            float[] watermarkColor;
             try {
-                pathFingerprint = PathFingerprinter.intersection(pdfs);
-                varyingOpSeqs = OpSequenceVarianceFinder.findVarying(pdfs);
-                varyingForms = VaryingFormFinder.findVarying(pdfs);
+                watermarkColor = WatermarkColorDetector.detect(pdfs);
             } catch (IOException e) {
                 logger.printMessage(String.format(
-                        "Failed to compute watermark fingerprint for %s: %s",
-                        groupLabel, e.getMessage()));
+                        "Failed to detect watermark for %s: %s", groupLabel, e.getMessage()));
                 continue;
             }
-            logger.printMessage(String.format(
-                    "[%s] Watermark fingerprint: %d shared shape(s), %d varying op-seq(s), %d varying form(s) across %d PDF(s)",
-                    groupLabel, pathFingerprint.size(), varyingOpSeqs.size(), varyingForms.size(), pdfs.size()));
+            if (watermarkColor == null) {
+                logger.printMessage(String.format(
+                        "[%s] No vector watermark detected across %d PDF(s); copying unchanged",
+                        groupLabel, pdfs.size()));
+            } else {
+                logger.printMessage(String.format(
+                        "[%s] Watermark color rgb(%d, %d, %d) detected across %d PDF(s)",
+                        groupLabel, to255(watermarkColor[0]), to255(watermarkColor[1]),
+                        to255(watermarkColor[2]), pdfs.size()));
+            }
 
             for (File pdf : pdfs) {
                 File output = resolveOutput(inputRoot, outDir, pdf);
@@ -104,7 +108,7 @@ public final class PdfVectorWatermarkAutoMode {
                     continue;
                 }
                 try {
-                    cleanOnePdf(pdf, pathFingerprint, varyingOpSeqs, varyingForms, optionalTextHint, output);
+                    cleanOnePdf(pdf, watermarkColor, optionalTextHint, output);
                     processed++;
                 } catch (IOException e) {
                     logger.printMessage("Failed to clean " + pdf.getAbsolutePath() + ": " + e.getMessage());
@@ -116,8 +120,7 @@ public final class PdfVectorWatermarkAutoMode {
         return 0;
     }
 
-    private static void cleanOnePdf(File input, Set<String> pathFingerprint, Set<String> varyingOpSeqs,
-                                     Set<String> varyingForms, String optionalTextHint, File output)
+    private static void cleanOnePdf(File input, float[] watermarkColor, String optionalTextHint, File output)
             throws IOException {
         boolean hasTextHint = optionalTextHint != null && !optionalTextHint.trim().isEmpty();
         try (PDDocument source = PDDocument.load(input);
@@ -129,10 +132,13 @@ public final class PdfVectorWatermarkAutoMode {
                 }
                 cleaned.addPage(page);
             }
-            VectorWatermarkRemover.removeFromAllPages(cleaned, pathFingerprint, varyingOpSeqs);
-            FormXObjectStripper.emptyForms(cleaned, varyingForms);
+            ColorPathStripper.removeFromAllPages(cleaned, watermarkColor, WATERMARK_COLOR_TOLERANCE);
             cleaned.save(output);
         }
+    }
+
+    private static int to255(float component) {
+        return Math.round(component * 255f);
     }
 
     private static Map<File, List<File>> groupPdfsByDirectory(File root) {

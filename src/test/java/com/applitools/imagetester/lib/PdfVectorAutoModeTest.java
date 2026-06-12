@@ -82,15 +82,18 @@ public class PdfVectorAutoModeTest {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                // Unique body line
+                // Unique body line (stroked, distinct per doc) — must survive
                 cs.moveTo(bx, by);
                 cs.lineTo(bx2, by2);
                 cs.stroke();
-                // Shared stamp shape
+                // Shared watermark stamp: a complex gray-filled outline — must be removed
+                cs.setNonStrokingColor(new java.awt.Color(0.7f, 0.7f, 0.7f));
                 cs.moveTo(sx, sy);
-                cs.lineTo(sx + 50f, sy + 80f);
-                cs.lineTo(sx + 100f, sy);
-                cs.closeAndStroke();
+                for (int i = 0; i < 10; i++) {
+                    cs.lineTo(sx + i * 6f, sy + (i % 2 == 0 ? 30f : 0f));
+                }
+                cs.closePath();
+                cs.fill();
             }
             doc.save(file);
         }
