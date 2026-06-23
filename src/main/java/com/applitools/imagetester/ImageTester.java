@@ -697,8 +697,8 @@ public class ImageTester {
 
         options.addOption(Option.builder("rwo")
             .longOpt("removeWatermarkOut")
-            .desc("Standalone mode: render watermark-cleaned PDFs to PNG files " +
-                  "in the given directory and exit. Requires -rw. No upload to Applitools.")
+            .desc("Standalone mode: write watermark-cleaned PDFs to the given " +
+                  "directory and exit. Combine with -rw or -rwauto. No upload to Applitools.")
             .hasArg()
             .argName("dir")
             .build());

@@ -182,9 +182,8 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 + `-pp [password]` - The password if the PDF files protected
 + `-pn` - Preserve original directory test names when specifying pages
 + `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization) below.
-+ `-rw [text]` - Remove text watermarks matching the given string from PDFs before rendering (case-insensitive, exact match after trim). See [Watermark Removal](#watermark-removal) below.
-+ `-rwauto` - Auto-detect a vector watermark across PDFs. ImageTester groups PDFs by their containing directory and fingerprints each group separately, so a parent folder with one subfolder per environment (e.g. `pre/`, `uat/`) cleans correctly in one run. Each group needs at least 2 PDFs. See [Watermark Removal](#watermark-removal).
-+ `-rwo [dir]` - Standalone output mode. Write cleaned PDFs to the given directory and exit without uploading to Applitools. Combine with `-rw` or `-rwauto`.
++ `-rwauto` - Auto-detect and remove a watermark (a stamped outline like a diagonal "UAT - Proof"). ImageTester groups PDFs by their containing folder, detects the watermark's fill color shared across each group, then strips only the paths drawn in that color — all other content is left intact. Each group needs at least 2 PDFs **from the same source** (all carrying the same watermark); a parent folder with one subfolder per environment (e.g. `pre/`, `uat/`) is cleaned correctly in one run. See [Watermark Removal](#watermark-removal).
++ `-rwo [dir]` - Standalone output mode. Write cleaned PDFs to the given directory and exit without uploading to Applitools. Combine with `-rwauto`.
 
 ### Font Normalization
 Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
@@ -217,28 +216,49 @@ captured without normalization. Plan for a baseline refresh when rolling this ou
 
 ### Watermark Removal
 
-Strips pre-production watermarks ("DRAFT", "PRE-Proof", etc.) from PDFs in memory before uploading
-to Eyes. Original PDFs on disk are never modified.
+Pre-production watermarks ("DRAFT", "PRE-Proof", etc.) make every page diff against a
+clean baseline. The `-rwauto` flag strips them from PDFs in memory before uploading to Eyes.
+**The original PDFs on disk are never modified.**
 
-**Run it:**
+ImageTester groups your PDFs by their containing folder, detects the watermark's fill color shared
+across each group, then removes only the paths drawn in that color — everything else is untouched.
+It works whether the watermark is stamped identically in every PDF or restamped at a different
+position in each one.
+
+Requirements:
+- **At least 2 PDFs per folder, all from the same source** (same template, all carrying the same
+  watermark). Detection works by comparing the PDFs against each other, so a folder must not mix
+  unrelated documents or include a PDF that has no watermark.
+- Subfolders per environment (`pre/`, `uat/`, `staging/`)? Point at the parent — each subfolder is
+  detected and cleaned independently.
 
 ```
 java -jar ImageTester.jar -k YOUR_API_KEY -f pdfs/ -rwauto -a YourApp -fb YourBatch
 ```
 
-If your PDFs are organized into subfolders by environment (`pre/`, `uat/`, `staging/`), point at the
-parent — each subfolder is handled independently.
+On success ImageTester logs the color it found, e.g.
+`[uat] Watermark color rgb(179, 179, 179) detected across 4 PDF(s)`.
 
-**Preview locally before uploading:**
+#### Preview locally before uploading
+
+Add `-rwo <dir>` to write the cleaned **PDFs** to a folder and exit without contacting
+Eyes:
 
 ```
 java -jar ImageTester.jar -f pdfs/ -rwauto -rwo cleaned/
 ```
 
-Open the cleaned PDFs to verify, then re-run without `-rwo` to upload.
+Open the cleaned PDFs to confirm the watermark is gone and nothing else changed, then re-run without
+`-rwo` to upload.
 
-**Single PDF, or watermark still visible after running** — ImageTester prints a notice with next
-steps. If unclear, contact Applitools support (support@applitools.com) with a sample PDF.
+#### Troubleshooting
+
+- **"you're testing one PDF on its own" / nothing removed (`-rwauto`)** — auto mode needs at least 2
+  same-source PDFs in the folder. Add another report/invoice/email from the same system and re-run.
+- **Watermark still visible after `-rwauto`** — the folder probably mixes documents from different
+  sources, or includes a PDF that has no watermark. Make sure each folder holds only same-source PDFs
+  that all carry the watermark. If it still doesn't work, contact Applitools support
+  (support@applitools.com) with a sample PDF.
 
 **Note:** cleaning changes what Eyes sees, so it invalidates baselines captured before cleaning was
 enabled. Plan a baseline refresh on rollout.
