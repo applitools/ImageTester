@@ -20,11 +20,19 @@ import org.apache.pdfbox.pdmodel.PDDocument;
  * Auto-detects the fill color of a vector watermark across a cohort of PDFs.
  *
  * A watermark is a dense outline (its glyphs flattened to hundreds of path
- * segments) stamped identically into every document. This finds the filled
- * paths whose shape is shared by all documents, then returns the fill color of
- * the single most complex one. Branded chrome — header bars, buttons, even
- * banners — is comparatively simple geometry, so it loses to the watermark's
- * outline; ties are broken by how often the shape repeats.
+ * segments) stamped into every document. This finds the filled paths that look
+ * like that stamp, then returns the fill color of the single most complex one.
+ * Branded chrome — header bars, buttons, even banners — is comparatively simple
+ * geometry, so it loses to the watermark's outline; ties are broken by how often
+ * the shape repeats.
+ *
+ * A path is treated as watermark-like if it either has a shape that is
+ * byte-identical across every document ({@link PathFingerprinter}) OR has an
+ * operator sequence shared by every document but whose coordinates vary per
+ * document ({@link OpSequenceVarianceFinder}). The latter is the common case:
+ * the same glyph outline restamped at a different position/transform in each
+ * document, so no two coordinate hashes match even though the stamp is identical
+ * to the eye.
  */
 public final class WatermarkColorDetector {
 
@@ -44,27 +52,30 @@ public final class WatermarkColorDetector {
 
     public static float[] detect(List<File> pdfs) throws IOException {
         if (pdfs == null || pdfs.size() < 2) return null;
-        Set<String> shared = PathFingerprinter.intersection(pdfs);
-        if (shared.isEmpty()) return null;
+        Set<String> sharedShapes = PathFingerprinter.intersection(pdfs);
+        Set<String> varyingOpSeqs = OpSequenceVarianceFinder.findVarying(pdfs);
+        if (sharedShapes.isEmpty() && varyingOpSeqs.isEmpty()) return null;
 
         Map<String, ShapeTally> tally = new HashMap<>();
         for (File pdf : pdfs) {
-            tallyDoc(pdf, shared, tally);
+            tallyDoc(pdf, sharedShapes, varyingOpSeqs, tally);
         }
         return mostComplexShapeColor(tally);
     }
 
-    private static void tallyDoc(File pdf, Set<String> shared, Map<String, ShapeTally> tally) throws IOException {
+    private static void tallyDoc(File pdf, Set<String> sharedShapes, Set<String> varyingOpSeqs,
+            Map<String, ShapeTally> tally) throws IOException {
         try (PDDocument doc = PDDocument.load(pdf)) {
             for (int p = 0; p < doc.getNumberOfPages(); p++) {
                 PDFStreamParser parser = new PDFStreamParser(doc.getPage(p));
                 parser.parse();
-                tallyTokens(parser.getTokens(), shared, tally);
+                tallyTokens(parser.getTokens(), sharedShapes, varyingOpSeqs, tally);
             }
         }
     }
 
-    private static void tallyTokens(List<Object> tokens, Set<String> shared, Map<String, ShapeTally> tally) {
+    private static void tallyTokens(List<Object> tokens, Set<String> sharedShapes, Set<String> varyingOpSeqs,
+            Map<String, ShapeTally> tally) {
         List<Object> argBuffer = new ArrayList<>();
         List<Object> currentPath = new ArrayList<>();
         boolean inPath = false;
@@ -86,7 +97,7 @@ public final class WatermarkColorDetector {
                 currentPath.addAll(argBuffer);
                 currentPath.add(t);
                 argBuffer.clear();
-                if (FILL_PAINT_OPS.contains(op)) record(currentPath, fill, shared, tally);
+                if (FILL_PAINT_OPS.contains(op)) record(currentPath, fill, sharedShapes, varyingOpSeqs, tally);
                 currentPath.clear();
                 inPath = false;
             } else {
@@ -106,12 +117,16 @@ public final class WatermarkColorDetector {
         }
     }
 
-    private static void record(List<Object> path, float[] fill, Set<String> shared, Map<String, ShapeTally> tally) {
+    private static void record(List<Object> path, float[] fill, Set<String> sharedShapes,
+            Set<String> varyingOpSeqs, Map<String, ShapeTally> tally) {
         List<PathFingerprint.PathHashes> hashes = PathFingerprint.pathHashesFor(path);
         if (hashes.isEmpty()) return;
         PathFingerprint.PathHashes ph = hashes.get(0);
-        if (ph.opCount < MIN_COMPLEXITY || !shared.contains(ph.coordHash)) return;
-        ShapeTally entry = tally.computeIfAbsent(ph.coordHash, k -> new ShapeTally(colorKey(fill)));
+        if (ph.opCount < MIN_COMPLEXITY) return;
+        if (!sharedShapes.contains(ph.coordHash) && !varyingOpSeqs.contains(ph.opSeqHash)) return;
+        // Key by op-sequence: a watermark restamped per document has a different
+        // coordHash in each one, but a single stable opSeqHash to tally against.
+        ShapeTally entry = tally.computeIfAbsent(ph.opSeqHash, k -> new ShapeTally(colorKey(fill)));
         entry.occurrences++;
         entry.opCount = ph.opCount;
     }

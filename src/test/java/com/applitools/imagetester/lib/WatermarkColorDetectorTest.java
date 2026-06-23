@@ -96,11 +96,16 @@ public class WatermarkColorDetectorTest {
     }
 
     @Test
-    public void returns_null_when_documents_share_no_shape() throws IOException {
+    public void detects_watermark_stamped_with_per_document_coordinate_variation() throws IOException {
         File a = writeVariantStamp("a.pdf", 0);
         File b = writeVariantStamp("b.pdf", 1);
 
-        assertNull(WatermarkColorDetector.detect(Arrays.asList(a, b)));
+        float[] color = WatermarkColorDetector.detect(Arrays.asList(a, b));
+
+        assertNotNull("a watermark restamped with varying geometry must still be detected", color);
+        assertEquals(0.7f, color[0], 0.06f);
+        assertEquals(0.7f, color[1], 0.06f);
+        assertEquals(0.7f, color[2], 0.06f);
     }
 
     @Test
