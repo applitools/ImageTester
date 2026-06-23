@@ -29,7 +29,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    private static final String cur_ver = "3.11.2";
+    private static final String cur_ver = "3.11.3";
     private static final String DEFAULT_THREADS = String.valueOf(Runtime.getRuntime().availableProcessors() * 2);
 
     public static void main(String[] args) {
