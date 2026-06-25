@@ -54,6 +54,10 @@ public class Logger {
         out_.print(String.format("[%s/%s] \n", curr, total));
     }
 
+    public void printHeartbeat(String name, long elapsedSeconds) {
+        emit(String.format("Still running... %s - %ds elapsed \n", name, elapsedSeconds));
+    }
+
     private String prefix() {
         if (!debug_) return "";
         Date date = new Date(System.currentTimeMillis());
