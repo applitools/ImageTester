@@ -26,7 +26,7 @@ public class TestExecutor {
 
     private static final long HEARTBEAT_GRACE_NANOS = TimeUnit.SECONDS.toNanos(30);
     private static final long HEARTBEAT_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(30);
-    private LongSupplier nanoTimeSource_ = System::nanoTime;
+    private volatile LongSupplier nanoTimeSource_ = System::nanoTime;
 
     private static final class Pending {
         final String name;
