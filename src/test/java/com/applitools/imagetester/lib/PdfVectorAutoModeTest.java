@@ -27,17 +27,11 @@ public class PdfVectorAutoModeTest {
         File inputDir = tempFolder.newFolder("input");
         File outputDir = tempFolder.newFolder("output");
 
-        // Doc A and Doc B have bodies with DIFFERENT op-counts (100 vs 107 line segments)
-        // so their op-sequences differ and OpSequenceVarianceFinder doesn't conflate them.
-        // The shared stamp uses a fixed op pattern present in both docs, identical
-        // normalized shape, so PathFingerprinter catches it as the watermark.
         File a = new File(inputDir, "a.pdf");
-        writeBodyAndStamp(a, /*bx*/ 100f, /*by*/ 700f, /*bx2*/ 250f, /*by2*/ 705f,
-                /*sx*/ 80f, /*sy*/ 400f, /*bodySteps*/ 100);
+        writeBodyAndStamp(a, /*bx*/ 100f, /*by*/ 700f, /*bx2*/ 250f, /*by2*/ 705f, /*sx*/ 80f, /*sy*/ 400f);
 
         File b = new File(inputDir, "b.pdf");
-        writeBodyAndStamp(b, /*bx*/ 60f, /*by*/ 600f, /*bx2*/ 300f, /*by2*/ 660f,
-                /*sx*/ 200f, /*sy*/ 350f, /*bodySteps*/ 107);
+        writeBodyAndStamp(b, /*bx*/ 60f, /*by*/ 600f, /*bx2*/ 300f, /*by2*/ 660f, /*sx*/ 200f, /*sy*/ 350f);
 
         int exit = ImageTester.run(new String[] {
                 "-rwauto",
@@ -72,7 +66,7 @@ public class PdfVectorAutoModeTest {
         File inputDir = tempFolder.newFolder("input");
         File outputDir = tempFolder.newFolder("output");
         File only = new File(inputDir, "only.pdf");
-        writeBodyAndStamp(only, 100f, 700f, 200f, 700f, 80f, 400f, 100);
+        writeBodyAndStamp(only, 100f, 700f, 200f, 700f, 80f, 400f);
 
         int exit = ImageTester.run(new String[] {
                 "-rwauto",
@@ -83,47 +77,26 @@ public class PdfVectorAutoModeTest {
     }
 
     private void writeBodyAndStamp(File file, float bx, float by, float bx2, float by2,
-                                    float sx, float sy, int bodySteps) throws IOException {
+                                    float sx, float sy) throws IOException {
         try (PDDocument doc = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                drawUniqueBody(cs, bx, by, bx2, by2, bodySteps);
-                drawSharedStamp(cs, sx, sy);
+                // Unique body line (stroked, distinct per doc) — must survive
+                cs.moveTo(bx, by);
+                cs.lineTo(bx2, by2);
+                cs.stroke();
+                // Shared watermark stamp: a complex gray-filled outline — must be removed
+                cs.setNonStrokingColor(new java.awt.Color(0.7f, 0.7f, 0.7f));
+                cs.moveTo(sx, sy);
+                for (int i = 0; i < 10; i++) {
+                    cs.lineTo(sx + i * 6f, sy + (i % 2 == 0 ? 30f : 0f));
+                }
+                cs.closePath();
+                cs.fill();
             }
             doc.save(file);
         }
-    }
-
-    /** Zigzag polyline with {@code steps} segments. Different {@code steps} per doc
-     *  yields a different operator sequence (and thus different op-seq hash), keeping
-     *  bodies out of both the PathFingerprinter intersection and the
-     *  OpSequenceVarianceFinder varying set. */
-    private void drawUniqueBody(PDPageContentStream cs, float x1, float y1, float x2, float y2,
-                                 int steps) throws IOException {
-        cs.moveTo(x1, y1);
-        for (int i = 1; i < steps; i++) {
-            float t = (float) i / steps;
-            float x = x1 + (x2 - x1) * t + (i % 2 == 0 ? 5f : -5f);
-            float y = y1 + (y2 - y1) * t + (i % 3 == 0 ? 3f : -3f);
-            cs.lineTo(x, y);
-        }
-        cs.stroke();
-    }
-
-    /** 101-op 100-gon stamp — position-invariant normalized shape, so it appears
-     *  identically in every input PDF's fingerprint regardless of (sx, sy). */
-    private void drawSharedStamp(PDPageContentStream cs, float cx, float cy) throws IOException {
-        int sides = 100;
-        float r = 30f;
-        for (int i = 0; i < sides; i++) {
-            double a = 2 * Math.PI * i / sides;
-            float x = cx + (float) (r * Math.cos(a));
-            float y = cy + (float) (r * Math.sin(a));
-            if (i == 0) cs.moveTo(x, y);
-            else cs.lineTo(x, y);
-        }
-        cs.closeAndStroke();
     }
 
     private int pathHashCount(File pdf) throws IOException {

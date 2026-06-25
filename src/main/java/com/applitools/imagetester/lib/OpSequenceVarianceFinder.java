@@ -25,17 +25,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
  */
 public final class OpSequenceVarianceFinder {
 
-    /**
-     * Minimum operator count for a path to qualify as a watermark candidate.
-     * Mirrors the floor in {@link PathFingerprinter}: text-as-bezier-outline
-     * watermarks produce 100+ op paths, while common shape primitives (small
-     * filled curves, bullet markers, checkmarks) that incidentally appear in
-     * every template at slightly different positions stay well under that.
-     *
-     * Without this floor, cross-template batches falsely flag short shared
-     * shapes as "varying op-seq" watermarks and strip legitimate UI elements.
-     */
-    private static final int MIN_OPS_FOR_WATERMARK_CANDIDATE = 100;
+    /** Minimum operator count for a path to be considered a watermark candidate.
+     *  Excludes simple lines, rectangles, and small triangles whose op-seqs naturally
+     *  collide with legitimate body content that happens to share their structure. */
+    private static final int MIN_OPS_FOR_WATERMARK_CANDIDATE = 6;
 
     private OpSequenceVarianceFinder() {
     }
