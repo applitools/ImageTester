@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 
 public class TestExecutor {
     private static final long SHUTDOWN_TIMEOUT_MINUTES = 5;
@@ -21,7 +22,19 @@ public class TestExecutor {
     private ThreadLocal<Eyes> thEyes_;
     // ConcurrentLinkedQueue: enqueue() runs on the suite thread, cancel() runs on the HTTP thread,
     // join() runs on the run thread. Lock-free FIFO keeps add/poll/iterate safe across all three.
-    private final Queue<Future<ExecutorResult>> results_ = new ConcurrentLinkedQueue<>();
+    private final Queue<Pending> results_ = new ConcurrentLinkedQueue<>();
+
+    private static final long HEARTBEAT_GRACE_NANOS = TimeUnit.SECONDS.toNanos(30);
+    private static final long HEARTBEAT_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(30);
+    private LongSupplier nanoTimeSource_ = System::nanoTime;
+
+    private static final class Pending {
+        final String name;
+        final Future<ExecutorResult> future;
+        Pending(String name, Future<ExecutorResult> future) { this.name = name; this.future = future; }
+    }
+
+    void setNanoTimeSource(LongSupplier source) { this.nanoTimeSource_ = source; }
     private final boolean hasAccessibilityValidation_;
     private volatile Consumer<ExecutorResult> completionListener_ = null;
     private volatile Consumer<String> startedListener_ = null;
@@ -54,7 +67,7 @@ public class TestExecutor {
         startedListener_ = null;
         completionListener_ = null;
         // mayInterruptIfRunning=false: only pending tasks are cancelled; running ones complete.
-        for (Future<ExecutorResult> f : results_) f.cancel(false);
+        for (Pending p : results_) p.future.cancel(false);
         executorService_.shutdown();
     }
 
@@ -62,9 +75,10 @@ public class TestExecutor {
 
     public void enqueue(TestBase test, BatchInfo overrideBatch) {
         if (cancelled_) return;
+        final String name = test.name();
         Consumer<String> sl = startedListener_;
         if (sl != null) {
-            try { sl.accept(test.name()); } catch (Throwable ignored) { /* never let a listener disrupt enqueue */ }
+            try { sl.accept(name); } catch (Throwable ignored) { /* never let a listener disrupt enqueue */ }
         }
         Future<ExecutorResult> f = executorService_.submit(() -> {
             long startTime = System.nanoTime();
@@ -95,7 +109,7 @@ public class TestExecutor {
             return er;
         });
 
-        results_.add(f);
+        results_.add(new Pending(name, f));
     }
 
     public void join() {
@@ -106,17 +120,24 @@ public class TestExecutor {
         while (!results_.isEmpty()) {
             if (cancelled_) return;
             config_.logger.printProgress(curr++, total);
-            Future<ExecutorResult> head = results_.poll();
+            Pending head = results_.poll();
             if (head == null) break;
+            long headStartNanos = nanoTimeSource_.getAsLong();
+            long lastBeatNanos = headStartNanos;
             ExecutorResult result = null;
-            // Poll for this test's result so cancel() can break us out without interrupting the worker.
-            // Soft-cancel deliberately does not interrupt — see cancel() for why.
             while (true) {
                 if (cancelled_) return;
                 try {
-                    result = head.get(250, TimeUnit.MILLISECONDS);
+                    result = head.future.get(250, TimeUnit.MILLISECONDS);
                     break;
                 } catch (TimeoutException e) {
+                    long now = nanoTimeSource_.getAsLong();
+                    if (now - headStartNanos >= HEARTBEAT_GRACE_NANOS
+                            && now - lastBeatNanos >= HEARTBEAT_INTERVAL_NANOS) {
+                        long elapsedSeconds = TimeUnit.NANOSECONDS.toSeconds(now - headStartNanos);
+                        config_.logger.printHeartbeat(head.name, elapsedSeconds);
+                        lastBeatNanos = now;
+                    }
                     continue;
                 } catch (CancellationException e) {
                     break;
@@ -146,7 +167,7 @@ public class TestExecutor {
         }
 
         // Cancel only pending (not-yet-started) tasks; let running workers finish their RPCs.
-        for (Future<ExecutorResult> f : results_) f.cancel(false);
+        for (Pending p : results_) p.future.cancel(false);
         results_.clear();
 
         executorService_.shutdown();
