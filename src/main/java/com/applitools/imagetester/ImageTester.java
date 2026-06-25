@@ -29,7 +29,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    public static final String CUR_VER = "3.11.1";
+    public static final String CUR_VER = "3.11.3";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
     private static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
@@ -714,19 +714,20 @@ public class ImageTester {
 
         options.addOption(Option.builder("rwo")
             .longOpt("removeWatermarkOut")
-            .desc("Standalone mode: render watermark-cleaned PDFs to PNG files " +
-                  "in the given directory and exit. Requires -rw. No upload to Applitools.")
+            .desc("Standalone mode: write watermark-cleaned PDFs to the given " +
+                  "directory and exit. Combine with -rw or -rwauto. No upload to Applitools.")
             .hasArg()
             .argName("dir")
             .build());
 
         options.addOption(Option.builder("rwauto")
             .longOpt("removeWatermarkAuto")
-            .desc("Auto-detect a vector watermark template by intersecting path " +
-                  "shapes across all PDFs in the input directory, then strip the " +
-                  "template from each. Requires at least 2 input PDFs. With -rwo, " +
-                  "writes cleaned PDFs to that directory and exits. Without -rwo, " +
-                  "cleans to a temp directory and uploads cleaned PDFs to Applitools.")
+            .desc("Auto-detect a vector watermark shared across all PDFs in the input " +
+                  "directory by its fill color, then strip only paths in that color " +
+                  "from each PDF, leaving all other content intact. Requires at least " +
+                  "2 input PDFs from the same source. With -rwo, writes cleaned PDFs to " +
+                  "that directory and exits. Without -rwo, cleans to a temp directory " +
+                  "and uploads cleaned PDFs to Applitools.")
             .hasArg(false)
             .build());
 

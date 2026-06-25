@@ -16,4 +16,9 @@ demo/
 docs/
 jars/Programmatic Applitools Version Control Integration.pdf
 .claude/
-.env`
+.env
+TestData/
+.superpowers/
+.playwright-mcp/
+clean_policy_doc.png
+clean_v2.png
