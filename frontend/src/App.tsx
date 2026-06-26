@@ -92,7 +92,13 @@ export function App() {
               const r = await api.run(toRunPayload(sourcePath, options));
               dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
             }}
-            onCancel={() => { api.cancel(); dispatch({ type: "set", snapshot: { kind: "idle" } }); setLogLines([]); }}
+            onCancel={() => {
+              api.cancel();
+              // Wipe the right pane immediately — the user expects a clean slate, not a frozen final state.
+              // The reducer ignores SSE events when not in "running", so any in-flight test-finished is dropped.
+              dispatch({ type: "set", snapshot: { kind: "idle" } });
+              setLogLines([]);
+            }}
           />
           {drawerOpen && <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />}
         </div>
