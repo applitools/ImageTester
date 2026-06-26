@@ -10,7 +10,7 @@ interface Props {
 const TICK_INTERVAL_MS = 500;
 
 export function StatusPane({ state, logLines }: Props) {
-  const [showLog, setShowLog] = useState(true);
+  const [showLog, setShowLog] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   const hasRunning = state.kind === "running" && state.tests.some((t) => t.status === "running");

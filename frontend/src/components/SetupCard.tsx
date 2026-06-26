@@ -5,11 +5,14 @@ interface Props {
   sourcePath: string;
   matchLevel: MatchLevel;
   running: boolean;
+  optionsCount: number;
+  drawerOpen: boolean;
   onSetKey: (value: string) => void;
   onChoosePath: (type: "file" | "folder") => void;
   onMatchLevel: (l: MatchLevel) => void;
   onRun: () => void;
   onCancel: () => void;
+  onToggleDrawer: () => void;
 }
 
 export function SetupCard(p: Props) {
@@ -49,6 +52,12 @@ export function SetupCard(p: Props) {
           <option value="Exact">Exact</option>
         </select>
       </label>
+
+      <button type="button" onClick={p.onToggleDrawer}
+        className="flex w-full items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm hover:bg-gray-100">
+        <span>⚙ Options</span>
+        <span className="text-xs text-gray-500">{p.optionsCount > 0 ? `${p.optionsCount} set` : "none"}{p.drawerOpen ? " ▴" : " ▾"}</span>
+      </button>
 
       {p.running ? (
         <button type="button" onClick={p.onCancel} className="w-full rounded-md bg-gray-200 py-2.5 font-semibold text-gray-700 hover:bg-gray-300">Cancel</button>

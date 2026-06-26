@@ -23,6 +23,7 @@ export const api = {
   setApiKey: (value: string) => http<void>("PUT", "/api/secret/api-key", { value }),
   deleteApiKey: () => http<void>("DELETE", "/api/secret/api-key"),
   choosePath: (type: "file" | "folder", start?: string) => http<{ path?: string }>("POST", "/api/choose-path", { type, start }),
-  run: (sourcePath: string, matchLevel: string) => http<{ runId: string }>("POST", "/api/run", { sourcePath, matchLevel }),
+  run: (payload: { sourcePath: string; options: Record<string, unknown> }) =>
+    http<{ runId: string }>("POST", "/api/run", payload),
   cancel: () => http<void>("POST", "/api/cancel"),
 };

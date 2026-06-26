@@ -1,9 +1,12 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { SetupCard } from "./components/SetupCard";
 import { StatusPane } from "./components/StatusPane";
+import { OptionsDrawer } from "./components/OptionsDrawer";
 import { api } from "./lib/api";
 import { connectSse } from "./lib/sse";
 import { getVersion } from "./lib/version";
+import { loadOptions, saveOptions, countNonDefault, toRunPayload } from "./lib/options";
+import type { RunOptions } from "./lib/options";
 import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow } from "./types";
 
 const LAST_SOURCE_PATH_KEY = "imagetester.lastSourcePath";
@@ -45,9 +48,14 @@ export function App() {
   const [snapshot, dispatch] = useReducer(reducer, { kind: "idle" } as RunStateSnapshot);
   const [hasKey, setHasKey] = useState(false);
   const [sourcePath, setSourcePath] = useState(readLastSourcePath);
-  const [matchLevel, setMatchLevel] = useState<MatchLevel>("Strict");
+  const [options, setOptions] = useState<RunOptions>(loadOptions);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
   const esRef = useRef<EventSource | null>(null);
+
+  const setOption = (flag: string, value: unknown) => {
+    setOptions((prev) => { const next = { ...prev, [flag]: value }; saveOptions(next); return next; });
+  };
 
   useEffect(() => {
     api.hasApiKey().then((r) => setHasKey(r.hasKey)).catch(() => {});
@@ -66,31 +74,28 @@ export function App() {
         <span className="font-semibold text-brand-navy">ImageTester</span>
         {getVersion() && <span className="text-xs text-gray-500">v{getVersion()}</span>}
       </header>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <SetupCard
-          hasKey={hasKey}
-          sourcePath={sourcePath}
-          matchLevel={matchLevel}
-          running={snapshot.kind === "running"}
-          onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
-          onChoosePath={async (t) => {
-            const r = await api.choosePath(t, sourcePath || undefined);
-            if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); }
-          }}
-          onMatchLevel={setMatchLevel}
-          onRun={async () => {
-            setLogLines([]);
-            const r = await api.run(sourcePath, matchLevel);
-            dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
-          }}
-          onCancel={() => {
-            api.cancel();
-            // Wipe the right pane immediately — the user expects a clean slate, not a frozen final state.
-            // The reducer ignores SSE events when not in "running", so any in-flight test-finished is dropped.
-            dispatch({ type: "set", snapshot: { kind: "idle" } });
-            setLogLines([]);
-          }}
-        />
+      <div className={`grid grid-cols-1 gap-6 ${drawerOpen ? "md:grid-cols-[2fr_1fr]" : "md:grid-cols-2"}`}>
+        <div className="space-y-4">
+          <SetupCard
+            hasKey={hasKey}
+            sourcePath={sourcePath}
+            matchLevel={(options.ml as MatchLevel) ?? "Strict"}
+            running={snapshot.kind === "running"}
+            optionsCount={countNonDefault(options)}
+            drawerOpen={drawerOpen}
+            onToggleDrawer={() => setDrawerOpen((v) => !v)}
+            onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
+            onChoosePath={async (t) => { const r = await api.choosePath(t, sourcePath || undefined); if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); } }}
+            onMatchLevel={(l) => setOption("ml", l)}
+            onRun={async () => {
+              setLogLines([]);
+              const r = await api.run(toRunPayload(sourcePath, options));
+              dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
+            }}
+            onCancel={() => { api.cancel(); dispatch({ type: "set", snapshot: { kind: "idle" } }); setLogLines([]); }}
+          />
+          {drawerOpen && <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />}
+        </div>
         <StatusPane state={snapshot} logLines={logLines} />
       </div>
     </div>
