@@ -25,13 +25,15 @@ import com.applitools.imagetester.lib.EyesUtilitiesConfig;
 import com.applitools.imagetester.lib.Logger;
 import com.applitools.imagetester.lib.PdfVectorWatermarkAutoMode;
 import com.applitools.imagetester.lib.PdfWatermarkOutMode;
+import com.applitools.imagetester.lib.RunConfig;
+import com.applitools.imagetester.lib.RunConfigFactory;
 import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
     public static final String CUR_VER = "3.11.3";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
-    private static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
+    public static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
     public static void main(String[] args) {
         System.exit(run(args));
@@ -106,103 +108,17 @@ public class ImageTester {
                 return 0;
             }
 
-            Config config = new Config();
-            config.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
-            config.serverUrl = cmd.getOptionValue("s", System.getenv(ApplitoolsConstants.APPLITOOLS_SERVER_URL));
-
-            String[] proxySettings = cmd.getOptionValues("p");
-
-            if(proxySettings == null) {
-                String proxyString = System.getenv(ApplitoolsConstants.APPLITOOLS_PROXY);
-                proxySettings = proxyString != null ? proxyString.split(",") : null;
-            }
-
-            config.setProxy(proxySettings);
-
-            String[] accessibilityOptions = cmd.getOptionValues("ac");
-            accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
-
-            EyesFactory factory
-                    = new EyesFactory(CUR_VER, logger)
-                    .apiKey(config.apiKey)
-                    .serverUrl(config.serverUrl)
-                    .proxySettings(config.proxy_settings)
-                    .matchLevel(cmd.getOptionValue("ml", null))
-                    .branch(cmd.getOptionValue("br", null))
-                    .parentBranch(cmd.getOptionValue("pb", null))
-                    .baselineEnvName(cmd.getOptionValue("bn", null))
-                    .baselineBranchName(cmd.getOptionValue("bb", null))
-                    .logFile(cmd.getOptionValue("lf", null))
-                    .hostOs(cmd.getOptionValue("os", null))
-                    .hostApp(cmd.getOptionValue("ap"))
-                    .environmentName(cmd.getOptionValue("en"))
-                    .saveFailedTests(cmd.hasOption("as"))
-                    .ignoreDisplacement(cmd.hasOption("id"))
-                    .saveNewTests(!cmd.hasOption("pt"))
-                    .imageCut(cmd.getOptionValues("ic"))
-                    .accSettings(accessibilityOptions)
-                    .logHandler(cmd.hasOption("log"))
-                    .deviceName(cmd.getOptionValue("dn", null));
-
-            config.splitSteps = cmd.hasOption("st");
-            config.logger = logger;
-            config.appName = cmd.getOptionValue("a", "ImageTester");
-            config.DocumentConversionDPI = Float.parseFloat(cmd.getOptionValue("di", "250"));
-            config.pdfPass = cmd.getOptionValue("pp", null);
-            config.pages = cmd.getOptionValue("sp", null);
-            config.includePageNumbers = cmd.hasOption("pn");
-            config.forcedName = cmd.getOptionValue("fn", null);
-            config.sequenceName = cmd.getOptionValue("sq", null);
-            config.legacyFileOrder = cmd.hasOption("lo");
-            config.dontCloseBatches = cmd.hasOption("dcb");
-            config.shouldThrowException = cmd.hasOption("te");
-            config.normalizeFont = cmd.hasOption("nf");
-            config.removeWatermarkText = cmd.getOptionValue("rw");
-            config.removeWatermarkOutDir = cmd.getOptionValue("rwo");
-            config.regexFileNameFilter = cmd.getOptionValue("rf");
-            config.setViewport(cmd.getOptionValue("vs", null));
-            config.setMatchSize(cmd.getOptionValue("ms", null));
-            config.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
-            config.setIgnoreRegions(cmd.getOptionValue("ir", null));
-            config.setContentRegions(cmd.getOptionValue("cr", null));
-            config.setLayoutRegions(cmd.getOptionValue("lr", null));
-            config.setAccessibilityIgnoreRegions(cmd.getOptionValue("ari", null));
-            config.setAccessibilityRegularTextRegions(cmd.getOptionValue("arr", null));
-            config.setAccessibilityLargeTextRegions(cmd.getOptionValue("arl", null));
-            config.setAccessibilityBoldTextRegions(cmd.getOptionValue("arb", null));
-            config.setAccessibilityGraphicsRegions(cmd.getOptionValue("arg", null));
-            config.setCaptureRegion(cmd.getOptionValue("rc", null));
-            config.setMatchTimeout(cmd.getOptionValue("mt", null));
-            config.setProperties(cmd.getOptionValue("pr", null));
-
-
-            // Full page for ac regions capability
-            if (cmd.hasOption("arr") && config.accessibilityRegularTextRegions == null) {
-                config.accessibilityRegularTextFullPage = true;
-            }
-            if (cmd.hasOption("arl") && config.accessibilityLargeTextRegions == null) {
-                config.accessibilityLargeTextFullPage = true;
-            }
-            if (cmd.hasOption("arb") && config.accessibilityBoldTextRegions == null) {
-                config.accessibilityBoldTextFullPage = true;
-            }
-            if (cmd.hasOption("arg") && config.accessibilityGraphicsRegions== null) {
-                config.accessibilityGraphicsFullPage = true;
-            }
+            RunConfig rc = RunConfigFactory.from(cmd, logger);
+            Config config = rc.config;
+            EyesFactory factory = rc.factory;
 
             File root = rwAutoCleanedDir != null
                     ? rwAutoCleanedDir
                     : new File(cmd.getOptionValue("f", "."));
 
-            int maxThreads = Integer.parseInt(cmd.getOptionValue("th", DEFAULT_THREADS));
-            TestExecutor executor = new TestExecutor(maxThreads, factory, config);
-
+            TestExecutor executor = new TestExecutor(rc.threads, factory, config);
             Suite suite = Suite.create(root.getCanonicalFile(), config, executor);
-
-            config.eyesUtilsConf = new EyesUtilitiesConfig(cmd);
-
             suite.run();
-
             config.closeBatches();
             return computeExitCode(config, logger);
         } catch (ParseException | IOException e) {
@@ -403,7 +319,7 @@ public class ImageTester {
         }
     }
 
-    private static Options getOptions() {
+    public static Options getOptions() {
         Options options = new Options();
         options.addOption(Option.builder("k")
                 .longOpt("apiKey")
