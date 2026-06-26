@@ -22,10 +22,10 @@ describe("StatusPane", () => {
     expect(screen.getByText(/1 failed/i)).toBeInTheDocument();
   });
 
-  it("hides log by default and shows it when toggled", () => {
+  it("shows log by default and hides it when toggled", () => {
     render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
-    expect(screen.queryByText("[INFO] hello")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText(/show log/i));
     expect(screen.getByText("[INFO] hello")).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/show log/i));
+    expect(screen.queryByText("[INFO] hello")).not.toBeInTheDocument();
   });
 });
