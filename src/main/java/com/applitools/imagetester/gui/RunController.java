@@ -16,6 +16,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -147,6 +149,22 @@ public final class RunController {
             return;
         }
 
+        // rwauto without rwo: clean source into a temp dir, then run the Suite on the cleaned output.
+        // Temp dir creation is outside the Suite's try block so the finally block always fires.
+        final File effectiveSource;
+        if (req.options != null && Boolean.TRUE.equals(req.options.get("rwauto"))) {
+            File tempDir = null;
+            try {
+                tempDir = Files.createTempDirectory("imagetester-rwauto-").toFile();
+                Runtime.getRuntime().addShutdownHook(new Thread(deleteRecursively(tempDir)));
+            } catch (IOException e) {
+                config.logger.reportException(e);
+            }
+            effectiveSource = tempDir != null ? tempDir : source;
+        } else {
+            effectiveSource = source;
+        }
+
         int passed = 0, failed = 0;
         try {
             EyesFactory factory = rc.factory;
@@ -164,8 +182,12 @@ public final class RunController {
                 row.status = status; row.durationMs = ms; row.dashboardUrl = dashboard;
                 running.tests.add(row);
             });
-            config.logger.printMessage(String.format("Scanning source: %s%n", source.getAbsolutePath()));
-            Suite suite = Suite.create(source.getCanonicalFile(), config, executor);
+            if (effectiveSource != source) {
+                String rwText = req.options.get("rw") != null ? req.options.get("rw").toString() : null;
+                PdfVectorWatermarkAutoMode.run(source, effectiveSource, rwText, config.logger);
+            }
+            config.logger.printMessage(String.format("Scanning source: %s%n", effectiveSource.getAbsolutePath()));
+            Suite suite = Suite.create(effectiveSource.getCanonicalFile(), config, executor);
             config.logger.printMessage("Starting tests" + System.lineSeparator());
             suite.run();
         } catch (Throwable t) {
@@ -184,6 +206,26 @@ public final class RunController {
             state_.set(done);
             runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
         }
+    }
+
+    private static Runnable deleteRecursively(final File dir) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (dir == null || !dir.exists()) return;
+                deleteTree(dir);
+            }
+
+            private void deleteTree(File entry) {
+                if (entry.isDirectory()) {
+                    File[] children = entry.listFiles();
+                    if (children != null) {
+                        for (File child : children) deleteTree(child);
+                    }
+                }
+                if (!entry.delete()) entry.deleteOnExit();
+            }
+        };
     }
 
     private void runWatermarkOut(File source, RunRequest req, Logger logger,

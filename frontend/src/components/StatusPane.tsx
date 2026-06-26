@@ -59,5 +59,7 @@ export function StatusPane({ state, logLines }: Props) {
 function Header({ state }: { state: RunStateSnapshot }) {
   if (state.kind === "idle") return <span className="text-xs text-gray-400">Idle</span>;
   if (state.kind === "running") return <span className="text-xs text-amber-700">Running {state.tests.filter((t) => t.status !== "running").length} / {state.tests.length}</span>;
+  // Watermark-out run: the cleaned-files summary below already communicates the outcome
+  if (state.outputDir) return null;
   return <span className="text-xs">{state.passed} passed{state.failed > 0 && <>, <span className="text-rose-700">{state.failed} failed</span></>}</span>;
 }

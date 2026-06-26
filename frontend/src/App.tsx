@@ -53,6 +53,7 @@ export function App() {
   const [options, setOptions] = useState<RunOptions>(loadOptions);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
+  const [runError, setRunError] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
   const setOption = (flag: string, value: unknown) => {
@@ -90,9 +91,14 @@ export function App() {
             onChoosePath={async (t) => { const r = await api.choosePath(t, sourcePath || undefined); if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); } }}
             onMatchLevel={(l) => setOption("ml", l)}
             onRun={async () => {
+              setRunError(null);
               setLogLines([]);
-              const r = await api.run(toRunPayload(sourcePath, options));
-              dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
+              try {
+                const r = await api.run(toRunPayload(sourcePath, options));
+                dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
+              } catch (err) {
+                setRunError(err instanceof Error ? err.message : String(err));
+              }
             }}
             onCancel={() => {
               api.cancel();
@@ -102,6 +108,7 @@ export function App() {
               setLogLines([]);
             }}
           />
+          {runError && <p role="alert" className="text-sm text-rose-700">{runError}</p>}
           {drawerOpen && <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />}
         </div>
         <StatusPane state={snapshot} logLines={logLines} />

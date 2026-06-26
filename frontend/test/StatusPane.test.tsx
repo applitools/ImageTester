@@ -33,5 +33,6 @@ describe("StatusPane", () => {
     render(<StatusPane state={{ kind: "done", runId: "r", tests: [], passed: 0, failed: 0, durationMs: 10, outputDir: "/out", fileCount: 4 }} logLines={[]} />);
     expect(screen.getByText(/Cleaned 4/)).toBeInTheDocument();
     expect(screen.getByText("/out")).toBeInTheDocument();
+    expect(screen.queryByText(/0 passed/i)).not.toBeInTheDocument();
   });
 });
