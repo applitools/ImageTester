@@ -4,9 +4,14 @@ import com.applitools.imagetester.ImageTester;
 import com.applitools.imagetester.Suite;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
-import com.applitools.imagetester.lib.ExecutorResult;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.RunConfig;
+import com.applitools.imagetester.lib.RunConfigFactory;
 import com.applitools.imagetester.lib.TestExecutor;
+import com.applitools.imagetester.lib.Utils;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.ParseException;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -31,19 +36,33 @@ public final class RunController {
         public MissingApiKeyException() { super("No Applitools API key configured."); }
     }
 
-    /** Builds an EyesFactory pre-configured with the api key + match level for one run. Allows tests to inject mocks. */
-    @FunctionalInterface
-    public interface EyesFactoryBuilder {
-        EyesFactory build(String apiKey, String matchLevel, Logger logger);
+    public static final class InvalidOptionsException extends RuntimeException {
+        public InvalidOptionsException(String msg) { super(msg); }
     }
 
-    private static final EyesFactoryBuilder PRODUCTION_BUILDER =
-        (apiKey, matchLevel, logger) ->
-            new EyesFactory(ImageTester.CUR_VER, logger).apiKey(apiKey).matchLevel(matchLevel);
+    /** Builds a RunConfig for one run from the full RunRequest. Allows tests to inject mocks. */
+    @FunctionalInterface
+    public interface RunConfigBuilder {
+        RunConfig build(RunRequest req, Logger logger);
+    }
+
+    private static final RunConfigBuilder PRODUCTION_BUILDER = (req, logger) -> {
+        try {
+            CommandLine cmd = new DefaultParser().parse(ImageTester.getOptions(),
+                    RunRequestTranslator.toArgv(req));
+            // Mirror main()'s -dv side effect (main applies it before the config mapping).
+            if (cmd.hasOption("dv")) Utils.disableCertValidation();
+            return RunConfigFactory.from(cmd, logger);
+        } catch (ParseException e) {
+            throw new InvalidOptionsException(e.getMessage());
+        } catch (java.security.NoSuchAlgorithmException | java.security.KeyManagementException e) {
+            throw new InvalidOptionsException("Could not disable SSL validation: " + e.getMessage());
+        }
+    };
 
     private final SecretsStore secrets_;
     private final RunStream runStream_;
-    private final EyesFactoryBuilder factoryBuilder_;
+    private final RunConfigBuilder factoryBuilder_;
     private final AtomicReference<RunState> state_ = new AtomicReference<>(RunState.Idle.INSTANCE);
     private final AtomicReference<TestExecutor> currentExecutor_ = new AtomicReference<>();
     private final ExecutorService runExecutor_ = Executors.newSingleThreadExecutor(r -> {
@@ -56,7 +75,7 @@ public final class RunController {
         this(secrets, runStream, PRODUCTION_BUILDER);
     }
 
-    public RunController(SecretsStore secrets, RunStream runStream, EyesFactoryBuilder factoryBuilder) {
+    public RunController(SecretsStore secrets, RunStream runStream, RunConfigBuilder factoryBuilder) {
         this.secrets_ = secrets;
         this.runStream_ = runStream;
         this.factoryBuilder_ = factoryBuilder;
@@ -68,8 +87,8 @@ public final class RunController {
 
     public void setSecretApiKey(String value) { secrets_.setApiKey(value); }
 
-    public StartResult start(String sourcePath, String matchLevelStr) {
-        Path validated = SourcePathValidator.validate(sourcePath);
+    public StartResult start(RunRequest req) {
+        Path validated = SourcePathValidator.validate(req.sourcePath);
         String apiKey = secrets_.getApiKey();
         if (apiKey == null || apiKey.isEmpty()) throw new MissingApiKeyException();
 
@@ -83,7 +102,7 @@ public final class RunController {
 
         // Wipe SSE replay history so a tab that connects mid-run only sees events from *this* run.
         runStream_.resetReplay();
-        runExecutor_.submit(() -> executeRun(validated.toFile(), matchLevelStr, apiKey, running));
+        runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, running));
         return new StartResult(running.runId);
     }
 
@@ -93,23 +112,22 @@ public final class RunController {
         executor.cancel();
     }
 
-    private void executeRun(File source, String matchLevelStr, String apiKey, RunState.Running running) {
+    private void executeRun(File source, RunRequest req, String apiKey, RunState.Running running) {
         long startedNs = System.nanoTime();
-        Config config = new Config();
+        RunConfig rc = factoryBuilder_.build(req, new Logger());
+        Config config = rc.config;
         config.apiKey = apiKey;
-        config.logger = new Logger();
-        // CRITICAL: without this, TestExecutor.join() may call System.exit on a diff
-        config.shouldThrowException = false;
+        config.shouldThrowException = false; // CRITICAL: a thrown diff calls System.exit
+        if (config.logger == null) config.logger = new Logger();
 
         Consumer<String> logListener = line -> runStream_.emit(new SseEvent.LogLine(LogRedactor.redact(line, apiKey)));
         config.logger.addListener(logListener);
 
-        int passed = 0;
-        int failed = 0;
+        int passed = 0, failed = 0;
         try {
-            EyesFactory factory = factoryBuilder_.build(apiKey, matchLevelStr, config.logger);
+            EyesFactory factory = rc.factory;
             factory.logHandlerInstance(new EyesLogBridge(config.logger));
-            TestExecutor executor = new TestExecutor(ImageTester.DEFAULT_THREAD_COUNT, factory, config);
+            TestExecutor executor = new TestExecutor(rc.threads, factory, config);
             currentExecutor_.set(executor);
             executor.setTestStartedListener(name -> runStream_.emit(new SseEvent.TestStarted(name)));
             executor.setTestCompletionListener(result -> {
@@ -119,9 +137,7 @@ public final class RunController {
                 String dashboard = result.testResult != null ? result.testResult.getUrl() : null;
                 runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard));
                 RunState.TestRow row = new RunState.TestRow(name);
-                row.status = status;
-                row.durationMs = ms;
-                row.dashboardUrl = dashboard;
+                row.status = status; row.durationMs = ms; row.dashboardUrl = dashboard;
                 running.tests.add(row);
             });
             config.logger.printMessage(String.format("Scanning source: %s%n", source.getAbsolutePath()));
@@ -132,9 +148,8 @@ public final class RunController {
             config.logger.reportException(t);
         } finally {
             TestExecutor executor = currentExecutor_.getAndSet(null);
-            if (executor != null && executor.isCancelled()) {
+            if (executor != null && executor.isCancelled())
                 config.logger.printMessage("Run cancelled" + System.lineSeparator());
-            }
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
                 if ("pass".equals(r.status)) passed++;

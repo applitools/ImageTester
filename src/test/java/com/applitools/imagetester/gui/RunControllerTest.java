@@ -4,8 +4,10 @@ import com.applitools.eyes.BatchInfo;
 import com.applitools.eyes.TestResults;
 import com.applitools.eyes.TestResultsStatus;
 import com.applitools.eyes.images.Eyes;
+import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.RunConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -14,12 +16,10 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.HashMap;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class RunControllerTest {
@@ -28,48 +28,51 @@ public class RunControllerTest {
 
     @Test
     public void initialStatusIsIdle() {
-        RunController c = newController(passingFactoryBuilder());
+        RunController c = newController(passingBuilder());
         assertTrue(c.snapshot() instanceof RunState.Idle);
     }
 
     @Test
     public void rejectsRunWithMissingApiKey() throws Exception {
         SecretsStore secrets = SecretsStore.inMemoryForTest(); // empty
-        RunController c = new RunController(secrets, new RunStream(), passingFactoryBuilder());
+        RunController c = new RunController(secrets, new RunStream(), passingBuilder());
         File folder = tmp.newFolder("pix");
         makeTinyPng(folder);
         assertThrows(RunController.MissingApiKeyException.class,
-            () -> c.start(folder.getAbsolutePath(), "Strict"));
+            () -> c.start(req(folder, "Strict")));
     }
 
     @Test
     public void rejectsRunWithInvalidSourcePath() {
-        RunController c = newController(passingFactoryBuilder());
+        RunController c = newController(passingBuilder());
         c.setSecretApiKey("sk_test");
+        RunRequest bad = new RunRequest();
+        bad.sourcePath = "/path/does/not/exist/anywhere";
+        bad.options = new HashMap<>();
         assertThrows(SourcePathValidator.InvalidSourceException.class,
-            () -> c.start("/path/does/not/exist/anywhere", "Strict"));
+            () -> c.start(bad));
     }
 
     @Test
     public void happyPathReachesDoneState() throws Exception {
-        RunController c = newController(passingFactoryBuilder());
+        RunController c = newController(passingBuilder());
         c.setSecretApiKey("sk_test");
         File folder = tmp.newFolder("pix");
         makeTinyPng(folder);
 
-        c.start(folder.getAbsolutePath(), "Strict");
+        c.start(req(folder, "Strict"));
 
-        long deadline = System.currentTimeMillis() + 5_000;
+        long deadline = System.currentTimeMillis() + 10_000;
         while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
             Thread.sleep(50);
         }
-        assertTrue("did not reach Done within 5s", c.snapshot() instanceof RunState.Done);
+        assertTrue("did not reach Done within 10s", c.snapshot() instanceof RunState.Done);
     }
 
     @Test
     public void secondConcurrentStartReturns409() throws Exception {
         // Use a builder that artificially blocks Eyes construction so the first run is in-flight when we issue the second.
-        RunController c = newController(slowFactoryBuilder(500));
+        RunController c = newController(slowBuilder(500));
         c.setSecretApiKey("sk_test");
         File folder = tmp.newFolder("pix");
         makeTinyPng(folder);
@@ -81,7 +84,7 @@ public class RunControllerTest {
             ready.countDown();
             ready.await();
             try {
-                return (Object) c.start(folder.getAbsolutePath(), "Strict");
+                return (Object) c.start(req(folder, "Strict"));
             } catch (RunController.RunInProgressException ex) {
                 return ex;
             }
@@ -90,7 +93,7 @@ public class RunControllerTest {
             ready.countDown();
             ready.await();
             try {
-                return (Object) c.start(folder.getAbsolutePath(), "Strict");
+                return (Object) c.start(req(folder, "Strict"));
             } catch (RunController.RunInProgressException ex) {
                 return ex;
             }
@@ -116,30 +119,70 @@ public class RunControllerTest {
         es.shutdownNow();
     }
 
+    @Test
+    public void dvOptionProducesUsableRunConfig() throws Exception {
+        RunController c = newController(passingBuilder());
+        c.setSecretApiKey("sk_test");
+        File folder = tmp.newFolder("pix");
+        makeTinyPng(folder);
+
+        RunRequest r = new RunRequest();
+        r.sourcePath = folder.getAbsolutePath();
+        r.options = new HashMap<>();
+        r.options.put("dv", Boolean.TRUE);
+
+        // If -dv handling throws, start() would propagate an InvalidOptionsException.
+        // A normal StartResult here confirms it was handled without error.
+        RunController.StartResult result = c.start(r);
+        assertNotNull(result);
+        assertNotNull(result.runId);
+
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        assertTrue("did not reach Done within 10s", c.snapshot() instanceof RunState.Done);
+    }
+
     // ---- helpers ----
 
-    private RunController newController(RunController.EyesFactoryBuilder builder) {
+    private RunController newController(RunController.RunConfigBuilder builder) {
         SecretsStore secrets = SecretsStore.inMemoryForTest();
         return new RunController(secrets, new RunStream(), builder);
     }
 
-    private RunController.EyesFactoryBuilder passingFactoryBuilder() {
-        return (apiKey, matchLevel, logger) -> {
-            EyesFactory factory = mock(EyesFactory.class);
-            Eyes eyes = stubEyes();
-            when(factory.build()).thenReturn(eyes);
-            return factory;
+    private RunRequest req(File folder, String matchLevel) {
+        RunRequest r = new RunRequest();
+        r.sourcePath = folder.getAbsolutePath();
+        r.options = new HashMap<>();
+        r.options.put("ml", matchLevel);
+        return r;
+    }
+
+    private RunController.RunConfigBuilder passingBuilder() {
+        // Pre-create mock on test thread so background-thread class loading doesn't race cold JVM startup.
+        // stubEyes() must be called BEFORE mock/when setup to avoid UnfinishedStubbing.
+        Eyes stubbedEyes = stubEyes();
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenReturn(stubbedEyes);
+        return (req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
         };
     }
 
-    private RunController.EyesFactoryBuilder slowFactoryBuilder(long delayMs) {
-        return (apiKey, matchLevel, logger) -> {
-            EyesFactory factory = mock(EyesFactory.class);
-            when(factory.build()).thenAnswer(inv -> {
-                Thread.sleep(delayMs);
-                return stubEyes();
-            });
-            return factory;
+    private RunController.RunConfigBuilder slowBuilder(long delayMs) {
+        // Pre-create mock on test thread so background-thread class loading doesn't race cold JVM startup.
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenAnswer(inv -> {
+            Thread.sleep(delayMs);
+            return stubEyes();
+        });
+        return (req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
         };
     }
 

@@ -139,9 +139,22 @@ public final class GuiServer {
 
         private void handleRun(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             Map<?, ?> body = json_.readValue(req.getInputStream(), Map.class);
-            String src = body.get("sourcePath") == null ? null : body.get("sourcePath").toString();
-            String ml  = body.get("matchLevel") == null ? null : body.get("matchLevel").toString();
-            RunController.StartResult r = controller_.start(src, ml);
+            RunRequest runReq = new RunRequest();
+            runReq.sourcePath = body.get("sourcePath") == null ? null : body.get("sourcePath").toString();
+            Object opts = body.get("options");
+            if (opts instanceof Map) {
+                runReq.options = new HashMap<>();
+                for (Map.Entry<?, ?> e : ((Map<?, ?>) opts).entrySet()) {
+                    runReq.options.put(e.getKey().toString(), e.getValue());
+                }
+            }
+            // Legacy: allow a top-level matchLevel field to be mapped into options["ml"].
+            if (runReq.options == null) runReq.options = new HashMap<>();
+            if (!runReq.options.containsKey("ml")) {
+                Object ml = body.get("matchLevel");
+                if (ml != null) runReq.options.put("ml", ml.toString());
+            }
+            RunController.StartResult r = controller_.start(runReq);
             writeJson(resp, Map.of("runId", r.runId));
         }
 
