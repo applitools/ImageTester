@@ -5,6 +5,8 @@ import com.applitools.imagetester.Suite;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.PdfVectorWatermarkAutoMode;
+import com.applitools.imagetester.lib.PdfWatermarkOutMode;
 import com.applitools.imagetester.lib.RunConfig;
 import com.applitools.imagetester.lib.RunConfigFactory;
 import com.applitools.imagetester.lib.TestExecutor;
@@ -125,6 +127,12 @@ public final class RunController {
         Consumer<String> logListener = line -> runStream_.emit(new SseEvent.LogLine(LogRedactor.redact(line, apiKey)));
         config.logger.addListener(logListener);
 
+        Object rwo = req.options == null ? null : req.options.get("rwo");
+        if (rwo != null && !rwo.toString().isEmpty()) {
+            runWatermarkOut(source, req, config.logger, running, startedNs);
+            return;
+        }
+
         int passed = 0, failed = 0;
         try {
             EyesFactory factory = rc.factory;
@@ -161,6 +169,29 @@ public final class RunController {
             RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
             state_.set(done);
             runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
+        }
+    }
+
+    private void runWatermarkOut(File source, RunRequest req, Logger logger,
+                                 RunState.Running running, long startedNs) {
+        String outPath = req.options.get("rwo").toString();
+        File outDir = new File(outPath);
+        String rwText = req.options.get("rw") == null ? null : req.options.get("rw").toString();
+        boolean auto = Boolean.TRUE.equals(req.options.get("rwauto"));
+        try {
+            // Dependent-flag guard mirrors ImageTester.validateWatermarkFlags: -rwo needs -rw or -rwauto.
+            if (!auto && (rwText == null || rwText.trim().isEmpty()))
+                throw new InvalidOptionsException("-rwo requires -rw or -rwauto");
+            if (auto) PdfVectorWatermarkAutoMode.run(source, outDir, rwText, logger);
+            else PdfWatermarkOutMode.run(source, rwText, outDir, logger);
+        } catch (Throwable t) {
+            logger.reportException(t);
+        } finally {
+            File[] files = outDir.listFiles();
+            int count = files == null ? 0 : files.length;
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
+            state_.set(new RunState.Done(running.runId, running.tests, 0, 0, durationMs, outPath));
+            runStream_.emit(new SseEvent.WatermarkCleaned(outPath, count, durationMs));
         }
     }
 }

@@ -34,4 +34,14 @@ public abstract class SseEvent {
             super("run-finished"); this.passed = passed; this.failed = failed; this.durationMs = durationMs;
         }
     }
+
+    public static final class WatermarkCleaned extends SseEvent {
+        public final String outputDir;
+        public final int fileCount;
+        public final long durationMs;
+        public WatermarkCleaned(String outputDir, int fileCount, long durationMs) {
+            super("watermark-cleaned");
+            this.outputDir = outputDir; this.fileCount = fileCount; this.durationMs = durationMs;
+        }
+    }
 }

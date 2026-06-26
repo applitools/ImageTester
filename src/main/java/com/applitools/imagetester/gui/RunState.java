@@ -30,12 +30,17 @@ public abstract class RunState {
         public final int passed;
         public final int failed;
         public final long durationMs;
+        public final String outputDir;
         public Done(String runId, List<TestRow> tests, int passed, int failed, long durationMs) {
+            this(runId, tests, passed, failed, durationMs, null);
+        }
+        public Done(String runId, List<TestRow> tests, int passed, int failed, long durationMs, String outputDir) {
             this.runId = runId;
             this.tests = tests;
             this.passed = passed;
             this.failed = failed;
             this.durationMs = durationMs;
+            this.outputDir = outputDir;
         }
     }
 
