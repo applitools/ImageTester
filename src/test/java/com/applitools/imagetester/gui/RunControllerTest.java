@@ -120,28 +120,14 @@ public class RunControllerTest {
     }
 
     @Test
-    public void dvOptionProducesUsableRunConfig() throws Exception {
-        RunController c = newController(passingBuilder());
-        c.setSecretApiKey("sk_test");
-        File folder = tmp.newFolder("pix");
-        makeTinyPng(folder);
-
+    public void dvOptionProducesUsableRunConfigViaProductionBuilder() {
         RunRequest r = new RunRequest();
-        r.sourcePath = folder.getAbsolutePath();
-        r.options = new HashMap<>();
+        r.sourcePath = ".";
+        r.options = new java.util.HashMap<>();
+        r.options.put("k", "sk_test");
         r.options.put("dv", Boolean.TRUE);
-
-        // If -dv handling throws, start() would propagate an InvalidOptionsException.
-        // A normal StartResult here confirms it was handled without error.
-        RunController.StartResult result = c.start(r);
-        assertNotNull(result);
-        assertNotNull(result.runId);
-
-        long deadline = System.currentTimeMillis() + 10_000;
-        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
-            Thread.sleep(50);
-        }
-        assertTrue("did not reach Done within 10s", c.snapshot() instanceof RunState.Done);
+        com.applitools.imagetester.lib.RunConfig rc = RunController.buildRunConfig(r, new com.applitools.imagetester.lib.Logger());
+        assertNotNull(rc.factory);
     }
 
     // ---- helpers ----

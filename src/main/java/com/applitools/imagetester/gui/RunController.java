@@ -46,7 +46,7 @@ public final class RunController {
         RunConfig build(RunRequest req, Logger logger);
     }
 
-    private static final RunConfigBuilder PRODUCTION_BUILDER = (req, logger) -> {
+    static RunConfig buildRunConfig(RunRequest req, Logger logger) {
         try {
             CommandLine cmd = new DefaultParser().parse(ImageTester.getOptions(),
                     RunRequestTranslator.toArgv(req));
@@ -58,7 +58,9 @@ public final class RunController {
         } catch (java.security.NoSuchAlgorithmException | java.security.KeyManagementException e) {
             throw new InvalidOptionsException("Could not disable SSL validation: " + e.getMessage());
         }
-    };
+    }
+
+    private static final RunConfigBuilder PRODUCTION_BUILDER = RunController::buildRunConfig;
 
     private final SecretsStore secrets_;
     private final RunStream runStream_;
