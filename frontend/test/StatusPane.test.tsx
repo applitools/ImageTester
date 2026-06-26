@@ -28,4 +28,10 @@ describe("StatusPane", () => {
     fireEvent.click(screen.getByText(/show log/i));
     expect(screen.queryByText("[INFO] hello")).not.toBeInTheDocument();
   });
+
+  it("shows cleaned-files summary for a watermark-out run", () => {
+    render(<StatusPane state={{ kind: "done", runId: "r", tests: [], passed: 0, failed: 0, durationMs: 10, outputDir: "/out", fileCount: 4 }} logLines={[]} />);
+    expect(screen.getByText(/Cleaned 4/)).toBeInTheDocument();
+    expect(screen.getByText("/out")).toBeInTheDocument();
+  });
 });

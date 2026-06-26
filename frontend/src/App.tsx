@@ -39,6 +39,8 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
     }
     case "run-finished":
       return { kind: "done", runId: state.runId, tests: state.tests, passed: e.passed, failed: e.failed, durationMs: e.durationMs };
+    case "watermark-cleaned":
+      return { kind: "done", runId: state.runId, tests: state.tests, passed: 0, failed: 0, durationMs: e.durationMs, outputDir: e.outputDir, fileCount: e.fileCount };
     default:
       return state;
   }

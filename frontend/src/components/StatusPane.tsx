@@ -37,6 +37,13 @@ export function StatusPane({ state, logLines }: Props) {
         </div>
       )}
 
+      {state.kind === "done" && state.outputDir && (
+        <div className="rounded-md bg-gray-50 p-3 text-sm">
+          <div className="font-medium text-gray-700">Cleaned {state.fileCount ?? 0} PDF(s)</div>
+          <div className="mt-1 truncate text-gray-500">{state.outputDir}</div>
+        </div>
+      )}
+
       <button type="button" onClick={() => setShowLog(!showLog)} className="mt-4 text-xs text-gray-500 hover:text-gray-800">
         {showLog ? "▾" : "▸"} Show log
       </button>
