@@ -96,6 +96,11 @@ public final class RunController {
         String apiKey = secrets_.getApiKey();
         if (apiKey == null || apiKey.isEmpty()) throw new MissingApiKeyException();
 
+        validateWatermarkFlags(req); // throws InvalidOptionsException synchronously
+
+        Logger logger = new Logger();
+        RunConfig rc = factoryBuilder_.build(req, logger); // throws on malformed options synchronously
+
         RunState.Running running = new RunState.Running();
         // Race-safe transition: only one caller can win; stale Done is also replaced atomically.
         while (true) {
@@ -106,8 +111,18 @@ public final class RunController {
 
         // Wipe SSE replay history so a tab that connects mid-run only sees events from *this* run.
         runStream_.resetReplay();
-        runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, running));
+        runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, rc, logger, running));
         return new StartResult(running.runId);
+    }
+
+    private static void validateWatermarkFlags(RunRequest req) {
+        if (req.options == null) return;
+        Object rwo = req.options.get("rwo");
+        if (rwo == null || rwo.toString().isEmpty()) return;
+        boolean auto = Boolean.TRUE.equals(req.options.get("rwauto"));
+        Object rw = req.options.get("rw");
+        boolean hasRw = rw != null && !rw.toString().trim().isEmpty();
+        if (!auto && !hasRw) throw new InvalidOptionsException("-rwo requires -rw or -rwauto");
     }
 
     public void cancel() {
@@ -116,13 +131,12 @@ public final class RunController {
         executor.cancel();
     }
 
-    private void executeRun(File source, RunRequest req, String apiKey, RunState.Running running) {
+    private void executeRun(File source, RunRequest req, String apiKey, RunConfig rc, Logger logger, RunState.Running running) {
         long startedNs = System.nanoTime();
-        RunConfig rc = factoryBuilder_.build(req, new Logger());
         Config config = rc.config;
         config.apiKey = apiKey;
         config.shouldThrowException = false; // CRITICAL: a thrown diff calls System.exit
-        if (config.logger == null) config.logger = new Logger();
+        if (config.logger == null) config.logger = logger;
 
         Consumer<String> logListener = line -> runStream_.emit(new SseEvent.LogLine(LogRedactor.redact(line, apiKey)));
         config.logger.addListener(logListener);

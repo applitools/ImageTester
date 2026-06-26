@@ -132,28 +132,18 @@ public final class GuiServer {
                 resp.setStatus(409); writeJson(resp, Map.of("error", e.getMessage()));
             } catch (RunController.MissingApiKeyException | SourcePathValidator.InvalidSourceException e) {
                 resp.setStatus(400); writeJson(resp, Map.of("error", e.getMessage()));
+            } catch (RuntimeException e) {
+                // Synchronous option/parse errors from start(): NumberFormatException (-di/-th),
+                // bare RuntimeException (Config.setViewport/setCaptureRegion/setProxy),
+                // IllegalArgumentException (Config.setProperties), InvalidOptionsException (-rwo guard).
+                resp.setStatus(400); writeJson(resp, Map.of("error", e.getMessage() != null ? e.getMessage() : "Invalid options"));
             } catch (Throwable t) {
                 resp.setStatus(500); writeJson(resp, Map.of("error", t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName()));
             }
         }
 
         private void handleRun(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-            Map<?, ?> body = json_.readValue(req.getInputStream(), Map.class);
-            RunRequest runReq = new RunRequest();
-            runReq.sourcePath = body.get("sourcePath") == null ? null : body.get("sourcePath").toString();
-            Object opts = body.get("options");
-            if (opts instanceof Map) {
-                runReq.options = new HashMap<>();
-                for (Map.Entry<?, ?> e : ((Map<?, ?>) opts).entrySet()) {
-                    runReq.options.put(e.getKey().toString(), e.getValue());
-                }
-            }
-            // Legacy: allow a top-level matchLevel field to be mapped into options["ml"].
-            if (runReq.options == null) runReq.options = new HashMap<>();
-            if (!runReq.options.containsKey("ml")) {
-                Object ml = body.get("matchLevel");
-                if (ml != null) runReq.options.put("ml", ml.toString());
-            }
+            RunRequest runReq = json_.readValue(req.getInputStream(), RunRequest.class);
             RunController.StartResult r = controller_.start(runReq);
             writeJson(resp, Map.of("runId", r.runId));
         }
