@@ -52,97 +52,97 @@ Note that the batch name was derived from the directoryTest name as there is no 
 folder level that can be used as batch name.
 
 ## Execution
-The tool build in java and requires minimal set of parameters the minimal command will look as follow:
+The tool is built in Java and requires a minimal set of parameters. The minimal command looks as follows:
 
 >java -jar ImageTester.jar -k [api-key]
 
-\* In the minimal set of parameters will assume that the search folder is the execution folder.
+\* With the minimal set of parameters the search folder is assumed to be the execution folder.
 
 + Required parameters:
-    + `-k [api-key]` - Applitools api key can also be set by environment variable APPLITOOLS_API_KEY
-+ Optional parameters and flags:
-    + `-f [path]` - A path to target folder or file
-    + `-a [app-name]` - Set the application name under directoryTest; default = ImageTester
-    + `-p [http://proxy{,user,pass}]` - Set proxy and optional username + password, can also be set by environment variable APPLITOOLS_PROXY
-    + `-s [server]` - Set Applitools server url , can also be set by environment variable APPLITOOLS_SERVER_URL
-    + `-ml [match-level]` - Set the comparison level, one from Strict/IgnoreColors/Layout/Exact/None ; Default = Strict
-    + `-br [branch]` - Set the branch
-    + `-pb [parent-branch]` - Set the parent branch
-    + `-bb [baseline-branch]` - Set the baseline branch name branch
-    + `-bn [baseline]` - Set custom baseline name
-    + `-vs [WidthxHeight]` - Set the viewport size identifier
-    + `-lf [log-file]` - DEPRECATED. Please set log file path with the environment variable *APPLITOOLS_LOG_PATH* <br>
-      + **The logs are automatically created and saved to:**
-      + Mac/Linux - `$TMPDIR/applitools-logs/`
-      + Windows (PowerShell) - `$env:TEMP/applitools-logs/`
-      + **The log directory can now be specified using this environment variable:**
-      + `APPLITOOLS_LOG_DIR=<path>`
-    + `-os [osname]` - Set custom os
-    + `-ap [browser name]` - Set browser or equivalent hosting application name
-    + `-th [number]` - Specify max. concurrent workers (Threads). default= 3
-    + `-fn [testName]` - Force all test names to be specific name. This will force all tests to be matched with a single baseline.
-    + `-fb [batchName]` - Set unified flat batch to contain all the discovered tests regardless their hierarchy.
-      + To add batch id to the flat batch use the following syntax:`-fb BATCH_NAME<>BATCH_ID`
-    + `-sq [sequenceName]` - Set batch sequenceName for unified insights in applitools' dashboard.
-    + `-ms [{width x height}]` - Match the size of the images to a specific width and/or height ie. `1000x`- adjust by width, `x600`-adjust by height, `1000x600`- fit to the exact size (note, if both provided, may loose proportions)
-    + `-ic [{header,footer,left,right}]` - Set pixels to cut from each side (one or more) in the format [header,footer,left,right], including missing notations ie: `-ic ,,10,4`
-    + `-nc` - Send batch notification on complete.
-    + `-as` - Set automatic save on failures
-    + `-st` - Split steps to individual tests
-    + `-id` - Ignore displacement of shifting elements.
-    + `-pt` - Prompt new tests, new tests will not be saved automatically, the user will have to review and save manually.
-    + `-dv` - Disable SSL certificate validation. !!!Unsecured!!!
-    + `-lo` - Use legacy files order complying with baselines that were created with versions below 2.0
-    + `-ac [Level:GuidelineVer]` - Set accessibilit
-    + y validation and optionally it's arguments split by semicolons ':' default: "AA:WCAG_2_0", available options: [AA|AAA:WCAG_2_0|WCAG_2_1]
-    + `-dcb` - ImageTester will not automatically close batch(es) when test is complete.
-    + `-mp` - ImageTester will read from and execute tests based on the batch mapper CSV.
-    + `-te` - ImageTester will throw an exception if Eyes detects a mismatch or failure. <br>
-    + `-mt` - Sets match timeout and retry timeout (default=500). <br>
-    + `-de` - Sets device name for test in dashboard. <br>
-    + `-rf` - Only test files which match a specified regular expression. <br>
-    + `-ir` - Ignore regions will be applied to all pages. <br>
-      **Example:** `-rf "Lorem.*"` will only test files that start with "Lorem" (e.g. Lorem1.pdf, Lorem2.pdf) <br>
-      **Example:** `-ir "300,300,500,100|500,500,200,200"` will create ignored regions at <br> 
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-cr` - Apply content regions to all pages. <br>
-      **Example:** `-cr "300,300,500,100|500,500,200,200"` will create content regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-lr` - Layout regions will be applied to all pages. <br>
-      **Example:** `-ir "300,300,500,100|500,500,200,200"` will create layout regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-ari` - Accessibility ignore regions will be applied to all pages. <br>
-      **Example:** `-ari "300,300,500,100|500,500,200,200"` will create accessibility ignore regions at <br>
-        + x:300, y:300, with width:500, height:100 and <br>
-        + x:500, y:500, with width:200, height:200 <br>
-    + `-arr` - Accessibility regular text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
-      **Example:** `-arr "300,300,500,100|500,500,200,200"` will create accessibility regular text regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-arl` - Accessibility large text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
-      **Example:** `-arl "300,300,500,100|500,500,200,200"` will create accessibility large text regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-arb` - Accessibility bold text regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
-      **Example:** `-arb "300,300,500,100|500,500,200,200"` will create accessibility bold text regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-arg` - Accessibility graphic regions will be applied to all pages. Without coordinates, region will be the viewport size. <br>
-      **Example:** `-arg "300,300,500,100|500,500,200,200"` will create accessibility graphics regions at <br>
-      + x:300, y:300, with width:500, height:100 and <br>
-      + x:500, y:500, with width:200, height:200 <br>
-    + `-rc` - Capture only a particular region of PDFs/Images. <br>
-      **Example:** `-rc "200,500,1000,1000"` instructs ImageTester to only test region with: <br>
-      + x:200, y:500, with width:1000, height:1000
-    + `-pr` - Add properties to Eyes tests. Format is `key1:value1|key2:value2`.<br> 
-      Each property will have the format "key1:value1", and each subsequent format will be separated by a "|" character. <br>
-      **Example:** `-pr "prop1:value1|prop2:value2|prop3:value3"` will add properties: <br>
-      + prop1, value1
-      + prop2, value2
-      + prop3, value3
+    + `-k [api-key]` - Applitools api key, can also be set by the environment variable APPLITOOLS_API_KEY
+    + `-f [path]` - A path to the target folder or file (default: the execution folder)
+
+The optional parameters and flags below are grouped by category. These categories mirror the tabs in the ImageTester GUI, so a link from the GUI lands on the matching section here.
+
+### Metadata options
+Labels and identifiers attached to your tests — shown on the Applitools dashboard.
+
++ `-a [app-name]` - Set the application name shown on the dashboard; default = ImageTester
++ `-os [osname]` - Set the operating-system label recorded for the test
++ `-ap [browser name]` - Set the browser or hosting-application label recorded for the test
++ `-en [environment]` - Set the environment name identifier for the test
++ `-dn [device name]` (alias `-de`) - Set the device-name metadata shown on the dashboard
++ `-vs [WidthxHeight]` - Set the viewport size identifier, e.g. `1000x600`
++ `-pr [key1:value1|key2:value2]` - Add custom key/value properties to each test.
+  **Example:** `-pr "prop1:value1|prop2:value2|prop3:value3"` adds:
+    + prop1, value1
+    + prop2, value2
+    + prop3, value3
+
+### Execution options
+How the run executes and what it writes to the log.
+
++ `-th [number]` - Maximum concurrent workers (threads); default = 3
++ `-debug` - Turn on verbose debug prints
++ `-log` - Turn on Applitools SDK log prints
++ `-rf [regex]` - Only test files whose name matches the regular expression.
+  **Example:** `-rf "Lorem.*"` only tests files that start with "Lorem" (e.g. Lorem1.pdf, Lorem2.pdf)
++ `-lf [log-file]` - DEPRECATED. Please set the log path with the environment variable *APPLITOOLS_LOG_DIR* instead. <br>
+  + **The logs are automatically created and saved to:**
+  + Mac/Linux - `$TMPDIR/applitools-logs/`
+  + Windows (PowerShell) - `$env:TEMP/applitools-logs/`
+
+### Matching options
+How images are compared and which differences count as failures.
+
++ `-ml [match-level]` - Set the comparison level, one of Strict/IgnoreColors/Layout/Exact/None; default = Strict
++ `-ms [{width x height}]` - Match the size of images to a specific width and/or height, e.g. `1000x` (by width), `x600` (by height), `1000x600` (exact — may lose proportions)
++ `-mt [ms]` - Set match timeout and retry timeout in milliseconds (minimum 500, default = 500)
++ `-ic [{header,footer,left,right}]` - Cut pixels from each side before comparing; missing notations allowed, e.g. `-ic ,,10,4`
++ `-rc [x,y,width,height]` - Capture (test) only a particular region of PDFs/Images.
+  **Example:** `-rc "200,500,1000,1000"` tests only the region at x:200, y:500, width:1000, height:1000
++ `-ac [Level:GuidelineVer]` - Set accessibility validation, optionally with arguments split by `:`; default "AA:WCAG_2_0", available [AA|AAA:WCAG_2_0|WCAG_2_1]
++ `-id` - Ignore displacement of shifting elements
++ `-as` - Automatically save baselines on failures
++ `-pt` - Prompt for new tests — new tests are not saved automatically; review and save them manually
++ `-te` - Throw an exception if Eyes detects a mismatch or failure
+
+### Batch and branch options
+Organize results into batches and branches on the dashboard.
+
++ `-br [branch]` - Set the branch
++ `-pb [parent-branch]` - Set the parent branch
++ `-bb [baseline-branch]` - Set the baseline branch name
++ `-bn [baseline]` - Set a custom baseline name
++ `-fb [batchName]` - Aggregate all discovered tests into a single flat batch.
+    + To also set a batch id: `-fb BATCH_NAME<>BATCH_ID`
++ `-sq [sequenceName]` - Set the batch sequence name for unified insights on the dashboard
++ `-fn [testName]` - Force all test names to a specific name (all files match a single baseline)
++ `-nc` - Send a batch notification on completion
++ `-dcb` - Do not automatically close the batch(es) when the run completes
++ `-mp [path]` - Run tests from a Batch Mapper CSV instead of a path (see [Using The Batch Mapper](#using-the-batch-mapper))
+
+### Region options
+Mark areas to ignore, treat as content, or check for layout/accessibility only. Coordinates are `x,y,width,height`, multiple separated by `|`.
+
++ `-ir` - Ignore regions, applied to all pages.
+  **Example:** `-ir "300,300,500,100|500,500,200,200"` creates ignored regions at:
+    + x:300, y:300, width:500, height:100 and
+    + x:500, y:500, width:200, height:200
++ `-cr` - Content regions, applied to all pages (same coordinate format)
++ `-lr` - Layout regions, applied to all pages (same coordinate format)
++ `-ari` - Accessibility ignore regions (same coordinate format)
++ `-arr` - Accessibility regular-text regions; without coordinates the region is the full viewport
++ `-arl` - Accessibility large-text regions; without coordinates the region is the full viewport
++ `-arb` - Accessibility bold-text regions; without coordinates the region is the full viewport
++ `-arg` - Accessibility graphic regions; without coordinates the region is the full viewport
+
+### Connection options
+Server, proxy, and SSL settings.
+
++ `-s [server]` - Set the Applitools server URL, can also be set by the environment variable APPLITOOLS_SERVER_URL
++ `-p [http://proxy{,user,pass}]` - Set the proxy with optional username and password, can also be set by APPLITOOLS_PROXY
++ `-dv` - Disable SSL certificate validation. !!!Unsecured!!!
 
 ### Using The Batch Mapper
 The Batch Mapper is a feature that allows you to specify tests from a CSV instead of supplying a path or file in the traditional way.
@@ -177,14 +177,18 @@ docs/a.pdf|Test2|AppA||||x748|1-3|Layout|||500,500,500,100|
 docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 ```
 
-###### For Documents (PDFs) only
-+ `-di [dpi]` - Set the quality of the conversion on PDF files
-+ `-sp [pages]` - Comma separated page numbers\range to include in PDF testing (ie: 1,2,5,7,10-15); Default all included
-+ `-pp [password]` - The password if the PDF files protected
-+ `-pn` - Preserve original directory test names when specifying pages
-+ `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization) below.
-+ `-rwauto` - Auto-detect and remove a watermark (a stamped outline like a diagonal "UAT - Proof"). ImageTester groups PDFs by their containing folder, detects the watermark's fill color shared across each group, then strips only the paths drawn in that color — all other content is left intact. Each group needs at least 2 PDFs **from the same source** (all carrying the same watermark); a parent folder with one subfolder per environment (e.g. `pre/`, `uat/`) is cleaned correctly in one run. See [Watermark Removal](#watermark-removal).
-+ `-rwo [dir]` - Standalone output mode. Write cleaned PDFs to the given directory and exit without uploading to Applitools. Combine with `-rwauto`.
+### PDF and document options
+Options that apply when testing PDFs and other documents.
+
++ `-di [dpi]` - Rendering quality (dots per inch) for PDF pages; default = 250
++ `-sp [pages]` - Comma-separated page numbers/ranges to include (e.g. 1,2,5,7,10-15); default = all pages
++ `-pp [password]` - Password for opening protected PDF files
++ `-pn` - Preserve the original test names when testing only selected pages
++ `-st` - Split a multi-page document into individual single-step tests
++ `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization).
++ `-lo` - Use legacy (pre-2.0) file ordering to stay compatible with older baselines
++ `-rwauto` - Auto-detect and remove a watermark (a stamped outline like a diagonal "UAT - Proof"). See [Watermark Removal](#watermark-removal).
++ `-rwo [dir]` - Standalone output mode: write cleaned PDFs to the directory and exit without uploading. Combine with `-rwauto`. See [Watermark Removal](#watermark-removal).
 
 ### Font Normalization
 Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
@@ -264,20 +268,23 @@ Open the cleaned PDFs to confirm the watermark is gone and nothing else changed,
 **Note:** cleaning changes what Eyes sees, so it invalidates baselines captured before cleaning was
 enabled. Plan a baseline refresh on rollout.
 
-## Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities)
-Several EyesUtilities functions are integrated into ImageTester.
+### Download options
+Enterprise features in combination with [Eyes Utilities](https://github.com/applitools/EyesUtilities).
+Several EyesUtilities functions are integrated into ImageTester. Downloading results requires an
+enterprise view-key.
 
 >java -jar ImageTester.jar -k [api-key] -vk [view-key] [options]
+
 + Required parameters:
     + `-k [api-key]` - Applitools api key
     + `-vk [view-key]` - Applitools enterprise view-key
-+ Selective flags - Required one or more
++ Selective flags - required one or more:
     + `-gd` - Get diff images of the failed steps
-    + `-gi` - Get images of the failed steps
+    + `-gi` - Get baseline and actual images of the failed steps
     + `-gg` - Get animated gifs of the failed steps
 + Optional parameters and flags:
-    + `-of [path]` - Specify custom output path or path-template
-    
+    + `-of [path]` - Specify a custom output path or path-template
+
 ## CI/CD integration
 Once setting the required environment variables, the ImageTester is able to pick them up and use to sync with the results
 with other tools that out there for CI/CD integration.

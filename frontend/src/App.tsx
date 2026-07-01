@@ -72,10 +72,17 @@ export function App() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
-      <header className="mb-6 flex items-center gap-2">
-        <span className="inline-block h-7 w-7 rounded-lg bg-gradient-to-br from-brand-teal to-brand-tealDark"></span>
-        <span className="font-semibold text-brand-navy">ImageTester</span>
-        {getVersion() && <span className="text-xs text-gray-500">v{getVersion()}</span>}
+      <header className="mb-6">
+        <div className="flex items-center gap-2">
+          <span className="inline-block h-7 w-7 rounded-lg bg-gradient-to-br from-brand-teal to-brand-tealDark"></span>
+          <span className="font-semibold text-brand-navy">ImageTester</span>
+          {getVersion() && <span className="text-xs text-gray-500">v{getVersion()}</span>}
+          <a href="https://github.com/applitools/ImageTester#readme" target="_blank" rel="noreferrer"
+            className="ml-auto text-xs text-brand-teal hover:underline">Docs ↗</a>
+        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          Visual regression testing for images, PDFs &amp; documents — compares them against baselines in Applitools Eyes.
+        </p>
       </header>
       <div className={`grid grid-cols-1 gap-6 ${drawerOpen ? "md:grid-cols-[2fr_1fr]" : "md:grid-cols-2"}`}>
         <div className="space-y-4">

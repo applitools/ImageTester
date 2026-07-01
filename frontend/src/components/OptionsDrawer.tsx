@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { OPTION_SPECS, TABS, type OptionSpec, type TabId } from "../lib/optionsSchema";
+import { OPTION_SPECS, TABS, docUrl, type OptionSpec, type TabId } from "../lib/optionsSchema";
 import type { RunOptions } from "../lib/options";
 import { ScalarControl } from "./controls/ScalarControl";
 import { RegionBuilder } from "./controls/RegionBuilder";
 import { ProxyControl } from "./controls/ProxyControl";
 import { PropertiesControl } from "./controls/PropertiesControl";
 import { ImageCutControl } from "./controls/ImageCutControl";
+import { WatermarkOutControl } from "./controls/WatermarkOutControl";
 
 interface Props {
   options: RunOptions;
@@ -19,12 +20,14 @@ function renderControl(spec: OptionSpec, value: unknown, onChange: (v: unknown) 
     case "proxy":      return <ProxyControl spec={spec} value={String(value ?? "")} onChange={onChange} />;
     case "properties": return <PropertiesControl spec={spec} value={String(value ?? "")} onChange={onChange} />;
     case "imagecut":   return <ImageCutControl spec={spec} value={String(value ?? "")} onChange={onChange} />;
+    case "watermarkout": return <WatermarkOutControl spec={spec} value={String(value ?? "")} onChange={onChange} />;
     default:           return <ScalarControl spec={spec} value={value} onChange={onChange} />;
   }
 }
 
 export function OptionsDrawer({ options, onChange, onClose }: Props) {
   const [active, setActive] = useState<TabId>("metadata");
+  const activeTab = TABS.find((t) => t.id === active);
   const specs = OPTION_SPECS.filter((s) => s.tab === active);
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -40,9 +43,20 @@ export function OptionsDrawer({ options, onChange, onClose }: Props) {
           </button>
         ))}
       </div>
-      <div className="space-y-3">
+      {activeTab && <p className="mb-3 text-xs text-gray-500">{activeTab.description}</p>}
+      <div className="space-y-4">
         {specs.map((spec) => (
-          <div key={spec.flag}>{renderControl(spec, options[spec.flag], (v) => onChange(spec.flag, v))}</div>
+          <div key={spec.flag}>
+            {renderControl(spec, options[spec.flag], (v) => onChange(spec.flag, v))}
+            {spec.help && (
+              <p className="mt-1 text-xs text-gray-400">
+                {spec.help}{" "}
+                <a href={docUrl(spec)} target="_blank" rel="noreferrer"
+                  className="whitespace-nowrap text-brand-teal hover:underline"
+                  aria-label={`${spec.label} documentation`}>README ↗</a>
+              </p>
+            )}
+          </div>
         ))}
       </div>
     </div>
