@@ -14,6 +14,8 @@ interface Props {
   onClose: () => void;
 }
 
+const FULL_ROW_TYPES = new Set(["regions", "proxy", "properties", "imagecut", "watermarkout"]);
+
 function renderControl(spec: OptionSpec, value: unknown, onChange: (v: unknown) => void) {
   switch (spec.type) {
     case "regions":    return <RegionBuilder spec={spec} value={String(value ?? "")} onChange={onChange} />;
@@ -44,9 +46,9 @@ export function OptionsDrawer({ options, onChange, onClose }: Props) {
         ))}
       </div>
       {activeTab && <p className="mb-3 text-xs text-gray-500">{activeTab.description}</p>}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
         {specs.map((spec) => (
-          <div key={spec.flag}>
+          <div key={spec.flag} className={FULL_ROW_TYPES.has(spec.type) ? "md:col-span-2 xl:col-span-3" : ""}>
             {renderControl(spec, options[spec.flag], (v) => onChange(spec.flag, v))}
             {spec.help && (
               <p className="mt-1 text-xs text-gray-400">

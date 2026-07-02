@@ -84,7 +84,7 @@ export function App() {
           Visual regression testing for images, PDFs &amp; documents — compares them against baselines in Applitools Eyes.
         </p>
       </header>
-      <div className={`grid grid-cols-1 gap-6 ${drawerOpen ? "md:grid-cols-[2fr_1fr]" : "md:grid-cols-2"}`}>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <SetupCard
             hasKey={hasKey}
@@ -116,10 +116,14 @@ export function App() {
             }}
           />
           {runError && <p role="alert" className="text-sm text-rose-700">{runError}</p>}
-          {drawerOpen && <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />}
         </div>
         <StatusPane state={snapshot} logLines={logLines} />
       </div>
+      {drawerOpen && (
+        <div className="mt-6">
+          <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
