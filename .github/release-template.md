@@ -18,6 +18,7 @@ This demo build isn't code-signed yet (signed builds are planned), so your compu
 
 - **Windows** shows "Windows protected your PC". Click **More info**, then **Run anyway**.
 - **macOS** blocks the first launch. Open **System Settings → Privacy & Security**, scroll down, click **Open Anyway** next to ImageTester, and confirm.
+- **macOS** may also ask to use "confidential information stored in Applitools ImageTester in your keychain" — that's the app reading back the API key it saved securely in your Keychain. Click **Always Allow**. (Unsigned builds re-ask after each update; signed builds won't.)
 <!-- UNSIGNED-END -->
 
 ## Using the app
