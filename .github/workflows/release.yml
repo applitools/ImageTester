@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: # dry run: builds artifacts, never creates a release
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Resolve version and validate tag
+        id: ver
+        shell: bash
+        run: |
+          POM_VERSION=$(mvn -q help:evaluate -Dexpression=project.version -DforceStdout)
+          echo "pom version: $POM_VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+              echo "Tag '$TAG' does not match v<major>.<minor>.<patch>[-suffix]" >&2
+              exit 1
+            fi
+            BASE="${TAG#v}"
+            BASE="${BASE%%-*}"
+            if [[ "$BASE" != "$POM_VERSION" ]]; then
+              echo "Tag base version '$BASE' does not match pom version '$POM_VERSION'." >&2
+              echo "Bump the pom or re-tag so installer metadata and asset names agree." >&2
+              exit 1
+            fi
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$POM_VERSION" >> "$GITHUB_OUTPUT"
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: validate
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+          - os: macos-latest
+            label: macOS-AppleSilicon
+          - os: macos-13
+            label: macOS-Intel
+          - os: ubuntu-latest
+            label: Linux
+    runs-on: ${{ matrix.os }}
+    env:
+      # GitHub Actions cannot reference secrets in `if:` directly; surface presence via env.
+      HAS_WINDOWS_SIGNING: ${{ secrets.WINDOWS_SIGNING_CERT != '' }}
+      HAS_APPLE_SIGNING: ${{ secrets.APPLE_SIGNING_CERT != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build installer
+        run: mvn -Pgui-installers -DskipTests -Dowasp.skip=true clean verify --batch-mode
+
+      # Signing seam: fail loudly if secrets exist before signing is implemented,
+      # so a "signed" release can never silently ship unsigned.
+      - name: Sign installer (Windows)
+        if: runner.os == 'Windows' && env.HAS_WINDOWS_SIGNING == 'true'
+        shell: bash
+        run: |
+          echo "WINDOWS_SIGNING_CERT is configured but Authenticode signing is not implemented yet." >&2
+          echo "Implement this step (signtool/SignPath) before setting the secret." >&2
+          exit 1
+
+      - name: Sign and notarize installer (macOS)
+        if: runner.os == 'macOS' && env.HAS_APPLE_SIGNING == 'true'
+        shell: bash
+        run: |
+          echo "APPLE_SIGNING_CERT is configured but Developer ID signing/notarization is not implemented yet." >&2
+          echo "Implement this step (codesign + notarytool) before setting the secret." >&2
+          exit 1
+
+      - name: Rename installer to customer-facing name
+        shell: bash
+        run: |
+          cd target/installers
+          count=$(ls | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "Expected exactly one installer in target/installers, found $count:" >&2
+            ls >&2
+            exit 1
+          fi
+          file=$(ls)
+          ext="${file##*.}"
+          mv "$file" "ImageTester-${{ needs.validate.outputs.version }}-${{ matrix.label }}.${ext}"
+          ls
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.label }}
+          path: target/installers/*
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          # Demo phase ships unsigned, so the UNSIGNED block stays in.
+          # When the signing seam is implemented, strip the block here for signed builds:
+          #   sed -i '/<!-- UNSIGNED-START -->/,/<!-- UNSIGNED-END -->/d' body.md
+          sed "s/{{VERSION}}/${{ needs.validate.outputs.version }}/g" .github/release-template.md > body.md
+          cat body.md
+
+      - name: Create pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ needs.validate.outputs.tag }}" \
+            --prerelease \
+            --title "ImageTester GUI ${{ needs.validate.outputs.tag }} (demo)" \
+            --notes-file body.md \
+            dist/*
