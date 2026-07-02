@@ -3,6 +3,8 @@ out/
 target/
 *.iml
 *.jar
+# libs/ is a file-based Maven repo for deps not published anywhere public
+!libs/**
 Artifacts/
 debug/
 src/test/java/Private/

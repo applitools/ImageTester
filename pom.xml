@@ -21,6 +21,15 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
+
+		<!--
+			EyesUtilities is not published to any public repository; it lives in
+			libs/ as a checked-in file-based repo so CI can resolve it.
+		-->
+		<repository>
+			<id>project-libs</id>
+			<url>file://${project.basedir}/libs</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
