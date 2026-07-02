@@ -49,6 +49,7 @@ public final class RunConfigFactory {
         config.logger = logger;
         config.appName = cmd.getOptionValue("a", "ImageTester");
         config.DocumentConversionDPI = Float.parseFloat(cmd.getOptionValue("di", "250"));
+        config.renderThreads = Integer.parseInt(cmd.getOptionValue("rt", String.valueOf(config.renderThreads)));
         config.pdfPass = cmd.getOptionValue("pp", null);
         config.pages = cmd.getOptionValue("sp", null);
         config.includePageNumbers = cmd.hasOption("pn");

@@ -31,7 +31,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    public static final String CUR_VER = "3.11.3";
+    public static final String CUR_VER = "3.12.0";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
     public static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
@@ -246,6 +246,7 @@ public class ImageTester {
                 currentConfiguration.logger = logger;
                 currentConfiguration.appName = currentBatch.app;
                 currentConfiguration.DocumentConversionDPI = Float.parseFloat(cmd.getOptionValue("di", "250"));
+                currentConfiguration.renderThreads = Integer.parseInt(cmd.getOptionValue("rt", String.valueOf(currentConfiguration.renderThreads)));
                 currentConfiguration.pdfPass = cmd.getOptionValue("pp", null);
                 currentConfiguration.pages = currentBatch.pages;
                 currentConfiguration.includePageNumbers = cmd.hasOption("pn");
@@ -482,6 +483,12 @@ public class ImageTester {
                 .desc("PDF Password")
                 .hasArg()
                 .argName("Password")
+                .build());
+        options.addOption(Option.builder("rt")
+                .longOpt("renderThreads")
+                .desc("Number of parallel page-render threads for multi-page PDF tests, default: min(4, cores - 1). Set 1 to disable parallel rendering.")
+                .hasArg()
+                .argName("units")
                 .build());
         options.addOption(Option.builder("th")
                 .longOpt("threads")
