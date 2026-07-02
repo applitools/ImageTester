@@ -120,6 +120,30 @@ public class RunControllerTest {
     }
 
     @Test
+    public void startEmitsRunStartedEventWithRunId() throws Exception {
+        RunStream stream = new RunStream();
+        RunController c = new RunController(SecretsStore.inMemoryForTest(), stream, passingBuilder());
+        c.setSecretApiKey("sk_test");
+        File folder = tmp.newFolder("pix");
+        makeTinyPng(folder);
+
+        java.io.StringWriter sink = new java.io.StringWriter();
+        CountDownLatch ready = new CountDownLatch(1);
+        stream.addClient(new java.io.PrintWriter(sink), () -> {}, ready);
+        ready.await(5, TimeUnit.SECONDS);
+
+        RunController.StartResult result = c.start(req(folder, "Strict"));
+
+        long deadline = System.currentTimeMillis() + 5_000;
+        while (!sink.toString().contains("\"type\":\"run-started\"") && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        String events = sink.toString();
+        assertTrue("run-started not emitted; got: " + events, events.contains("\"type\":\"run-started\""));
+        assertTrue("run-started missing runId; got: " + events, events.contains("\"runId\":\"" + result.runId + "\""));
+    }
+
+    @Test
     public void dvOptionProducesUsableRunConfigViaProductionBuilder() {
         RunRequest r = new RunRequest();
         r.sourcePath = ".";

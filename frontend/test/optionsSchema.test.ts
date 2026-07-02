@@ -19,6 +19,18 @@ describe("optionsSchema", () => {
     expect(vk?.tab).toBe("downloads");
   });
 
+  it("places render threads in the execution tab as a number", () => {
+    const rt = OPTION_SPECS.find((o) => o.flag === "rt");
+    expect(rt?.tab).toBe("execution");
+    expect(rt?.type).toBe("number");
+  });
+
+  it("places regex file filter in the execution tab as text", () => {
+    const rf = OPTION_SPECS.find((o) => o.flag === "rf");
+    expect(rf?.tab).toBe("execution");
+    expect(rf?.type).toBe("text");
+  });
+
   it("gives every option a help tip", () => {
     const withoutHelp = OPTION_SPECS.filter((o) => !o.help);
     expect(withoutHelp).toEqual([]);

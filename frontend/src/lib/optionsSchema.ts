@@ -76,6 +76,8 @@ export const OPTION_SPECS: OptionSpec[] = [
   { flag: "pr", label: "Properties",    type: "properties", tab: "metadata", help: "Custom key/value properties attached to each test (searchable on the dashboard).", default: "" },
   // Execution
   { flag: "th",    label: "Threads",      type: "number",   tab: "execution", help: "Maximum concurrent worker threads. Default: 3.", default: "" },
+  { flag: "rt",    label: "Render threads",   type: "number", tab: "execution", help: "Parallel page-render threads for multi-page PDFs. Default: min(4, CPU cores - 1); set 1 to disable.", default: "" },
+  { flag: "rf",    label: "File name filter", type: "text",   tab: "execution", help: "Only test files whose name matches this regular expression, e.g. Lorem.* tests Lorem1.pdf and Lorem2.pdf.", default: "" },
   { flag: "debug", label: "Debug prints", type: "checkbox", tab: "execution", help: "Print verbose debug output to the log.", default: false },
   { flag: "log",   label: "Verbose log",  type: "checkbox", tab: "execution", help: "Enable detailed Applitools SDK logging.", default: false },
   { flag: "lf",    label: "Log file",     type: "text",     tab: "execution", help: "Deprecated — set the log path with the APPLITOOLS_LOG_DIR environment variable instead.", default: "" },

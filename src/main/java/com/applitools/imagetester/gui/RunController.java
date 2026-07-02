@@ -113,6 +113,9 @@ public final class RunController {
 
         // Wipe SSE replay history so a tab that connects mid-run only sees events from *this* run.
         runStream_.resetReplay();
+        // Emitted before the HTTP response returns so the frontend can enter "running" from the
+        // stream itself instead of racing its optimistic dispatch against test-started.
+        runStream_.emit(new SseEvent.RunStarted(running.runId));
         runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, rc, logger, running));
         return new StartResult(running.runId);
     }

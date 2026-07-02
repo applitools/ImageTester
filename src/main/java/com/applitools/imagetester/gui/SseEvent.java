@@ -5,6 +5,11 @@ public abstract class SseEvent {
     public final String type;
     protected SseEvent(String type) { this.type = type; }
 
+    public static final class RunStarted extends SseEvent {
+        public final String runId;
+        public RunStarted(String runId) { super("run-started"); this.runId = runId; }
+    }
+
     public static final class TestStarted extends SseEvent {
         public final String name;
         public TestStarted(String name) { super("test-started"); this.name = name; }

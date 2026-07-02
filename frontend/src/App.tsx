@@ -4,6 +4,7 @@ import { StatusPane } from "./components/StatusPane";
 import { OptionsDrawer } from "./components/OptionsDrawer";
 import { api } from "./lib/api";
 import { connectSse } from "./lib/sse";
+import type { SseHandle } from "./lib/sse";
 import { getVersion } from "./lib/version";
 import { loadOptions, saveOptions, countNonDefault, toRunPayload } from "./lib/options";
 import type { RunOptions } from "./lib/options";
@@ -26,6 +27,9 @@ type Action =
 function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
   if (action.type === "set") return action.snapshot;
   const e = action.event;
+  // The server emits run-started before /api/run even responds, so this — not the
+  // optimistic dispatch in onRun — is the authoritative idle → running transition.
+  if (e.type === "run-started") return { kind: "running", runId: e.runId, tests: [] };
   if (state.kind !== "running") return state;
   switch (e.type) {
     case "test-started":
@@ -54,7 +58,7 @@ export function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  const esRef = useRef<SseHandle | null>(null);
 
   const setOption = (flag: string, value: unknown) => {
     setOptions((prev) => { const next = { ...prev, [flag]: value }; saveOptions(next); return next; });
@@ -63,10 +67,15 @@ export function App() {
   useEffect(() => {
     api.hasApiKey().then((r) => setHasKey(r.hasKey)).catch(() => {});
     api.status().then((s) => dispatch({ type: "set", snapshot: s as RunStateSnapshot })).catch(() => {});
-    esRef.current = connectSse((e) => {
-      if (e.type === "log-line") setLogLines((l) => [...l, e.text]);
-      else dispatch({ type: "sse", event: e });
-    });
+    esRef.current = connectSse(
+      (e) => {
+        if (e.type === "log-line") setLogLines((l) => [...l, e.text]);
+        else dispatch({ type: "sse", event: e });
+      },
+      // Re-sync on every (re)connect — events emitted while the stream was down are gone,
+      // so the snapshot is the only way to catch up.
+      () => api.status().then((s) => dispatch({ type: "set", snapshot: s as RunStateSnapshot })).catch(() => {}),
+    );
     return () => esRef.current?.close();
   }, []);
 
