@@ -61,7 +61,8 @@ jobs:
             label: Windows
           - os: macos-latest
             label: macOS-AppleSilicon
-          - os: macos-13
+          # macos-13 was retired from the hosted fleet; macos-15-intel is the x64 label
+          - os: macos-15-intel
             label: macOS-Intel
           - os: ubuntu-latest
             label: Linux
