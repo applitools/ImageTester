@@ -6,6 +6,14 @@ If you don't have your Applitools account yet,
 please [sign up first]("https://applitools.com/sign-up/") 
 and get your Applitools api-key that will be used next to execute the tests.
 
+## ImageTester GUI (beta)
+
+Prefer an app over the command line? Download the ImageTester GUI installer for your OS from the
+[latest release](https://github.com/applitools/ImageTester/releases) — Windows (`.exe`),
+macOS (`.dmg`, Apple Silicon and Intel), or Linux (`.deb`). Each bundles everything it needs;
+double-click and the app opens in your browser. See the release notes for first-launch
+instructions (demo builds are not yet code-signed, so your OS will ask you to confirm once).
+
 The tool can be invoked on a single file or a complex folder structure with mixed content.
 Once provided a complex folder structure the tool recursively scans the structure and determines on each level what should be the batch-name, 
 the directoryTest-name and the tag values relatively to the target files.  
