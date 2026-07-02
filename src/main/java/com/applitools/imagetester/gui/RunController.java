@@ -140,6 +140,9 @@ public final class RunController {
         long startedNs = System.nanoTime();
         Config config = rc.config;
         config.apiKey = apiKey;
+        // The factory captured a null key at build time (no -k flag, no env var in the
+        // installed app); every Eyes instance it creates needs the GUI-provided key.
+        rc.factory.apiKey(apiKey);
         config.shouldThrowException = false; // CRITICAL: a thrown diff calls System.exit
         if (config.logger == null) config.logger = logger;
 

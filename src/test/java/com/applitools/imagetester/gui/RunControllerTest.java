@@ -144,6 +144,30 @@ public class RunControllerTest {
     }
 
     @Test
+    public void runPassesGuiApiKeyToEyesFactory() throws Exception {
+        Eyes stubbedEyes = stubEyes();
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenReturn(stubbedEyes);
+        RunController.RunConfigBuilder builder = (req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
+        };
+        RunController c = newController(builder);
+        c.setSecretApiKey("sk_from_gui");
+        File folder = tmp.newFolder("pix");
+        makeTinyPng(folder);
+
+        c.start(req(folder, "Strict"));
+
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        verify(factory).apiKey("sk_from_gui");
+    }
+
+    @Test
     public void dvOptionProducesUsableRunConfigViaProductionBuilder() {
         RunRequest r = new RunRequest();
         r.sourcePath = ".";

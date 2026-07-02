@@ -34,6 +34,19 @@ public final class NativePathChooser {
     public static String chooseFile(String startPath) { return choose(false, startPath); }
     public static String chooseFolder(String startPath) { return choose(true, startPath); }
 
+    /**
+     * macOS opens the native NSOpenPanel behind the browser unless the app is activated first;
+     * the always-on-top anchor frame is enough for Swing dialogs but ignored by native panels.
+     */
+    private static void requestForeground() {
+        try {
+            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+            if (desktop.isSupported(java.awt.Desktop.Action.APP_REQUEST_FOREGROUND)) {
+                desktop.requestForeground(true);
+            }
+        } catch (Throwable ignored) { /* focus is best-effort; the dialog still opens */ }
+    }
+
     /** Returns an existing directory derived from the hint (the path itself if a dir, else its parent), or null. */
     private static File resolveStartDir(String hint) {
         if (hint == null || hint.isEmpty()) return null;
@@ -59,6 +72,7 @@ public final class NativePathChooser {
             anchor.setType(java.awt.Window.Type.UTILITY);
             anchor.setVisible(true);
             anchor.toFront();
+            requestForeground();
             try {
                 if (folder) {
                     JFileChooser fc = new JFileChooser();
