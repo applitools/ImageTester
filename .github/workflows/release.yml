@@ -53,6 +53,8 @@ jobs:
   build:
     needs: validate
     strategy:
+      # One OS failing must not cancel the other installers mid-build.
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
