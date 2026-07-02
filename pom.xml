@@ -415,6 +415,8 @@
 						<phase>process-resources</phase>
 						<goals><goal>copy-resources</goal></goals>
 						<configuration>
+							<!-- overwrite: never let a newer-destination timestamp skip the copy -->
+							<overwrite>true</overwrite>
 							<outputDirectory>${project.build.outputDirectory}/web</outputDirectory>
 							<resources>
 								<resource>
@@ -568,6 +570,7 @@
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
 						<executions>
 							<execution>
 								<id>run-jpackage</id>
