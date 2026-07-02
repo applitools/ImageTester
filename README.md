@@ -83,6 +83,7 @@ Labels and identifiers attached to your tests — shown on the Applitools dashbo
 How the run executes and what it writes to the log.
 
 + `-th [number]` - Maximum concurrent workers (threads); default = 3
++ `-rt [number]` - Parallel page-render threads for multi-page PDF tests; default = min(4, CPU cores - 1). Pages are rendered in the background while earlier pages upload, keeping a single test with ordered steps. Set `-rt 1` to disable
 + `-debug` - Turn on verbose debug prints
 + `-log` - Turn on Applitools SDK log prints
 + `-rf [regex]` - Only test files whose name matches the regular expression.

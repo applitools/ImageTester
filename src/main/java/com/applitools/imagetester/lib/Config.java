@@ -16,7 +16,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Config {
+    private static final int MAX_DEFAULT_RENDER_THREADS = 4;
+
     public RectangleSize viewport;
+    public int renderThreads = defaultRenderThreads();
     public String appName = "ImageTester";
     public float DocumentConversionDPI = 250;
     public boolean splitSteps = false;
@@ -60,6 +63,12 @@ public class Config {
     public String deviceName;
     public String regexFileNameFilter;
     public String[][] properties = null;
+
+    // Leave one core for the Eyes check thread and the universal-core process.
+    private static int defaultRenderThreads() {
+        int cores = Runtime.getRuntime().availableProcessors();
+        return Math.min(MAX_DEFAULT_RENDER_THREADS, Math.max(1, cores - 1));
+    }
 
     public void setViewport(String viewport) {
         if (viewport == null) return;
