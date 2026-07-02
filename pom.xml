@@ -507,6 +507,8 @@
 									<arguments>
 										<argument>--input</argument>
 										<argument>${project.build.directory}/installer-input</argument>
+										<argument>--type</argument>
+										<argument>${installer.type}</argument>
 										<argument>--name</argument>
 										<argument>ImageTester</argument>
 										<argument>--main-jar</argument>
@@ -536,21 +538,48 @@
 
 		<!--
 			OS-detection sub-profiles for gui-installers: each auto-activates on its host and
-			sets ${installer.input.jar} to the correct slim shade. Only consumed when -Pgui-installers
-			is also active; harmless property otherwise.
+			sets ${installer.input.jar} to the correct slim shade plus ${installer.type} and any
+			OS-specific jpackage flags. Only consumed when -Pgui-installers is also active;
+			harmless properties otherwise.
 		-->
 		<profile>
 			<id>installer-os-windows</id>
 			<activation><os><family>windows</family></os></activation>
 			<properties>
 				<installer.input.jar>ImageTester_${project.version}_Windows.jar</installer.input.jar>
+				<!--
+					msi, not exe: jpackage's exe wrapper ships without a supportedOS manifest,
+					so Windows PCA shows "This program might not have installed correctly"
+					even though the install succeeded. msiexec is exempt from that heuristic.
+				-->
+				<installer.type>msi</installer.type>
 			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>run-jpackage</id>
+								<configuration>
+									<arguments combine.children="append">
+										<argument>--win-menu</argument>
+										<argument>--win-shortcut</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 		<profile>
 			<id>installer-os-mac-arm</id>
 			<activation><os><family>mac</family><arch>aarch64</arch></os></activation>
 			<properties>
 				<installer.input.jar>ImageTester_${project.version}_MacArm.jar</installer.input.jar>
+				<installer.type>dmg</installer.type>
 			</properties>
 		</profile>
 		<profile>
@@ -558,6 +587,7 @@
 			<activation><os><family>mac</family><arch>x86_64</arch></os></activation>
 			<properties>
 				<installer.input.jar>ImageTester_${project.version}_Mac.jar</installer.input.jar>
+				<installer.type>dmg</installer.type>
 			</properties>
 		</profile>
 		<profile>
@@ -565,6 +595,7 @@
 			<activation><os><family>unix</family><name>linux</name></os></activation>
 			<properties>
 				<installer.input.jar>ImageTester_${project.version}_Linux.jar</installer.input.jar>
+				<installer.type>deb</installer.type>
 			</properties>
 		</profile>
 	</profiles>

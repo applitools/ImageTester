@@ -4,7 +4,7 @@ ImageTester GUI — visual testing for images, PDFs & documents, powered by Appl
 
 | Your machine | File |
 |---|---|
-| Windows | `ImageTester-{{VERSION}}-Windows.exe` |
+| Windows | `ImageTester-{{VERSION}}-Windows.msi` |
 | Mac with Apple Silicon | `ImageTester-{{VERSION}}-macOS-AppleSilicon.dmg` |
 | Mac with Intel | `ImageTester-{{VERSION}}-macOS-Intel.dmg` |
 | Linux (Debian/Ubuntu) | `ImageTester-{{VERSION}}-Linux.deb` |
