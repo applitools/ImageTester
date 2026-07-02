@@ -84,6 +84,8 @@ jobs:
           node-version: 20
 
       - name: Build installer
+        # bash on every OS: Windows' default pwsh splits -Dowasp.skip=true at the dot
+        shell: bash
         run: mvn -Pgui-installers -DskipTests -Dowasp.skip=true clean verify --batch-mode
 
       # Signing seam: fail loudly if secrets exist before signing is implemented,
