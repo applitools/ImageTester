@@ -31,6 +31,12 @@ describe("optionsSchema", () => {
     expect(rf?.type).toBe("text");
   });
 
+  it("offers pdf trim as a checkbox in the pdf tab", () => {
+    const tp = OPTION_SPECS.find((o) => o.flag === "tp");
+    expect(tp?.tab).toBe("pdf");
+    expect(tp?.type).toBe("checkbox");
+  });
+
   it("gives every option a help tip", () => {
     const withoutHelp = OPTION_SPECS.filter((o) => !o.help);
     expect(withoutHelp).toEqual([]);

@@ -191,7 +191,7 @@ Options that apply when testing PDFs and other documents.
 
 + `-di [dpi]` - Rendering quality (dots per inch) for PDF pages; default = 250
 + `-sp [pages]` - Comma-separated page numbers/ranges to include (e.g. 1,2,5,7,10-15); default = all pages
-+ `-tp [auto|size]` - Trim print margins (crop marks, slug area) from PDF pages before comparing. `auto` detects the trim area from TrimBox metadata or crop marks; `603x774` crops a centered box of that size in PDF points. Enabling trim changes checkpoint dimensions, so existing baselines will mismatch on the first trimmed run. Marks flattened into raster scans are not detected — use the explicit size for those.
++ `-tp [size]` - Trim print margins (crop marks, slug area) from PDF pages before comparing. Bare `-tp` (or `-tp auto`) detects the trim area from TrimBox metadata or crop marks; `-tp 603x774` crops a centered box of that size in PDF points. Enabling trim changes checkpoint dimensions, so existing baselines will mismatch on the first trimmed run. Marks flattened into raster scans are not detected — use the explicit size for those.
 + `-pp [password]` - Password for opening protected PDF files
 + `-pn` - Preserve the original test names when testing only selected pages
 + `-st` - Split a multi-page document into individual single-step tests

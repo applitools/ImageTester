@@ -64,7 +64,7 @@ public final class RunConfigFactory {
         config.regexFileNameFilter = cmd.getOptionValue("rf");
         config.setViewport(cmd.getOptionValue("vs", null));
         config.setMatchSize(cmd.getOptionValue("ms", null));
-        config.setPdfTrim(cmd.getOptionValue("tp", null));
+        config.setPdfTrim(cmd.hasOption("tp") ? cmd.getOptionValue("tp", Config.PDF_TRIM_AUTO) : null);
         config.setBatchInfo(cmd.getOptionValue("fb", null), cmd.hasOption("nc"));
         config.setIgnoreRegions(cmd.getOptionValue("ir", null));
         config.setContentRegions(cmd.getOptionValue("cr", null));

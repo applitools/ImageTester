@@ -1,6 +1,11 @@
-import { OPTION_SPECS } from "./optionsSchema";
+import { OPTION_SPECS, type OptionSpec } from "./optionsSchema";
 
 export type RunOptions = Record<string, unknown>;
+
+export interface ActiveOption {
+  spec: OptionSpec;
+  value: unknown;
+}
 
 const STORAGE_KEY = "imagetester.options";
 
@@ -18,6 +23,16 @@ function isDefault(flag: string, value: unknown): boolean {
 
 export function countNonDefault(o: RunOptions): number {
   return OPTION_SPECS.filter((s) => !isDefault(s.flag, o[s.flag])).length;
+}
+
+export function countNonDefaultForTab(o: RunOptions, tab: string): number {
+  return OPTION_SPECS.filter((s) => s.tab === tab && !isDefault(s.flag, o[s.flag])).length;
+}
+
+export function listNonDefault(o: RunOptions): ActiveOption[] {
+  return OPTION_SPECS
+    .filter((s) => !isDefault(s.flag, o[s.flag]))
+    .map((s) => ({ spec: s, value: o[s.flag] }));
 }
 
 export function toRunPayload(sourcePath: string, o: RunOptions) {

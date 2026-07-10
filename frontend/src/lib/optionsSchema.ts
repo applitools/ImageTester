@@ -112,7 +112,7 @@ export const OPTION_SPECS: OptionSpec[] = [
   // PDF & Documents
   { flag: "di", label: "DPI",               type: "number",   tab: "pdf", help: "Rendering quality (dots per inch) for PDF pages. Higher is sharper but slower. Default: 250.", default: "" },
   { flag: "sp", label: "Selected pages",    type: "text",     tab: "pdf", help: "Which PDF pages to test, e.g. 1,2,5,7,10-15. Default: all pages.", default: "" },
-  { flag: "tp", label: "Trim print margins", type: "text",    tab: "pdf", help: "Remove printer margins (crop marks, slug area) from PDF pages before comparing. auto = detect from TrimBox metadata or crop marks; or a centered WxH crop in PDF points, e.g. 603x774.", default: "" },
+  { flag: "tp", label: "Trim print margins", type: "checkbox", tab: "pdf", help: "Remove printer margins (crop marks, slug area) from PDF pages before comparing — detects the trim area from TrimBox metadata or crop marks. For a fixed-size crop, use the CLI: -tp WxH in PDF points.", default: false },
   { flag: "pn", label: "Page numbers",      type: "checkbox", tab: "pdf", help: "Preserve the original test names when testing only selected pages.", default: false },
   { flag: "pp", label: "PDF password",      type: "password", tab: "pdf", help: "Password for opening protected PDF files.", default: "" },
   { flag: "st", label: "Split steps",       type: "checkbox", tab: "pdf", help: "Split a multi-page document into individual single-step tests.", default: false },

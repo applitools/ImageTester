@@ -442,8 +442,9 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("tp")
                 .longOpt("pdfTrim")
-                .desc("Trim print margins from PDF pages before comparing. `auto` detects the trim area from TrimBox metadata or crop marks; `<width>x<height>` (PDF points) crops a centered box ie. 603x774")
+                .desc("Trim print margins from PDF pages before comparing. Bare `-tp` (or `-tp auto`) detects the trim area from TrimBox metadata or crop marks; `<width>x<height>` (PDF points) crops a centered box ie. 603x774")
                 .hasArg()
+                .optionalArg(true)
                 .argName("auto|size")
                 .build());
         options.addOption(Option.builder("sq")
