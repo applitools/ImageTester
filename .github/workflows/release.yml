@@ -24,6 +24,9 @@ jobs:
           java-version: 17
           cache: maven
 
+      - name: Scan tracked files for customer data
+        run: bash .githooks/pii-guard.sh --all
+
       - name: Resolve version and validate tag
         id: ver
         shell: bash
