@@ -11,6 +11,20 @@ ImageTester GUI — visual testing for images, PDFs & documents, powered by Appl
 
 Not sure which Mac you have? Apple menu → **About This Mac**: "Chip: Apple M…" means Apple Silicon; "Processor: Intel…" means Intel.
 
+## Command line (CLI jars)
+
+Prefer the CLI? Grab a jar and run it with Java 11+: `java -jar ImageTester_{{VERSION}}.jar -k <api-key> [options]`
+
+| Environment | File |
+|---|---|
+| Any (largest, bundles every platform) | `ImageTester_{{VERSION}}.jar` |
+| Windows x64 | `ImageTester_{{VERSION}}_Windows.jar` |
+| Mac Intel | `ImageTester_{{VERSION}}_Mac.jar` |
+| Mac Apple Silicon | `ImageTester_{{VERSION}}_MacArm.jar` |
+| Linux x64 | `ImageTester_{{VERSION}}_Linux.jar` |
+| Alpine Linux | `ImageTester_{{VERSION}}_Alpine.jar` |
+| Linux ARM | `ImageTester_{{VERSION}}_Arm.jar` |
+
 <!-- UNSIGNED-START -->
 ## First launch
 

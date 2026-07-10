@@ -440,6 +440,12 @@ public class ImageTester {
                 .hasArg()
                 .argName("Pages")
                 .build());
+        options.addOption(Option.builder("tp")
+                .longOpt("pdfTrim")
+                .desc("Trim print margins from PDF pages before comparing. `auto` detects the trim area from TrimBox metadata or crop marks; `<width>x<height>` (PDF points) crops a centered box ie. 603x774")
+                .hasArg()
+                .argName("auto|size")
+                .build());
         options.addOption(Option.builder("sq")
                 .longOpt("sequenceName")
                 .desc("Set the batch sequenceName for applitools' insights")

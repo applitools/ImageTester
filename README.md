@@ -9,7 +9,7 @@ and get your Applitools api-key that will be used next to execute the tests.
 ## ImageTester GUI (beta)
 
 Prefer an app over the command line? Download the ImageTester GUI installer for your OS from the
-[latest release](https://github.com/applitools/ImageTester/releases) — Windows (`.exe`),
+[latest release](https://github.com/applitools/ImageTester/releases) — Windows (`.msi`),
 macOS (`.dmg`, Apple Silicon and Intel), or Linux (`.deb`). Each bundles everything it needs;
 double-click and the app opens in your browser. See the release notes for first-launch
 instructions (demo builds are not yet code-signed, so your OS will ask you to confirm once).
@@ -191,6 +191,7 @@ Options that apply when testing PDFs and other documents.
 
 + `-di [dpi]` - Rendering quality (dots per inch) for PDF pages; default = 250
 + `-sp [pages]` - Comma-separated page numbers/ranges to include (e.g. 1,2,5,7,10-15); default = all pages
++ `-tp [auto|size]` - Trim print margins (crop marks, slug area) from PDF pages before comparing. `auto` detects the trim area from TrimBox metadata or crop marks; `603x774` crops a centered box of that size in PDF points. Enabling trim changes checkpoint dimensions, so existing baselines will mismatch on the first trimmed run. Marks flattened into raster scans are not detected — use the explicit size for those.
 + `-pp [password]` - Password for opening protected PDF files
 + `-pn` - Preserve the original test names when testing only selected pages
 + `-st` - Split a multi-page document into individual single-step tests

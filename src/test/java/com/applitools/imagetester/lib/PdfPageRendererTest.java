@@ -72,6 +72,69 @@ public class PdfPageRendererTest {
         }
     }
 
+    @Test
+    public void with_ms_set_resizes_rendered_page_to_exact_dimensions() throws IOException {
+        File pdf = createSinglePagePdf("Hello World", PDType1Font.HELVETICA, 12f);
+        try (PDDocument doc = PDDocument.load(pdf)) {
+            PDFRenderer fallback = new PDFRenderer(doc);
+            Config config = baseConfig();
+            config.setMatchSize("300x400");
+
+            BufferedImage rendered = PdfPageRenderer.render(doc.getPage(0), 0, fallback, config);
+
+            assertEquals("Width mismatch", 300, rendered.getWidth());
+            assertEquals("Height mismatch", 400, rendered.getHeight());
+        }
+    }
+
+    @Test
+    public void with_pt_manual_set_crops_rendered_page() throws IOException {
+        File pdf = createSinglePagePdf("Hello World", PDType1Font.HELVETICA, 12f);
+        try (PDDocument doc = PDDocument.load(pdf)) {
+            PDFRenderer fallback = new PDFRenderer(doc);
+            Config config = baseConfig();
+            config.setPdfTrim("306x396");
+
+            BufferedImage rendered = PdfPageRenderer.render(doc.getPage(0), 0, fallback, config);
+
+            assertEquals("Width mismatch", 306, rendered.getWidth());
+            assertEquals("Height mismatch", 396, rendered.getHeight());
+        }
+    }
+
+    @Test
+    public void with_pt_auto_set_crops_to_trimbox_metadata() throws IOException {
+        File pdf = createSinglePagePdf("Hello World", PDType1Font.HELVETICA, 12f);
+        try (PDDocument doc = PDDocument.load(pdf)) {
+            doc.getPage(0).setTrimBox(new PDRectangle(100f, 146f, 400f, 500f));
+            PDFRenderer fallback = new PDFRenderer(doc);
+            Config config = baseConfig();
+            config.setPdfTrim("auto");
+
+            BufferedImage rendered = PdfPageRenderer.render(doc.getPage(0), 0, fallback, config);
+
+            assertEquals("Width mismatch", 400, rendered.getWidth());
+            assertEquals("Height mismatch", 500, rendered.getHeight());
+        }
+    }
+
+    @Test
+    public void with_pt_and_ms_set_crops_before_resizing() throws IOException {
+        File pdf = createSinglePagePdf("Hello World", PDType1Font.HELVETICA, 12f);
+        try (PDDocument doc = PDDocument.load(pdf)) {
+            PDFRenderer fallback = new PDFRenderer(doc);
+            Config config = baseConfig();
+            // Crop changes the aspect ratio; proportional match-size then proves crop ran first.
+            config.setPdfTrim("306x792");
+            config.setMatchSize("153x");
+
+            BufferedImage rendered = PdfPageRenderer.render(doc.getPage(0), 0, fallback, config);
+
+            assertEquals("Width mismatch", 153, rendered.getWidth());
+            assertEquals("Height mismatch", 396, rendered.getHeight());
+        }
+    }
+
     private Config baseConfig() {
         Config config = new Config();
         config.DocumentConversionDPI = TEST_DPI;

@@ -82,7 +82,7 @@ export const OPTION_SPECS: OptionSpec[] = [
   { flag: "log",   label: "Verbose log",  type: "checkbox", tab: "execution", help: "Enable detailed Applitools SDK logging.", default: false },
   { flag: "lf",    label: "Log file",     type: "text",     tab: "execution", help: "Deprecated — set the log path with the APPLITOOLS_LOG_DIR environment variable instead.", default: "" },
   // Matching
-  { flag: "ms", label: "Match size",          type: "text",     tab: "matching", help: "Resize images to a target size before comparing. e.g. 1000x (by width), x600 (by height), 1000x600 (exact — may distort).", default: "" },
+  { flag: "ms", label: "Match size",          type: "text",     tab: "matching", help: "Resize images and PDF pages to a target size before comparing. e.g. 1000x (by width), x600 (by height), 1000x600 (exact — may distort).", default: "" },
   { flag: "mt", label: "Match timeout (ms)",  type: "number",   tab: "matching", help: "Match/retry timeout in milliseconds. Minimum 500. Default: 500.", default: "" },
   { flag: "id", label: "Ignore displacement", type: "checkbox", tab: "matching", help: "Ignore position shifts of elements that only moved.", default: false },
   { flag: "as", label: "Auto-save failed",    type: "checkbox", tab: "matching", help: "Automatically accept new baselines on failure. Use with care — saves without human review.", default: false },
@@ -112,6 +112,7 @@ export const OPTION_SPECS: OptionSpec[] = [
   // PDF & Documents
   { flag: "di", label: "DPI",               type: "number",   tab: "pdf", help: "Rendering quality (dots per inch) for PDF pages. Higher is sharper but slower. Default: 250.", default: "" },
   { flag: "sp", label: "Selected pages",    type: "text",     tab: "pdf", help: "Which PDF pages to test, e.g. 1,2,5,7,10-15. Default: all pages.", default: "" },
+  { flag: "tp", label: "Trim print margins", type: "text",    tab: "pdf", help: "Remove printer margins (crop marks, slug area) from PDF pages before comparing. auto = detect from TrimBox metadata or crop marks; or a centered WxH crop in PDF points, e.g. 603x774.", default: "" },
   { flag: "pn", label: "Page numbers",      type: "checkbox", tab: "pdf", help: "Preserve the original test names when testing only selected pages.", default: false },
   { flag: "pp", label: "PDF password",      type: "password", tab: "pdf", help: "Password for opening protected PDF files.", default: "" },
   { flag: "st", label: "Split steps",       type: "checkbox", tab: "pdf", help: "Split a multi-page document into individual single-step tests.", default: false },

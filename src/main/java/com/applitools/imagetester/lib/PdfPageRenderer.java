@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 /**
@@ -24,9 +25,13 @@ public final class PdfPageRenderer {
                                        Config config) throws IOException {
         boolean removeWatermark = config.removeWatermarkText != null;
         boolean normalize = config.normalizeFont;
+        // Resolve against the original page: watermark removal must not erase the crop marks first.
+        PDRectangle trimCrop = PdfPageTrimmer.resolveCropBox(originalPage, config);
 
         if (!removeWatermark && !normalize) {
-            return fallback.renderImageWithDPI(zeroBasedPageIndex, config.DocumentConversionDPI);
+            if (trimCrop != null) originalPage.setCropBox(trimCrop);
+            return MatchSizeResizer.resize(
+                    fallback.renderImageWithDPI(zeroBasedPageIndex, config.DocumentConversionDPI), config);
         }
 
         PDPage page = originalPage;
@@ -36,9 +41,11 @@ public final class PdfPageRenderer {
         if (normalize) {
             page = PdfFontNormalizer.normalize(page);
         }
+        if (trimCrop != null) page.setCropBox(trimCrop);
         try (PDDocument tempDoc = new PDDocument()) {
             tempDoc.addPage(page);
-            return new PDFRenderer(tempDoc).renderImageWithDPI(0, config.DocumentConversionDPI);
+            return MatchSizeResizer.resize(
+                    new PDFRenderer(tempDoc).renderImageWithDPI(0, config.DocumentConversionDPI), config);
         }
     }
 }
