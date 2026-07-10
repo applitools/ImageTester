@@ -53,16 +53,13 @@ jobs:
   build:
     needs: validate
     strategy:
-      # One OS failing must not cancel the other installers mid-build.
-      fail-fast: false
       matrix:
         include:
           - os: windows-latest
             label: Windows
           - os: macos-latest
             label: macOS-AppleSilicon
-          # macos-13 was retired from the hosted fleet; macos-15-intel is the x64 label
-          - os: macos-15-intel
+          - os: macos-13
             label: macOS-Intel
           - os: ubuntu-latest
             label: Linux
@@ -85,8 +82,6 @@ jobs:
           node-version: 20
 
       - name: Build installer
-        # bash on every OS: Windows' default pwsh splits -Dowasp.skip=true at the dot
-        shell: bash
         run: mvn -Pgui-installers -DskipTests -Dowasp.skip=true clean verify --batch-mode
 
       # Signing seam: fail loudly if secrets exist before signing is implemented,
@@ -128,50 +123,9 @@ jobs:
           path: target/installers/*
           if-no-files-found: error
 
-  build-jars:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 11
-          cache: maven
-
-      # Platform jars differ only by which eyes-universal-core binary is bundled,
-      # so a single Linux build produces all seven (frontend-maven-plugin installs
-      # its own Node for the GUI bundle).
-      - name: Build CLI jars (universal + six platform jars)
-        run: mvn -DskipTests package --batch-mode
-
-      - name: Verify expected jars exist
-        shell: bash
-        run: |
-          cd jars
-          # Jars are named with the pom version; a suffixed tag (v1.2.3-rc1) still builds 1.2.3 jars.
-          BASE="${{ needs.validate.outputs.version }}"
-          BASE="${BASE%%-*}"
-          for suffix in "" "_Windows" "_Mac" "_MacArm" "_Linux" "_Alpine" "_Arm"; do
-            f="ImageTester_${BASE}${suffix}.jar"
-            if [ ! -f "$f" ]; then
-              echo "Missing expected jar: $f" >&2
-              ls >&2
-              exit 1
-            fi
-          done
-          ls -la ImageTester_*.jar
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cli-jars
-          path: jars/ImageTester_*.jar
-          if-no-files-found: error
-
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [validate, build, build-jars]
+    needs: [validate, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
