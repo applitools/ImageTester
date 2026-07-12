@@ -1,0 +1,55 @@
+# Binary files approved for this public repository.
+# .githooks/pii-guard.sh (pre-commit + CI) rejects any tracked binary not
+# listed here. Before adding a file: open it, including every embedded image
+# (xlsx/docx media can rasterize emails and names), and confirm it contains
+# no customer data. Sanitize first if in doubt — see
+# TestData/xlsx-header-watermark.xlsx for an example of a scrubbed fixture.
+TestData/a/wikipedia.png
+TestData/b/Lorem1.pdf
+TestData/b/c/JustPDF/Lorem2.pdf
+TestData/b/c/JustPDF/Lorem3.pdf
+TestData/b/c/JustPostscript/Lorem2.ps
+TestData/b/c/d/wikihow.png
+TestData/b/c/d/wikiquote.png
+TestData/b/c/googleforgoogle.png
+TestData/diffs/actual/lorem_20.pdf
+TestData/diffs/base/lorem_20.pdf
+TestData/image-T0MP130031-01.png
+TestData/jpegs/alphabetic/a.jpg
+TestData/jpegs/alphabetic/b.jpg
+TestData/jpegs/alphabetic/c.jpg
+TestData/jpegs/alphabetic/d.jpg
+TestData/jpegs/mixed/1.jpg
+TestData/jpegs/mixed/2.jpg
+TestData/jpegs/mixed/3.jpg
+TestData/jpegs/mixed/4.jpg
+TestData/jpegs/mixed/a.jpg
+TestData/jpegs/mixed/b.jpg
+TestData/jpegs/mixed/c.jpg
+TestData/jpegs/mixed/d.jpg
+TestData/jpegs/numeric/1.jpg
+TestData/jpegs/numeric/2.jpg
+TestData/jpegs/numeric/3.jpg
+TestData/jpegs/numeric/4.jpg
+TestData/multi-format/Accessing user tickets in Zendesk (1).docx
+TestData/multi-format/Copy of Dealing with sensitive data in support.pptx
+TestData/multi-format/contributing-to-docs (2).pptx
+TestData/multi-format/sample.docx
+TestData/multi-format/sample.pptx
+TestData/multi-format/sample.ps
+TestData/multi-format/test_sample_xlsx_Small.xlsx
+TestData/xlsx-header-watermark.xlsx
+gui-launch.png
+jars/test_jbig.pdf
+libs/com/applitools/eyesutilities/EyesUtilities/1.6.6/EyesUtilities-1.6.6.jar
+orig_page_fullsize.png
+orig_policy_doc.png
+src/test/resources/fixtures/corrupted.pdf
+src/test/resources/fixtures/empty.pdf
+src/test/resources/fixtures/password-protected.pdf
+src/test/resources/fixtures/sample.png
+src/test/resources/fixtures/valid-1-page.pdf
+src/test/resources/fixtures/valid-10-page.pdf
+src/test/resources/fixtures/valid-2-page.pdf
+src/test/resources/watermark/PDF_with_watermark.pdf
+src/test/resources/watermark/PDF_without_watermark.pdf

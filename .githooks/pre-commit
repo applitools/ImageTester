@@ -1,0 +1,3 @@
+#!/bin/sh
+# Enable with: git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/.githooks/pii-guard.sh" --staged

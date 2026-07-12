@@ -38,6 +38,7 @@ public class Config {
     public ProxySettings proxy_settings = null;
     public String matchWidth = null;
     public String matchHeight = null;
+    public String pdfTrim = null;
     public boolean legacyFileOrder = false;
     public boolean dontCloseBatches = false;
     public String batchMapperPath = null;
@@ -103,6 +104,29 @@ public class Config {
                 proxy_settings = new ProxySettings(proxy[0], proxy[1], proxy[2]);
             } else
                 throw new RuntimeException("Proxy setting are invalid");
+    }
+
+    public static final String PDF_TRIM_AUTO = "auto";
+
+    public void setPdfTrim(String value) {
+        if (value == null) return;
+        if (!PDF_TRIM_AUTO.equals(value) && parsePdfTrimSize(value) == null)
+            throw new RuntimeException(
+                    "invalid pdf trim, make sure the call is -tp auto or -tp <width>x<height> (PDF points)");
+        this.pdfTrim = value;
+    }
+
+    /** Returns {width, height} in PDF points, or null when the value is not a valid WxH pair. */
+    public static float[] parsePdfTrimSize(String value) {
+        String[] dims = value.split("x");
+        if (dims.length != 2) return null;
+        try {
+            float width = Float.parseFloat(dims[0]);
+            float height = Float.parseFloat(dims[1]);
+            return width > 0 && height > 0 ? new float[] { width, height } : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public void setMatchSize(String size) {

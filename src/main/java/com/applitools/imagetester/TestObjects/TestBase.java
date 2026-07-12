@@ -5,13 +5,10 @@ import com.applitools.eyes.TestResults;
 import com.applitools.eyes.images.Eyes;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Logger;
+import com.applitools.imagetester.lib.MatchSizeResizer;
 import com.applitools.imagetester.lib.Utils;
 
-import org.apache.commons.lang3.StringUtils;
-import org.imgscalr.Scalr;
-
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -89,28 +86,6 @@ public abstract class TestBase implements ITest {
     }
 
     protected BufferedImage getImage(File img) throws IOException {
-        BufferedImage bim = ImageIO.read(img);
-        if (StringUtils.isNotBlank(conf_.matchWidth) || StringUtils.isNotBlank(conf_.matchHeight)) {
-            //Resize the image
-            Dimension dim = getNewDimensions_(bim.getWidth(), bim.getHeight());
-            BufferedImage scaledImg = Scalr.resize(bim, Scalr.Method.ULTRA_QUALITY, dim.width, dim.height);
-            bim = null; //perhaps a better disposal required
-            bim = scaledImg;
-        }
-        return bim;
-    }
-
-    private Dimension getNewDimensions_(int oldWidth, int oldHeight) {
-        if (StringUtils.isNotBlank(conf_.matchWidth) && StringUtils.isNotBlank(conf_.matchHeight))
-            return new Dimension(Integer.parseInt(conf_.matchWidth), Integer.parseInt(conf_.matchHeight));
-        else if (StringUtils.isNotBlank(conf_.matchWidth)) {
-            // scale by width
-            float ratio = Float.parseFloat(conf_.matchWidth) / oldWidth;
-            return new Dimension(Integer.parseInt(conf_.matchWidth), Math.round(oldHeight * ratio));
-        } else if (StringUtils.isNotBlank(conf_.matchHeight)) {
-            // scale by height
-            float ratio = Float.parseFloat(conf_.matchHeight) / oldHeight;
-            return new Dimension(Math.round(oldWidth * ratio), Integer.parseInt(conf_.matchHeight));
-        } else throw new RuntimeException("The new dimensions were not provided correctly");
+        return MatchSizeResizer.resize(ImageIO.read(img), conf_);
     }
 }

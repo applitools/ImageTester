@@ -228,6 +228,34 @@ public class ConfigTest {
     }
 
     @Test
+    public void setPdfTrim_auto() {
+        config.setPdfTrim("auto");
+        assertEquals("auto", config.pdfTrim);
+    }
+
+    @Test
+    public void setPdfTrim_dimensions() {
+        config.setPdfTrim("603x774");
+        assertEquals("603x774", config.pdfTrim);
+    }
+
+    @Test
+    public void setPdfTrim_null_isNoOp() {
+        config.setPdfTrim(null);
+        assertNull(config.pdfTrim);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void setPdfTrim_malformed_throws() {
+        config.setPdfTrim("abc");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void setPdfTrim_nonPositiveDimension_throws() {
+        config.setPdfTrim("0x774");
+    }
+
+    @Test
     public void setMatchTimeout_storesValue() {
         config.setMatchTimeout("2000");
         assertEquals("2000", config.getMatchTimeout());

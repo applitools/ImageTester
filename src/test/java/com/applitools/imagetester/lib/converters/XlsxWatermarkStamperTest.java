@@ -26,16 +26,19 @@ public class XlsxWatermarkStamperTest {
 
     @Rule public TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private static final Path PERM_WAT = Paths.get("TestData", "PermWat.xlsx");
+    // Sanitized copy of a customer file: same structure, watermark image replaced
+    // with a generated one. The original (TestData/PermWat.xlsx) contains customer
+    // PII and must stay untracked.
+    private static final Path WATERMARKED_XLSX = Paths.get("TestData", "xlsx-header-watermark.xlsx");
     private static final int EXPECTED_WATERMARK_WIDTH = 750;
     private static final int EXPECTED_WATERMARK_HEIGHT = 600;
 
     @Test
-    public void extractsHeaderFooterWatermarkFromPermWat() throws Exception {
-        assertTrue("Test fixture missing: " + PERM_WAT, Files.isRegularFile(PERM_WAT));
+    public void extractsHeaderFooterWatermarkFromXlsx() throws Exception {
+        assertTrue("Test fixture missing: " + WATERMARKED_XLSX, Files.isRegularFile(WATERMARKED_XLSX));
 
         Optional<XlsxWatermarkStamper.Watermark> wm =
-                new XlsxWatermarkStamper().extractWatermark(PERM_WAT.toFile());
+                new XlsxWatermarkStamper().extractWatermark(WATERMARKED_XLSX.toFile());
 
         assertTrue("expected to find a header/footer watermark", wm.isPresent());
         assertNotNull(wm.get().imageBytes);
@@ -67,11 +70,11 @@ public class XlsxWatermarkStamperTest {
 
     @Test
     public void stampsWatermarkOnEveryPageOfConvertedPdf() throws Exception {
-        assertTrue("Test fixture missing: " + PERM_WAT, Files.isRegularFile(PERM_WAT));
+        assertTrue("Test fixture missing: " + WATERMARKED_XLSX, Files.isRegularFile(WATERMARKED_XLSX));
         File source = writeMultiPagePdf(tempFolder.newFile("converted.pdf"), 6);
 
         File result = new XlsxWatermarkStamper()
-                .stampIfPresent(PERM_WAT.toFile(), source, tempFolder.getRoot().toPath());
+                .stampIfPresent(WATERMARKED_XLSX.toFile(), source, tempFolder.getRoot().toPath());
 
         assertNotEquals("stamped pdf should be distinct from input", source, result);
         try (PDDocument doc = PDDocument.load(result)) {

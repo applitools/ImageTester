@@ -4,6 +4,7 @@ import com.applitools.eyes.AccessibilityGuidelinesVersion;
 import com.applitools.eyes.AccessibilityLevel;
 import com.applitools.eyes.AccessibilitySettings;
 import com.applitools.eyes.FileLogger;
+import com.applitools.eyes.LogHandler;
 import com.applitools.eyes.MatchLevel;
 import com.applitools.eyes.ProxySettings;
 import com.applitools.eyes.StdoutLogHandler;
@@ -35,6 +36,7 @@ public class EyesFactory {
     private int[] cutValues;
     private AccessibilitySettings accSettings = null;
     private boolean logHandler;
+    private LogHandler logHandlerInstance;
     private String deviceName;
 
     public EyesFactory(String ver, Logger logger) {
@@ -106,9 +108,17 @@ public class EyesFactory {
             throw new RuntimeException("Parent Branches (pb) should be combined with branches (br).");
         if (this.accSettings != null)
             eyes.setAccessibilityValidation(this.accSettings);
-        if (logHandler)
+        // A custom instance wins over the boolean stdout flag; the GUI uses this to pipe SDK events into its log pane.
+        if (logHandlerInstance != null)
+            eyes.setLogHandler(logHandlerInstance);
+        else if (logHandler)
             eyes.setLogHandler(new StdoutLogHandler(true));
         return eyes;
+    }
+
+    public EyesFactory logHandlerInstance(LogHandler lh) {
+        this.logHandlerInstance = lh;
+        return this;
     }
 
     public boolean hasAccessibilityValidation() {
