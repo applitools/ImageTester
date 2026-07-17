@@ -578,6 +578,8 @@
 									<arguments combine.children="append">
 										<argument>--win-menu</argument>
 										<argument>--win-shortcut</argument>
+										<argument>--icon</argument>
+										<argument>${project.basedir}/installer/icons/ImageTester.ico</argument>
 									</arguments>
 								</configuration>
 							</execution>
@@ -593,6 +595,26 @@
 				<installer.input.jar>ImageTester_${project.version}_MacArm.jar</installer.input.jar>
 				<installer.type>dmg</installer.type>
 			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<id>run-jpackage</id>
+								<configuration>
+									<arguments combine.children="append">
+										<argument>--icon</argument>
+										<argument>${project.basedir}/installer/icons/ImageTester.icns</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 		<profile>
 			<id>installer-os-mac-x64</id>
@@ -601,6 +623,26 @@
 				<installer.input.jar>ImageTester_${project.version}_Mac.jar</installer.input.jar>
 				<installer.type>dmg</installer.type>
 			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<id>run-jpackage</id>
+								<configuration>
+									<arguments combine.children="append">
+										<argument>--icon</argument>
+										<argument>${project.basedir}/installer/icons/ImageTester.icns</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 		<profile>
 			<id>installer-os-linux</id>
@@ -609,6 +651,26 @@
 				<installer.input.jar>ImageTester_${project.version}_Linux.jar</installer.input.jar>
 				<installer.type>deb</installer.type>
 			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>3.1.1</version>
+						<executions>
+							<execution>
+								<id>run-jpackage</id>
+								<configuration>
+									<arguments combine.children="append">
+										<argument>--icon</argument>
+										<argument>${project.basedir}/installer/icons/ImageTester.png</argument>
+									</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 </project>

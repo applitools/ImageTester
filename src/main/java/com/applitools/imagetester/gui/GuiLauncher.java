@@ -1,8 +1,12 @@
 package com.applitools.imagetester.gui;
 
 import java.awt.Desktop;
+import java.awt.Image;
+import java.awt.Taskbar;
 import java.io.IOException;
 import java.net.URI;
+
+import javax.imageio.ImageIO;
 
 public final class GuiLauncher {
 
@@ -11,6 +15,22 @@ public final class GuiLauncher {
     public static void open(String url) {
         if (tryDesktop(url)) return;
         tryShell(url);
+    }
+
+    /**
+     * Sets the app's Dock/taskbar icon when launched directly via `java -jar ... --gui`
+     * (jpackage-built installers get their icon from --icon at packaging time instead).
+     */
+    public static void setDockIcon() {
+        try {
+            if (!Taskbar.isTaskbarSupported()) return;
+            Taskbar taskbar = Taskbar.getTaskbar();
+            if (!taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) return;
+            Image icon = ImageIO.read(GuiLauncher.class.getResource("/icons/app-icon.png"));
+            if (icon != null) taskbar.setIconImage(icon);
+        } catch (Throwable ignored) {
+            // Dock icon is cosmetic; never let it block GUI startup.
+        }
     }
 
     private static boolean tryDesktop(String url) {

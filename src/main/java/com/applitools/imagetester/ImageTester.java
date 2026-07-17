@@ -54,6 +54,7 @@ public class ImageTester {
                 return 2;
             }
             try {
+                com.applitools.imagetester.gui.GuiLauncher.setDockIcon();
                 com.applitools.imagetester.gui.GuiServer server = com.applitools.imagetester.gui.GuiServer.start();
                 com.applitools.imagetester.gui.GuiLauncher.open("http://localhost:" + server.port());
                 server.join();
