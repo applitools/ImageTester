@@ -74,7 +74,7 @@ public class TestExecutorListenerTest {
 
         TestExecutor executor = new TestExecutor(1, factory, config);
         List<String> started = new ArrayList<>();
-        executor.setTestStartedListener(started::add);
+        executor.setTestStartedListener(info -> started.add(info.name));
 
         executor.enqueue(t, null);
         assertEquals(1, started.size());
@@ -101,7 +101,7 @@ public class TestExecutorListenerTest {
         when(t.runSafe(any())).thenReturn(r);
 
         TestExecutor executor = new TestExecutor(1, factory, config);
-        executor.setTestStartedListener(name -> { throw new RuntimeException("boom"); });
+        executor.setTestStartedListener(info -> { throw new RuntimeException("boom"); });
         executor.enqueue(t, null);
         executor.join();
     }

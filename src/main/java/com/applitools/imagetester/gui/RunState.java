@@ -49,6 +49,7 @@ public abstract class RunState {
         public String status;  // "running" | "pass" | "fail"
         public Long durationMs;
         public String dashboardUrl;
+        public String previewPath;
         public TestRow(String name) { this.name = name; this.status = "running"; }
     }
 }

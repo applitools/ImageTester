@@ -71,6 +71,7 @@ public final class RunController {
     private final RunConfigBuilder factoryBuilder_;
     private final AtomicReference<RunState> state_ = new AtomicReference<>(RunState.Idle.INSTANCE);
     private final AtomicReference<TestExecutor> currentExecutor_ = new AtomicReference<>();
+    private final AtomicReference<Path> currentSourceRoot_ = new AtomicReference<>();
     private final ExecutorService runExecutor_ = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "RunController-run");
         t.setDaemon(true);
@@ -90,6 +91,8 @@ public final class RunController {
     public RunState snapshot() { return state_.get(); }
     public RunStream stream() { return runStream_; }
     public SecretsStore secrets() { return secrets_; }
+    /** Root of the most recently validated source path, so the preview endpoint can reject paths outside it. */
+    public Path sourceRoot() { return currentSourceRoot_.get(); }
 
     public void setSecretApiKey(String value) { secrets_.setApiKey(value); }
 
@@ -170,6 +173,13 @@ public final class RunController {
         } else {
             effectiveSource = source;
         }
+        // Preview thumbnails are read from disk by path on request; scope the endpoint to files
+        // under whatever directory the Suite actually runs against (source, or the rwauto temp dir).
+        try {
+            currentSourceRoot_.set(effectiveSource.getCanonicalFile().toPath());
+        } catch (IOException e) {
+            currentSourceRoot_.set(effectiveSource.getAbsoluteFile().toPath());
+        }
 
         int passed = 0, failed = 0;
         try {
@@ -177,15 +187,15 @@ public final class RunController {
             factory.logHandlerInstance(new EyesLogBridge(config.logger));
             TestExecutor executor = new TestExecutor(rc.threads, factory, config);
             currentExecutor_.set(executor);
-            executor.setTestStartedListener(name -> runStream_.emit(new SseEvent.TestStarted(name)));
+            executor.setTestStartedListener(info -> runStream_.emit(new SseEvent.TestStarted(info.name, info.previewPath)));
             executor.setTestCompletionListener(result -> {
                 String name = result.testResult != null ? result.testResult.getName() : "(unknown)";
                 String status = result.testResult != null && result.testResult.isDifferent() ? "fail" : "pass";
                 long ms = TimeUnit.NANOSECONDS.toMillis(result.runTimeNs);
                 String dashboard = result.testResult != null ? result.testResult.getUrl() : null;
-                runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard));
+                runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, result.previewPath));
                 RunState.TestRow row = new RunState.TestRow(name);
-                row.status = status; row.durationMs = ms; row.dashboardUrl = dashboard;
+                row.status = status; row.durationMs = ms; row.dashboardUrl = dashboard; row.previewPath = result.previewPath;
                 running.tests.add(row);
             });
             if (effectiveSource != source) {

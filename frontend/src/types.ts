@@ -6,6 +6,7 @@ export interface TestRow {
   durationMs?: number;
   dashboardUrl?: string;
   startedAtMs?: number;
+  previewPath?: string;
 }
 
 export type RunStateSnapshot =
@@ -15,8 +16,8 @@ export type RunStateSnapshot =
 
 export type SseEvent =
   | { type: "run-started"; runId: string }
-  | { type: "test-started"; name: string }
-  | { type: "test-finished"; name: string; status: "pass" | "fail"; durationMs: number; dashboardUrl?: string }
+  | { type: "test-started"; name: string; previewPath?: string }
+  | { type: "test-finished"; name: string; status: "pass" | "fail"; durationMs: number; dashboardUrl?: string; previewPath?: string }
   | { type: "log-line"; text: string }
   | { type: "run-finished"; passed: number; failed: number; durationMs: number }
   | { type: "watermark-cleaned"; outputDir: string; fileCount: number; durationMs: number };

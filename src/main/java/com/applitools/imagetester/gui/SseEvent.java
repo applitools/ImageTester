@@ -12,7 +12,12 @@ public abstract class SseEvent {
 
     public static final class TestStarted extends SseEvent {
         public final String name;
-        public TestStarted(String name) { super("test-started"); this.name = name; }
+        public final String previewPath;
+        public TestStarted(String name) { this(name, null); }
+        public TestStarted(String name, String previewPath) {
+            super("test-started");
+            this.name = name; this.previewPath = previewPath;
+        }
     }
 
     public static final class TestFinished extends SseEvent {
@@ -20,9 +25,14 @@ public abstract class SseEvent {
         public final String status;
         public final long durationMs;
         public final String dashboardUrl;
+        public final String previewPath;
         public TestFinished(String name, String status, long durationMs, String dashboardUrl) {
+            this(name, status, durationMs, dashboardUrl, null);
+        }
+        public TestFinished(String name, String status, long durationMs, String dashboardUrl, String previewPath) {
             super("test-finished");
             this.name = name; this.status = status; this.durationMs = durationMs; this.dashboardUrl = dashboardUrl;
+            this.previewPath = previewPath;
         }
     }
 

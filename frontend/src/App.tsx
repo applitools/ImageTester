@@ -33,12 +33,12 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
   if (state.kind !== "running") return state;
   switch (e.type) {
     case "test-started":
-      return { ...state, tests: [...state.tests, { name: e.name, status: "running", startedAtMs: Date.now() }] };
+      return { ...state, tests: [...state.tests, { name: e.name, status: "running", startedAtMs: Date.now(), previewPath: e.previewPath }] };
     case "test-finished": {
       const exists = state.tests.some((t) => t.name === e.name);
       const tests: TestRow[] = exists
-        ? state.tests.map((t) => t.name === e.name ? { ...t, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl } : t)
-        : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl }];
+        ? state.tests.map((t) => t.name === e.name ? { ...t, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath ?? t.previewPath } : t)
+        : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath }];
       return { ...state, tests };
     }
     case "run-finished":

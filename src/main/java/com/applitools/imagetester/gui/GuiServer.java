@@ -11,15 +11,24 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.imgscalr.Scalr;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,6 +87,7 @@ public final class GuiServer {
         ctx.addServlet(new ServletHolder(new IndexHtmlServlet(token)), "/index.html");
         ctx.addServlet(new ServletHolder(new StaticAssetServlet()), "/assets/*");
         ctx.addServlet(new ServletHolder(new SseServlet(controller)), "/api/events");
+        ctx.addServlet(new ServletHolder(new PreviewServlet(controller)), "/api/preview");
         ctx.addServlet(new ServletHolder(new ApiServlet(controller)), "/api/*");
 
         server.setHandler(ctx);
@@ -201,6 +211,68 @@ public final class GuiServer {
             async.setTimeout(0);
             CountDownLatch ready = new CountDownLatch(1);
             controller_.stream().addClient(resp.getWriter(), () -> async.complete(), ready);
+        }
+    }
+
+    /** Renders a small thumbnail for a status-row source file (image or first PDF page). */
+    private static final class PreviewServlet extends HttpServlet {
+        // Sized for a 96px (24 * 4 for hi-DPI) status-row thumbnail — big enough to eyeball
+        // the actual page/image content, not just confirm a file loaded.
+        private static final int THUMB_MAX_DIMENSION = 400;
+        private static final float PDF_RENDER_DPI = 90f;
+
+        private final RunController controller_;
+
+        PreviewServlet(RunController c) { this.controller_ = c; }
+
+        @Override
+        protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            String raw = req.getParameter("path");
+            if (raw == null || raw.isEmpty()) { resp.setStatus(400); return; }
+
+            Path resolved;
+            try {
+                resolved = Paths.get(raw).toAbsolutePath().toRealPath();
+            } catch (IOException | java.nio.file.InvalidPathException e) {
+                resp.setStatus(404); return;
+            }
+
+            // Only serve files under the currently running/last-run source root — the path
+            // parameter otherwise lets any local client read arbitrary files off disk.
+            Path root = controller_.sourceRoot();
+            if (root == null || !resolved.startsWith(root) || !Files.isRegularFile(resolved)) {
+                resp.setStatus(403); return;
+            }
+
+            BufferedImage thumb;
+            try {
+                thumb = renderThumbnail(resolved.toFile());
+            } catch (Exception e) {
+                thumb = null;
+            }
+            if (thumb == null) { resp.setStatus(404); return; }
+
+            resp.setContentType("image/png");
+            resp.setHeader("Cache-Control", "private, max-age=3600");
+            ImageIO.write(thumb, "png", resp.getOutputStream());
+        }
+
+        private static BufferedImage renderThumbnail(File file) throws IOException {
+            String name = file.getName().toLowerCase();
+            BufferedImage full;
+            if (name.endsWith(".pdf")) {
+                try (PDDocument doc = PDDocument.load(file)) {
+                    if (doc.getNumberOfPages() == 0) return null;
+                    full = new PDFRenderer(doc).renderImageWithDPI(0, PDF_RENDER_DPI);
+                }
+            } else {
+                full = ImageIO.read(file);
+            }
+            if (full == null) return null;
+
+            int maxSide = Math.max(full.getWidth(), full.getHeight());
+            if (maxSide <= THUMB_MAX_DIMENSION) return full;
+            return Scalr.resize(full, Scalr.Method.SPEED, Scalr.Mode.AUTOMATIC, THUMB_MAX_DIMENSION);
         }
     }
 }

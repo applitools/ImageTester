@@ -33,6 +33,11 @@ public abstract class TestBase implements ITest {
         return file_;
     }
 
+    /** The file to render as a GUI status-row thumbnail. Overridden where file() isn't a displayable image/PDF. */
+    public File previewFile() {
+        return file_;
+    }
+
     public Config config() {
         return conf_;
     }

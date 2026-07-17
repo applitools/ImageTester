@@ -54,4 +54,9 @@ public class FolderTest extends TestBase {
     public boolean isEmpty() {
         return steps_.length == 0;
     }
+
+    @Override
+    public File previewFile() {
+        return steps_.length == 0 ? null : steps_[0];
+    }
 }

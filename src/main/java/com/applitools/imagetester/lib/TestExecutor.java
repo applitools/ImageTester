@@ -9,6 +9,7 @@ import com.applitools.imagetester.TestObjects.TestBase;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -34,10 +35,17 @@ public class TestExecutor {
         Pending(String name, Future<ExecutorResult> future) { this.name = name; this.future = future; }
     }
 
+    /** name plus the source file to render as a GUI status-row thumbnail (may be null). */
+    public static final class StartedInfo {
+        public final String name;
+        public final String previewPath;
+        public StartedInfo(String name, String previewPath) { this.name = name; this.previewPath = previewPath; }
+    }
+
     void setNanoTimeSource(LongSupplier source) { this.nanoTimeSource_ = source; }
     private final boolean hasAccessibilityValidation_;
     private volatile Consumer<ExecutorResult> completionListener_ = null;
-    private volatile Consumer<String> startedListener_ = null;
+    private volatile Consumer<StartedInfo> startedListener_ = null;
     private volatile boolean cancelled_ = false;
 
     public TestExecutor(int threads, EyesFactory eyesFactory, Config conf) {
@@ -51,7 +59,7 @@ public class TestExecutor {
         this.completionListener_ = listener;
     }
 
-    public void setTestStartedListener(Consumer<String> listener) {
+    public void setTestStartedListener(Consumer<StartedInfo> listener) {
         this.startedListener_ = listener;
     }
 
@@ -76,9 +84,11 @@ public class TestExecutor {
     public void enqueue(TestBase test, BatchInfo overrideBatch) {
         if (cancelled_) return;
         final String name = test.name();
-        Consumer<String> sl = startedListener_;
+        final File previewFile = test.previewFile();
+        final String previewPath = previewFile != null ? previewFile.getAbsolutePath() : null;
+        Consumer<StartedInfo> sl = startedListener_;
         if (sl != null) {
-            try { sl.accept(name); } catch (Throwable ignored) { /* never let a listener disrupt enqueue */ }
+            try { sl.accept(new StartedInfo(name, previewPath)); } catch (Throwable ignored) { /* never let a listener disrupt enqueue */ }
         }
         Future<ExecutorResult> f = executorService_.submit(() -> {
             long startTime = System.nanoTime();
@@ -101,7 +111,7 @@ public class TestExecutor {
                 ((IDisposable) test).dispose();
             long endTime = System.nanoTime();
 
-            ExecutorResult er = new ExecutorResult(result, (endTime - startTime));
+            ExecutorResult er = new ExecutorResult(result, (endTime - startTime), previewPath);
             Consumer<ExecutorResult> listener = completionListener_;
             if (listener != null) {
                 try { listener.accept(er); } catch (Throwable ignored) { /* never let a listener disrupt the worker */ }
