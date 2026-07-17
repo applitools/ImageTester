@@ -44,8 +44,12 @@ public class TestExecutorHeartbeatTest {
         when(t.runSafe(any())).thenAnswer(inv -> { workerEntered.countDown(); release.await(); return r; });
 
         TestExecutor executor = new TestExecutor(1, factory, config);
-        AtomicLong fakeNanos = new AtomicLong(0);
-        executor.setNanoTimeSource(fakeNanos::get);
+        // join()'s first clock read captures the head's start time; every later read sees the
+        // 30s grace expired. A settable clock raced here: advancing it before join()'s first
+        // read made the start time itself 31s, so no heartbeat ever fired.
+        AtomicLong clockReads = new AtomicLong(0);
+        executor.setNanoTimeSource(() ->
+                clockReads.getAndIncrement() == 0 ? 0 : TimeUnit.SECONDS.toNanos(31));
 
         executor.enqueue(t, null);
         Thread joiner = new Thread(executor::join, "joiner");
@@ -53,7 +57,6 @@ public class TestExecutorHeartbeatTest {
         joiner.start();
 
         assertTrue("worker never started", workerEntered.await(5, TimeUnit.SECONDS));
-        fakeNanos.set(TimeUnit.SECONDS.toNanos(31)); // cross the 30s grace; join's 250ms poll will observe it
 
         boolean sawHeartbeat = heartbeatSeen.await(5, TimeUnit.SECONDS);
         release.countDown();
