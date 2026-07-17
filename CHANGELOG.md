@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.15.0 - 2026/7/17
+- Releases are now published as full releases marked Latest on GitHub (previously pre-releases)
+
 ## 3.14.0 - 2026/7/17
 - GUI: status rows now show a thumbnail preview of the image or PDF page being tested
 - GUI: replaced the default Java icon with the Applitools logo for installed apps and `--gui` runs
