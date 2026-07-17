@@ -31,7 +31,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    public static final String CUR_VER = "3.13.0";
+    public static final String CUR_VER = "3.14.0";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
     public static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 

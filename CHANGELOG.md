@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.14.0 - 2026/7/17
+- GUI: status rows now show a thumbnail preview of the image or PDF page being tested
+- GUI: replaced the default Java icon with the Applitools logo for installed apps and `--gui` runs
+
 # 3.8.0 - 2026/2/18
 - Add support for IgnoreColors match level 
 
