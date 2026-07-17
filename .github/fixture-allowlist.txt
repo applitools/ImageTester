@@ -40,10 +40,14 @@ TestData/multi-format/sample.ps
 TestData/multi-format/test_sample_xlsx_Small.xlsx
 TestData/xlsx-header-watermark.xlsx
 gui-launch.png
+installer/Applitools-logo-circle_teal.png
+installer/icons/ImageTester.ico
+installer/icons/ImageTester.png
 jars/test_jbig.pdf
 libs/com/applitools/eyesutilities/EyesUtilities/1.6.6/EyesUtilities-1.6.6.jar
 orig_page_fullsize.png
 orig_policy_doc.png
+src/main/resources/icons/app-icon.png
 src/test/resources/fixtures/corrupted.pdf
 src/test/resources/fixtures/empty.pdf
 src/test/resources/fixtures/password-protected.pdf
