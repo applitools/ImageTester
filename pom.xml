@@ -578,6 +578,9 @@
 									<arguments combine.children="append">
 										<argument>--win-menu</argument>
 										<argument>--win-shortcut</argument>
+										<!-- Without this the MSI has no destination page and installs
+										     to Program Files\ImageTester with no indication where. -->
+										<argument>--win-dir-chooser</argument>
 										<argument>--icon</argument>
 										<argument>${project.basedir}/installer/icons/ImageTester.ico</argument>
 									</arguments>
