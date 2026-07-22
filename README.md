@@ -13,6 +13,12 @@ Prefer an app over the command line? Download the ImageTester GUI installer for 
 macOS (`.dmg`, Apple Silicon and Intel), or Linux (`.deb`). Each bundles everything it needs;
 double-click and the app opens in your browser. See the release notes for first-launch
 instructions (demo builds are not yet code-signed, so your OS will ask you to confirm once).
+The GUI checks for new releases on launch and can download and start the installer for you
+with one click.
+
+Alongside the usual folder/file scan, the GUI has a "Compare two documents" toggle for diffing
+exactly two files directly against each other — see
+[Comparing Two Documents Directly](#comparing-two-documents-directly).
 
 The tool can be invoked on a single file or a complex folder structure with mixed content.
 Once provided a complex folder structure the tool recursively scans the structure and determines on each level what should be the batch-name, 
@@ -185,6 +191,34 @@ docs/a.pdf|Test1|AppA|Linux|Chrome|1024x748||1|Strict||800,800,100,100|300,300,3
 docs/a.pdf|Test2|AppA||||x748|1-3|Layout|||500,500,500,100|
 docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 ```
+
+### Comparing Two Documents Directly
+Sometimes you just want to diff two specific documents against each other — no folder scanning,
+no existing baseline lookup on the dashboard.
+
++ `-doc1 [path]` - First document to compare (image or PDF)
++ `-doc2 [path]` - Second document to compare (image or PDF)
+
+Both flags are required together, and are mutually exclusive with `-f`. You must also set
+`-fn [name]` (Forced name) — Doc 1 and Doc 2 need to share this name so Eyes treats them as the
+same test: Doc 1's run establishes the baseline, then Doc 2's run is compared against it.
+
+```
+java -jar ImageTester.jar -k [api-key] -doc1 v2.pdf -doc2 v3.pdf -fn "contract-v2-vs-v3"
+```
+
+**Use a unique `-fn` value for each comparison.** This reuses the tool's normal Eyes baseline
+behavior — the first run under a name sets the baseline, later runs under the same name diff
+against whatever's already there. Reusing a name from an earlier comparison means whichever
+document ran first *that time* becomes the baseline, not necessarily today's Doc 1.
+
+For multi-page PDFs, use `-sp` (see [PDF and document options](#pdf-and-document-options)) to pick
+which pages to compare — the same range applies to both documents, so both must actually have
+that many pages.
+
+In the GUI, this is the "Compare two documents" toggle on the Setup card: it swaps the single
+Source picker for Doc 1 / Doc 2 file pickers and a required Comparison name field (the same `-fn`
+value, editable from either place).
 
 ### PDF and document options
 Options that apply when testing PDFs and other documents.
