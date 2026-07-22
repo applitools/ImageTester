@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.16.0 - 2026/7/21
+- New: Compare two documents directly against each other, without scanning a folder — `-doc1`/`-doc2` on the CLI, or the "Compare two documents" toggle in the GUI
+- GUI: automatic update check with a one-click installer download from the app
+- GUI: Windows installer now shows a destination-folder chooser instead of installing silently to a fixed path
+- GUI: design refresh — elevation/shadows on cards, consistent focus rings, spacing, and required-field markers on the Setup card
+
 ## 3.15.0 - 2026/7/17
 - Releases are now published as full releases marked Latest on GitHub (previously pre-releases)
 
