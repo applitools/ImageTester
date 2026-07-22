@@ -25,7 +25,8 @@ public final class JapaneseText {
     }
 
     private static boolean isJapanese(int cp) {
-        return (cp >= 0x3000 && cp <= 0x303F)   // CJK symbols & punctuation (includes 〓)
+        return (cp >= 0x2E80 && cp <= 0x2FDF)   // CJK + Kangxi radicals (ToUnicode CMaps may map ideographs here)
+            || (cp >= 0x3000 && cp <= 0x303F)   // CJK symbols & punctuation (includes 〓)
             || (cp >= 0x3040 && cp <= 0x309F)   // Hiragana
             || (cp >= 0x30A0 && cp <= 0x30FF)   // Katakana
             || (cp >= 0x31F0 && cp <= 0x31FF)   // Katakana phonetic extensions

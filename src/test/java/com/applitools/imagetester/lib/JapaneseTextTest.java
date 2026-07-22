@@ -38,6 +38,13 @@ public class JapaneseTextTest {
     }
 
     @Test
+    public void should_detect_kangxi_radical_codepoints() {
+        // PDFBox-generated ToUnicode CMaps may map ideographs to Kangxi radical
+        // duplicates (e.g. 日 → U+2F47) — these must classify as Japanese
+        assertTrue(JapaneseText.containsJapanese("⽇"));
+    }
+
+    @Test
     public void should_not_detect_pure_ascii() {
         assertFalse(JapaneseText.containsJapanese("Hello World 2025000013"));
     }
