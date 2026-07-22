@@ -336,3 +336,12 @@ with other tools that out there for CI/CD integration.
 The parameters:
 + `JOB_NAME` - The name of the job as it was set in CI/CD
 + `APPLITOOLS_BATCH_ID` - Job id, a unique identifier of the current job.
+
+## Automatic Update Check
+Both the CLI and the GUI check GitHub's releases once per launch and let you know when a newer
+version is available — the CLI prints a one-line note to stderr, the GUI shows a banner with a
+one-click install button (downloaded to your Downloads folder and verified against the release's
+checksum) when running as an installed app.
+
+Set `IMAGETESTER_SKIP_UPDATE_CHECK=1` to disable it entirely — useful for CI runs or air-gapped
+environments where the outbound network call to GitHub isn't wanted.
