@@ -35,13 +35,21 @@ export function listNonDefault(o: RunOptions): ActiveOption[] {
     .map((s) => ({ spec: s, value: o[s.flag] }));
 }
 
-export function toRunPayload(sourcePath: string, o: RunOptions) {
+function toNonDefaultOptions(o: RunOptions): Record<string, unknown> {
   const options: Record<string, unknown> = { ml: o.ml ?? "Strict" };
   for (const spec of OPTION_SPECS) {
     const v = o[spec.flag];
     if (!isDefault(spec.flag, v)) options[spec.flag] = v;
   }
-  return { sourcePath, options };
+  return options;
+}
+
+export function toRunPayload(sourcePath: string, o: RunOptions) {
+  return { sourcePath, options: toNonDefaultOptions(o) };
+}
+
+export function toComparePayload(doc1Path: string, doc2Path: string, o: RunOptions) {
+  return { doc1Path, doc2Path, options: toNonDefaultOptions(o) };
 }
 
 export function loadOptions(): RunOptions {

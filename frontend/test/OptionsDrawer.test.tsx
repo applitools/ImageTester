@@ -12,7 +12,12 @@ describe("OptionsDrawer", () => {
   it("switches to PDF tab on click", () => {
     render(<OptionsDrawer options={defaultOptions()} onChange={() => {}} onClose={() => {}} />);
     fireEvent.click(screen.getByText("PDF & Documents"));
-    expect(screen.getByLabelText("DPI")).toBeInTheDocument();
+    expect(screen.getByLabelText("DPI").closest('[role="tabpanel"]')).toHaveAttribute("aria-hidden", "false");
+  });
+
+  it("keeps an inactive tab's panel marked aria-hidden", () => {
+    render(<OptionsDrawer options={defaultOptions()} onChange={() => {}} onClose={() => {}} />);
+    expect(screen.getByLabelText("DPI").closest('[role="tabpanel"]')).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows the active tab's intro description", () => {
@@ -23,7 +28,8 @@ describe("OptionsDrawer", () => {
   it("shows help text under a region control that has no built-in help line", () => {
     render(<OptionsDrawer options={defaultOptions()} onChange={() => {}} onClose={() => {}} />);
     fireEvent.click(screen.getByText("Regions"));
-    expect(screen.getByText(/Areas excluded from comparison/i)).toBeInTheDocument();
+    const helpText = screen.getByText(/Areas excluded from comparison/i);
+    expect(helpText.closest('[role="tabpanel"]')).toHaveAttribute("aria-hidden", "false");
   });
 
   it("links each help tip to the README", () => {
@@ -62,7 +68,7 @@ describe("OptionsDrawer", () => {
     const options = { ...defaultOptions(), sp: "1,3" };
     render(<OptionsDrawer options={options} onChange={() => {}} onClose={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "Selected pages: 1,3" }));
-    expect(screen.getByLabelText("DPI")).toBeInTheDocument();
+    expect(screen.getByLabelText("DPI").closest('[role="tabpanel"]')).toHaveAttribute("aria-hidden", "false");
   });
 
   it("shows no active-options row when everything is default", () => {
@@ -76,5 +82,17 @@ describe("OptionsDrawer", () => {
     expect(screen.queryByLabelText("Output folder for cleaned PDFs")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: /only produce cleaned PDFs locally/i }));
     expect(screen.getByLabelText("Output folder for cleaned PDFs")).toBeInTheDocument();
+  });
+
+  it("shows the compare-mode reuse warning under Forced name when compareMode is true", () => {
+    render(<OptionsDrawer options={defaultOptions()} onChange={() => {}} onClose={() => {}} compareMode={true} />);
+    fireEvent.click(screen.getByText("Batch & Branch"));
+    expect(screen.getByText(/Doc 1 and Doc 2 must share this name/i)).toBeInTheDocument();
+  });
+
+  it("shows the normal Forced name help text when compareMode is false or absent", () => {
+    render(<OptionsDrawer options={defaultOptions()} onChange={() => {}} onClose={() => {}} />);
+    fireEvent.click(screen.getByText("Batch & Branch"));
+    expect(screen.queryByText(/Doc 1 and Doc 2 must share this name/i)).not.toBeInTheDocument();
   });
 });

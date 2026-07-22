@@ -12,6 +12,7 @@ interface Props {
   options: RunOptions;
   onChange: (flag: string, value: unknown) => void;
   onClose: () => void;
+  compareMode?: boolean;
 }
 
 const FULL_ROW_TYPES = new Set(["regions", "proxy", "properties", "imagecut", "watermarkout"]);
@@ -22,6 +23,11 @@ function chipText(spec: OptionSpec, value: unknown): string {
   const text = String(value);
   const shown = text.length > CHIP_VALUE_MAX_CHARS ? text.slice(0, CHIP_VALUE_MAX_CHARS) + "…" : text;
   return `${spec.label}: ${shown}`;
+}
+
+function compareModeForcedNameHelp(spec: OptionSpec, compareMode: boolean | undefined): string | undefined {
+  if (spec.flag !== "fn" || !compareMode) return undefined;
+  return "Required in Compare mode — Doc 1 and Doc 2 must share this name to be compared. Reusing a name from a previous comparison means today's first-run document, not necessarily Doc 1, becomes what Doc 2 is compared against.";
 }
 
 function renderControl(spec: OptionSpec, value: unknown, onChange: (v: unknown) => void) {
@@ -35,10 +41,9 @@ function renderControl(spec: OptionSpec, value: unknown, onChange: (v: unknown) 
   }
 }
 
-export function OptionsDrawer({ options, onChange, onClose }: Props) {
+export function OptionsDrawer({ options, onChange, onClose, compareMode }: Props) {
   const [active, setActive] = useState<TabId>("metadata");
   const activeTab = TABS.find((t) => t.id === active);
-  const specs = OPTION_SPECS.filter((s) => s.tab === active);
   const activeOptions = listNonDefault(options);
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -77,20 +82,32 @@ export function OptionsDrawer({ options, onChange, onClose }: Props) {
         })}
       </div>
       {activeTab && <p className="mb-3 text-xs text-gray-500">{activeTab.description}</p>}
-      <div className="grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
-        {specs.map((spec) => (
-          <div key={spec.flag} className={FULL_ROW_TYPES.has(spec.type) ? "md:col-span-2 xl:col-span-3" : ""}>
-            {renderControl(spec, options[spec.flag], (v) => onChange(spec.flag, v))}
-            {spec.help && (
-              <p className="mt-1 text-xs text-gray-400">
-                {spec.help}{" "}
-                <a href={docUrl(spec)} target="_blank" rel="noreferrer"
-                  className="whitespace-nowrap text-brand-teal hover:underline"
-                  aria-label={`${spec.label} documentation`}>README ↗</a>
-              </p>
-            )}
-          </div>
-        ))}
+      {/* All tab panels stay mounted, stacked in the same grid cell (gridRow/gridColumn: 1),
+          so the row auto-sizes to the tallest tab and switching never changes the drawer's
+          height. Inactive panels are invisible + non-interactive but still occupy layout. */}
+      <div className="grid">
+        {TABS.map((t) => {
+          const isActive = t.id === active;
+          const specsForTab = OPTION_SPECS.filter((s) => s.tab === t.id);
+          return (
+            <div key={t.id} role="tabpanel" aria-hidden={!isActive} style={{ gridRow: 1, gridColumn: 1 }}
+              className={`grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-3 ${isActive ? "" : "invisible pointer-events-none"}`}>
+              {specsForTab.map((spec) => (
+                <div key={spec.flag} className={FULL_ROW_TYPES.has(spec.type) ? "md:col-span-2 xl:col-span-3" : ""}>
+                  {renderControl(spec, options[spec.flag], (v) => onChange(spec.flag, v))}
+                  {(compareModeForcedNameHelp(spec, compareMode) ?? spec.help) && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      {compareModeForcedNameHelp(spec, compareMode) ?? spec.help}{" "}
+                      <a href={docUrl(spec)} target="_blank" rel="noreferrer"
+                        className="whitespace-nowrap text-brand-teal hover:underline"
+                        aria-label={`${spec.label} documentation`}>README ↗</a>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

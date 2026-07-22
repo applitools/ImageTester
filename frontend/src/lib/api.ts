@@ -1,4 +1,5 @@
 import { getToken } from "./token";
+import type { UpdateStatus } from "../types";
 
 async function http<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -23,7 +24,9 @@ export const api = {
   setApiKey: (value: string) => http<void>("PUT", "/api/secret/api-key", { value }),
   deleteApiKey: () => http<void>("DELETE", "/api/secret/api-key"),
   choosePath: (type: "file" | "folder", start?: string) => http<{ path?: string }>("POST", "/api/choose-path", { type, start }),
-  run: (payload: { sourcePath: string; options: Record<string, unknown> }) =>
+  run: (payload: { sourcePath: string; options: Record<string, unknown> } | { doc1Path: string; doc2Path: string; options: Record<string, unknown> }) =>
     http<{ runId: string }>("POST", "/api/run", payload),
   cancel: () => http<void>("POST", "/api/cancel"),
+  updateStatus: () => http<UpdateStatus>("GET", "/api/update"),
+  startUpdate: () => http<void>("POST", "/api/update/install"),
 };

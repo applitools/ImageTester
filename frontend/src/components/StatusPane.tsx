@@ -21,7 +21,7 @@ export function StatusPane({ state, logLines }: Props) {
   }, [hasRunning]);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
+    <div className="card p-6">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs uppercase tracking-wider text-gray-500">Status</h2>
         <Header state={state} />
@@ -38,17 +38,17 @@ export function StatusPane({ state, logLines }: Props) {
       )}
 
       {state.kind === "done" && state.outputDir && (
-        <div className="rounded-md bg-gray-50 p-3 text-sm">
+        <div className="rounded-lg bg-gray-50 p-3 text-sm">
           <div className="font-medium text-gray-700">Cleaned {state.fileCount ?? 0} PDF(s)</div>
           <div className="mt-1 truncate text-gray-500">{state.outputDir}</div>
         </div>
       )}
 
-      <button type="button" onClick={() => setShowLog(!showLog)} className="mt-4 text-xs text-gray-500 hover:text-gray-800">
+      <button type="button" onClick={() => setShowLog(!showLog)} className="mt-4 text-xs text-gray-500 transition-colors hover:text-gray-800">
         {showLog ? "▾" : "▸"} Show log
       </button>
       {showLog && (
-        <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-gray-900 p-3 text-xs text-emerald-200">
+        <pre className="mt-2 max-h-64 overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg bg-gray-900 p-3 font-mono text-xs text-emerald-200">
           {logLines.join("")}
         </pre>
       )}

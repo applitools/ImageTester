@@ -1,12 +1,14 @@
 import { useEffect, useReducer, useRef, useState } from "react";
+import applitoolsLogo from "./assets/applitools-logo.png";
 import { SetupCard } from "./components/SetupCard";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { StatusPane } from "./components/StatusPane";
 import { OptionsDrawer } from "./components/OptionsDrawer";
 import { api } from "./lib/api";
 import { connectSse } from "./lib/sse";
 import type { SseHandle } from "./lib/sse";
 import { getVersion } from "./lib/version";
-import { loadOptions, saveOptions, countNonDefault, toRunPayload } from "./lib/options";
+import { loadOptions, saveOptions, countNonDefault, toRunPayload, toComparePayload } from "./lib/options";
 import type { RunOptions } from "./lib/options";
 import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow } from "./types";
 
@@ -33,12 +35,12 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
   if (state.kind !== "running") return state;
   switch (e.type) {
     case "test-started":
-      return { ...state, tests: [...state.tests, { name: e.name, status: "running", startedAtMs: Date.now(), previewPath: e.previewPath }] };
+      return { ...state, tests: [...state.tests, { name: e.name, status: "running", startedAtMs: Date.now(), previewPath: e.previewPath, doc2PreviewPath: e.doc2PreviewPath }] };
     case "test-finished": {
       const exists = state.tests.some((t) => t.name === e.name);
       const tests: TestRow[] = exists
-        ? state.tests.map((t) => t.name === e.name ? { ...t, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath ?? t.previewPath } : t)
-        : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath }];
+        ? state.tests.map((t) => t.name === e.name ? { ...t, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath ?? t.previewPath, doc2PreviewPath: e.doc2PreviewPath ?? t.doc2PreviewPath } : t)
+        : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath, doc2PreviewPath: e.doc2PreviewPath }];
       return { ...state, tests };
     }
     case "run-finished":
@@ -54,6 +56,9 @@ export function App() {
   const [snapshot, dispatch] = useReducer(reducer, { kind: "idle" } as RunStateSnapshot);
   const [hasKey, setHasKey] = useState(false);
   const [sourcePath, setSourcePath] = useState(readLastSourcePath);
+  const [compareMode, setCompareMode] = useState(false);
+  const [doc1Path, setDoc1Path] = useState("");
+  const [doc2Path, setDoc2Path] = useState("");
   const [options, setOptions] = useState<RunOptions>(loadOptions);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -80,21 +85,26 @@ export function App() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8">
-      <header className="mb-6">
-        <div className="flex items-center gap-2">
-          <span className="inline-block h-7 w-7 rounded-lg bg-gradient-to-br from-brand-teal to-brand-tealDark"></span>
-          <span className="font-semibold text-brand-navy">ImageTester</span>
-          {getVersion() && <span className="text-xs text-gray-500">v{getVersion()}</span>}
+    <div className="mx-auto max-w-6xl px-6 py-10">
+      <header className="mb-8">
+        <div className="flex items-center gap-2.5">
+          <img src={applitoolsLogo} alt="Applitools" className="h-7 w-7" />
+          <span className="text-[15px] font-semibold tracking-tight text-brand-navy">ImageTester</span>
+          {getVersion() && (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[11px] tabular-nums tracking-tight text-gray-500">
+              v{getVersion()}
+            </span>
+          )}
           <a href="https://github.com/applitools/ImageTester#readme" target="_blank" rel="noreferrer"
-            className="ml-auto text-xs text-brand-teal hover:underline">Docs ↗</a>
+            className="ml-auto text-xs font-medium text-brand-teal transition-colors hover:text-brand-tealDark">Docs ↗</a>
         </div>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-2 text-sm leading-relaxed text-gray-500">
           Visual regression testing for images, PDFs &amp; documents — compares them against baselines in Applitools Eyes.
         </p>
       </header>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div className="space-y-4">
+          <UpdateBanner />
           <SetupCard
             hasKey={hasKey}
             sourcePath={sourcePath}
@@ -102,6 +112,14 @@ export function App() {
             running={snapshot.kind === "running"}
             optionsCount={countNonDefault(options)}
             drawerOpen={drawerOpen}
+            compareMode={compareMode}
+            doc1Path={doc1Path}
+            doc2Path={doc2Path}
+            forcedName={(options.fn as string) ?? ""}
+            onForcedNameChange={(v) => setOption("fn", v)}
+            onToggleCompareMode={() => setCompareMode((v) => !v)}
+            onChooseDoc1={async () => { const r = await api.choosePath("file", doc1Path || undefined); if (r.path) setDoc1Path(r.path); }}
+            onChooseDoc2={async () => { const r = await api.choosePath("file", doc2Path || undefined); if (r.path) setDoc2Path(r.path); }}
             onToggleDrawer={() => setDrawerOpen((v) => !v)}
             onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
             onChoosePath={async (t) => { const r = await api.choosePath(t, sourcePath || undefined); if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); } }}
@@ -110,7 +128,10 @@ export function App() {
               setRunError(null);
               setLogLines([]);
               try {
-                const r = await api.run(toRunPayload(sourcePath, options));
+                const payload = compareMode
+                  ? toComparePayload(doc1Path, doc2Path, options)
+                  : toRunPayload(sourcePath, options);
+                const r = await api.run(payload);
                 dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
               } catch (err) {
                 setRunError(err instanceof Error ? err.message : String(err));
@@ -130,7 +151,7 @@ export function App() {
       </div>
       {drawerOpen && (
         <div className="mt-6">
-          <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} />
+          <OptionsDrawer options={options} onChange={setOption} onClose={() => setDrawerOpen(false)} compareMode={compareMode} />
         </div>
       )}
     </div>
