@@ -39,6 +39,7 @@ TestData/multi-format/sample.pptx
 TestData/multi-format/sample.ps
 TestData/multi-format/test_sample_xlsx_Small.xlsx
 TestData/xlsx-header-watermark.xlsx
+frontend/src/assets/applitools-logo.png
 gui-launch.png
 installer/Applitools-logo-circle_teal.png
 installer/icons/ImageTester.ico

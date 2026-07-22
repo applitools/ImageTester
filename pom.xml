@@ -581,6 +581,11 @@
 										<!-- Without this the MSI has no destination page and installs
 										     to Program Files\ImageTester with no indication where. -->
 										<argument>--win-dir-chooser</argument>
+										<!-- Fixed UpgradeCode: MSI upgrades replace the previous install
+										     instead of stacking a second Add/Remove Programs entry.
+										     Generated once for this product line; must never change. -->
+										<argument>--win-upgrade-uuid</argument>
+										<argument>9a4f2d7e-6b13-4c58-8a0d-2f7e91c45b6a</argument>
 										<argument>--icon</argument>
 										<argument>${project.basedir}/installer/icons/ImageTester.ico</argument>
 									</arguments>
