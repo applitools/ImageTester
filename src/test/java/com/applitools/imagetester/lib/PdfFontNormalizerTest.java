@@ -72,7 +72,9 @@ public class PdfFontNormalizerTest {
             String streamBefore = tokensBefore.toString();
 
             // Run normalization
-            PdfFontNormalizer.normalize(originalPage);
+            try (PDDocument tempDoc = new PDDocument()) {
+                PdfFontNormalizer.normalize(originalPage, tempDoc, true, true);
+            }
 
             // Verify original unchanged
             PDFStreamParser parserAfter = new PDFStreamParser(originalPage);
@@ -93,7 +95,7 @@ public class PdfFontNormalizerTest {
 
         // Run full rendering pipeline
         try (PDDocument document = PDDocument.load(pdf)) {
-            PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI);
+            PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI, true, true);
         }
 
         byte[] checksumAfter = md5(pdf);
@@ -104,11 +106,11 @@ public class PdfFontNormalizerTest {
     public void should_handle_Form_XObjects() throws IOException {
         File pdf = createPdfWithFormXObject();
 
-        try (PDDocument document = PDDocument.load(pdf)) {
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
             PDPage originalPage = document.getPage(0);
-            PDPage normalized = PdfFontNormalizer.normalize(originalPage);
+            PDPage normalized = PdfFontNormalizer.normalize(originalPage, tempDoc, true, true);
 
-            // Verify the form XObject's content stream was normalized
             PDFormXObject form = (PDFormXObject) normalized.getResources()
                     .getXObject(COSName.getPDFName("Fm1"));
             assertNotNull(form);
@@ -117,11 +119,16 @@ public class PdfFontNormalizerTest {
             parser.parse();
             List<Object> tokens = parser.getTokens();
 
-            // Every Tf operator should now reference Helv at size 12
+            // The Tf in effect at each show operator must reference Helv
+            Object governingFont = null;
             for (int i = 0; i < tokens.size(); i++) {
                 Object token = tokens.get(i);
-                if (token instanceof Operator && "Tf".equals(((Operator) token).getName())) {
-                    assertEquals(COSName.getPDFName("Helv"), tokens.get(i - 2));
+                if (!(token instanceof Operator)) continue;
+                String op = ((Operator) token).getName();
+                if ("Tf".equals(op)) {
+                    governingFont = tokens.get(i - 2);
+                } else if ("Tj".equals(op)) {
+                    assertEquals(COSName.getPDFName("Helv"), governingFont);
                 }
             }
         }
@@ -147,7 +154,7 @@ public class PdfFontNormalizerTest {
 
         try (PDDocument document = PDDocument.load(pdf)) {
             // Should not throw
-            BufferedImage img = PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI);
+            BufferedImage img = PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI, true, true);
             assertNotNull(img);
         }
     }
@@ -157,20 +164,92 @@ public class PdfFontNormalizerTest {
         PDRectangle customSize = new PDRectangle(400, 800);
         File pdf = createTestPdfWithSize("Hello", PDType1Font.HELVETICA, 12f, customSize);
 
-        try (PDDocument document = PDDocument.load(pdf)) {
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
             PDPage original = document.getPage(0);
-            PDPage normalized = PdfFontNormalizer.normalize(original);
+            PDPage normalized = PdfFontNormalizer.normalize(original, tempDoc, true, true);
 
             assertEquals(customSize.getWidth(), normalized.getMediaBox().getWidth(), 0.01f);
             assertEquals(customSize.getHeight(), normalized.getMediaBox().getHeight(), 0.01f);
         }
     }
 
+    @Test
+    public void should_produce_identical_images_when_japanese_sizes_differ() throws IOException {
+        File pdf1 = createJapanesePdf("変更手続きのご案内", 12f);
+        File pdf2 = createJapanesePdf("変更手続きのご案内", 28f);
+
+        BufferedImage img1 = renderNormalizedFirstPage(pdf1);
+        BufferedImage img2 = renderNormalizedFirstPage(pdf2);
+
+        assertImagesMatch(img1, img2);
+    }
+
+    @Test
+    public void should_produce_different_images_when_japanese_text_differs() throws IOException {
+        File pdf1 = createJapanesePdf("変更手続きのご案内", 12f);
+        File pdf2 = createJapanesePdf("全然違うテキストですここは", 12f);
+
+        BufferedImage img1 = renderNormalizedFirstPage(pdf1);
+        BufferedImage img2 = renderNormalizedFirstPage(pdf2);
+
+        assertImagesDiffer(img1, img2);
+    }
+
+    @Test
+    public void should_route_mixed_latin_cjk_run_to_noto() throws IOException {
+        File pdf = createJapanesePdf("2025年10月31日", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(nfkc("2025年10月31日"), nfkc(decodedTextGovernedBy(normalized, "NotoJP")));
+        }
+    }
+
+    @Test
+    public void nf_alone_should_leave_japanese_runs_untouched() throws IOException {
+        File pdf = createJapanesePdf("変更手続きのご案内", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            // normalizeLatin only — Japanese must stay in its original font
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, false);
+
+            assertEquals("", decodedTextGovernedBy(normalized, "NotoJP"));
+            assertEquals("", decodedTextGovernedBy(normalized, "Helv"));
+            assertEquals(nfkc("変更手続きのご案内"), nfkc(allDecodedText(normalized)));
+        }
+    }
+
+    @Test
+    public void should_substitute_geta_mark_for_glyphs_missing_from_noto() throws IOException {
+        // U+1F600 (emoji) is not in Noto Sans JP; the run is Japanese because of 日本
+        File pdf = createJapanesePdfWithUnrepresentableGlyph(18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(nfkc("日本〓語"), nfkc(decodedTextGovernedBy(normalized, "NotoJP")));
+        }
+    }
+
     // --- Helper methods ---
+
+    /**
+     * PDFBox-generated ToUnicode CMaps map ideographs sharing a glyph with a
+     * Kangxi radical to the radical codepoint (e.g. 日 → U+2F47). NFKC folds
+     * radicals back to unified ideographs so comparisons are stable.
+     */
+    private static String nfkc(String s) {
+        return s == null ? null : java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC);
+    }
 
     private BufferedImage renderNormalizedFirstPage(File pdfFile) throws IOException {
         try (PDDocument document = PDDocument.load(pdfFile)) {
-            return PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI);
+            return PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI, true, true);
         }
     }
 
@@ -327,6 +406,170 @@ public class PdfFontNormalizerTest {
             doc.save(file);
         }
         return file;
+    }
+
+    /** Creates a single-page PDF whose text is drawn with embedded Noto (Type0/Identity-H). */
+    private File createJapanesePdf(String text, float size) throws IOException {
+        File file = tempFolder.newFile();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            org.apache.pdfbox.pdmodel.font.PDType0Font noto = NotoFontProvider.load(doc);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.beginText();
+                cs.setFont(noto, size);
+                cs.newLineAtOffset(72, 700);
+                cs.showText(text);
+                cs.endText();
+            }
+            doc.save(file);
+        }
+        return file;
+    }
+
+    /**
+     * Creates a Japanese PDF containing a raw CID (0xFFFE) that has no glyph in
+     * Noto Sans JP, whose /ToUnicode entry is hand-patched to an emoji codepoint
+     * (U+1F600) flanked by real "日本"/"語" text encoded normally.
+     *
+     * NOTE: deviates from the brief, which built this fixture via
+     * createJapanesePdf("日本😀語", size). That fails at fixture-creation time:
+     * PDType0Font.encode()/PDPageContentStream.showText() throw
+     * IllegalArgumentException for any codepoint missing from the font's cmap
+     * (verified: Noto Sans JP has no emoji glyphs), so a PDF containing an
+     * emoji encoded with Noto cannot be built through the normal text API —
+     * the exact case the test needs never gets past fixture setup, regardless
+     * of the normalizer's own behavior. Real-world PDFs can still end up with
+     * a ToUnicode entry pointing at a codepoint the embedded font can't
+     * render (e.g. post-subsetting tool bugs), so we reproduce that directly:
+     * write the raw CID by hand, then patch the font's auto-generated
+     * /ToUnicode CMap stream (PDFBox writes one covering the whole glyph
+     * range at save time) to map it to U+1F600.
+     */
+    private File createJapanesePdfWithUnrepresentableGlyph(float size) throws IOException {
+        COSName fontRes = COSName.getPDFName("F1");
+        File unpatched = tempFolder.newFile();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            org.apache.pdfbox.pdmodel.font.PDType0Font noto = NotoFontProvider.load(doc);
+            page.setResources(new org.apache.pdfbox.pdmodel.PDResources());
+            page.getResources().put(fontRes, noto);
+
+            byte[] before = noto.encode("日本");
+            byte[] unmappableCid = { (byte) 0xFF, (byte) 0xFE };
+            byte[] after = noto.encode("語");
+
+            org.apache.pdfbox.cos.COSStream contentStream = new org.apache.pdfbox.cos.COSStream();
+            try (java.io.OutputStream out = contentStream.createOutputStream()) {
+                out.write(("BT /F1 " + size + " Tf 72 700 Td (").getBytes("ISO-8859-1"));
+                writeEscapedLiteral(out, before);
+                writeEscapedLiteral(out, unmappableCid);
+                writeEscapedLiteral(out, after);
+                out.write(") Tj ET".getBytes("ISO-8859-1"));
+            }
+            page.getCOSObject().setItem(COSName.CONTENTS, contentStream);
+            doc.save(unpatched);
+        }
+
+        File patched = tempFolder.newFile();
+        try (PDDocument doc = PDDocument.load(unpatched)) {
+            org.apache.pdfbox.pdmodel.font.PDFont font = doc.getPage(0).getResources().getFont(fontRes);
+            org.apache.pdfbox.cos.COSStream toUnicode = (org.apache.pdfbox.cos.COSStream)
+                    font.getCOSObject().getDictionaryObject(COSName.getPDFName("ToUnicode"));
+            String cmap = readAllAsLatin1(toUnicode);
+            String withEntry = cmap.replace("endcmap",
+                    "1 beginbfchar\n<FFFE> <D83DDE00>\nendbfchar\nendcmap");
+            toUnicode.removeItem(COSName.FILTER);
+            toUnicode.removeItem(COSName.getPDFName("DecodeParms"));
+            try (java.io.OutputStream out = toUnicode.createOutputStream()) {
+                out.write(withEntry.getBytes("ISO-8859-1"));
+            }
+            doc.save(patched);
+        }
+        return patched;
+    }
+
+    private void writeEscapedLiteral(java.io.OutputStream out, byte[] bytes) throws IOException {
+        for (byte b : bytes) {
+            int unsigned = b & 0xff;
+            if (unsigned == '(' || unsigned == ')' || unsigned == '\\') {
+                out.write('\\');
+            }
+            out.write(unsigned);
+        }
+    }
+
+    private String readAllAsLatin1(org.apache.pdfbox.cos.COSStream stream) throws IOException {
+        try (java.io.InputStream in = stream.createInputStream()) {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int read;
+            while ((read = in.read(buf)) != -1) {
+                bos.write(buf, 0, read);
+            }
+            return new String(bos.toByteArray(), "ISO-8859-1");
+        }
+    }
+
+    /**
+     * Walks the normalized page's content stream and returns the concatenated
+     * decoded text of every show op whose governing Tf names the given font.
+     * Decoding uses the page's own resources, so it works for any font.
+     */
+    private String decodedTextGovernedBy(PDPage page, String fontName) throws IOException {
+        PDFStreamParser parser = new PDFStreamParser(page);
+        parser.parse();
+        List<Object> tokens = parser.getTokens();
+
+        StringBuilder sb = new StringBuilder();
+        COSName governing = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            Object token = tokens.get(i);
+            if (!(token instanceof Operator)) continue;
+            String op = ((Operator) token).getName();
+            if ("Tf".equals(op)) {
+                governing = (COSName) tokens.get(i - 2);
+            } else if (("Tj".equals(op) || "'".equals(op)) && governing != null
+                    && fontName.equals(governing.getName())) {
+                sb.append(PdfTextDecoder.decode(
+                        (org.apache.pdfbox.cos.COSString) tokens.get(i - 1),
+                        page.getResources().getFont(governing)));
+            } else if ("TJ".equals(op) && governing != null
+                    && fontName.equals(governing.getName())) {
+                sb.append(PdfTextDecoder.decode(
+                        (org.apache.pdfbox.cos.COSArray) tokens.get(i - 1),
+                        page.getResources().getFont(governing)));
+            }
+        }
+        return nfkc(sb.toString());
+    }
+
+    /** Concatenated decoded text of every show op on the page, regardless of font. */
+    private String allDecodedText(PDPage page) throws IOException {
+        PDFStreamParser parser = new PDFStreamParser(page);
+        parser.parse();
+        List<Object> tokens = parser.getTokens();
+
+        StringBuilder sb = new StringBuilder();
+        COSName governing = null;
+        for (int i = 0; i < tokens.size(); i++) {
+            Object token = tokens.get(i);
+            if (!(token instanceof Operator)) continue;
+            String op = ((Operator) token).getName();
+            if ("Tf".equals(op)) {
+                governing = (COSName) tokens.get(i - 2);
+            } else if (("Tj".equals(op) || "'".equals(op)) && governing != null) {
+                sb.append(PdfTextDecoder.decode(
+                        (org.apache.pdfbox.cos.COSString) tokens.get(i - 1),
+                        page.getResources().getFont(governing)));
+            } else if ("TJ".equals(op) && governing != null) {
+                sb.append(PdfTextDecoder.decode(
+                        (org.apache.pdfbox.cos.COSArray) tokens.get(i - 1),
+                        page.getResources().getFont(governing)));
+            }
+        }
+        return nfkc(sb.toString());
     }
 
     private byte[] md5(File file) throws IOException, NoSuchAlgorithmException {

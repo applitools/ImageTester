@@ -38,11 +38,11 @@ public final class PdfPageRenderer {
         if (removeWatermark) {
             page = PdfWatermarkRemover.remove(page, config.removeWatermarkText);
         }
-        if (normalize) {
-            page = PdfFontNormalizer.normalize(page);
-        }
-        if (trimCrop != null) page.setCropBox(trimCrop);
         try (PDDocument tempDoc = new PDDocument()) {
+            if (normalize) {
+                page = PdfFontNormalizer.normalize(page, tempDoc, config.normalizeFont, false);
+            }
+            if (trimCrop != null) page.setCropBox(trimCrop);
             tempDoc.addPage(page);
             return MatchSizeResizer.resize(
                     new PDFRenderer(tempDoc).renderImageWithDPI(0, config.DocumentConversionDPI), config);
