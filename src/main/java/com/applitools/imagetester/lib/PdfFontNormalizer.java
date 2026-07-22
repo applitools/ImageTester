@@ -176,7 +176,28 @@ public class PdfFontNormalizer {
         if (JapaneseText.containsJapanese(decoded)) {
             return notoFont != null ? NOTO_JP : null;
         }
-        return normalizeLatin ? HELV : null;
+        if (!normalizeLatin) {
+            return null;
+        }
+        // Symbols Helvetica lacks (e.g. ●, ①) fall back to Noto when available so
+        // both sides of a comparison render them identically instead of as '?'
+        if (notoFont != null && !canEncode(PDType1Font.HELVETICA, decoded)) {
+            return NOTO_JP;
+        }
+        return HELV;
+    }
+
+    private static boolean canEncode(PDFont font, String text) {
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            try {
+                font.encode(new String(Character.toChars(cp)));
+            } catch (IllegalArgumentException | IOException e) {
+                return false;
+            }
+            i += Character.charCount(cp);
+        }
+        return true;
     }
 
     private static void rewriteShowString(List<Object> out, List<Object> operands, int stringIndex,

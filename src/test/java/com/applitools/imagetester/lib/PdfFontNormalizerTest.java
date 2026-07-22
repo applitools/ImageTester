@@ -236,6 +236,32 @@ public class PdfFontNormalizerTest {
         }
     }
 
+    @Test
+    public void should_route_helvetica_missing_symbols_to_noto() throws IOException {
+        // ● (U+25CF) is not Japanese by classification, but Helvetica has no glyph
+        // for it — the run must route to Noto so both comparison sides render ●
+        File pdf = createJapanesePdf("● item 1", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(nfkc("● item 1"), nfkc(decodedTextGovernedBy(normalized, "NotoJP")));
+        }
+    }
+
+    @Test
+    public void should_keep_pure_ascii_runs_in_helvetica_when_both_flags_on() throws IOException {
+        File pdf = createJapanesePdf("plain ascii 123", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(nfkc("plain ascii 123"), nfkc(decodedTextGovernedBy(normalized, "Helv")));
+        }
+    }
+
     // --- Helper methods ---
 
     /**

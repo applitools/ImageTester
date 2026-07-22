@@ -265,6 +265,8 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf -nfj
 - Text that cannot be decoded to Unicode (no ToUnicode mapping) keeps its original font — it renders
   faithfully rather than as garbage, but font differences in those runs still diff.
 - Characters missing from Noto Sans JP render as 〓 (geta mark) on both sides of the comparison.
+- Characters Helvetica lacks (e.g. ●, ①) in otherwise Latin text are normalized to Noto Sans JP
+  instead when `-nfj` is enabled, so both sides render them identically.
 
 **When to use it:**
 - Baselines are breaking because the document generator upgraded a font library or switched a typeface.
