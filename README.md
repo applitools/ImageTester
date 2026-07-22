@@ -229,27 +229,42 @@ Options that apply when testing PDFs and other documents.
 + `-pp [password]` - Password for opening protected PDF files
 + `-pn` - Preserve the original test names when testing only selected pages
 + `-st` - Split a multi-page document into individual single-step tests
-+ `-nf` - Normalize all PDF fonts to Helvetica 12pt before rendering. See [Font Normalization](#font-normalization).
++ `-nf` - Normalize Latin-script PDF text to Helvetica 12pt before rendering. Japanese text is left untouched. See [Font Normalization](#font-normalization).
++ `-nfj` - Normalize Japanese PDF text (Hiragana, Katakana, Kanji) to bundled Noto Sans JP 12pt before rendering. See [Font Normalization](#font-normalization).
 + `-lo` - Use legacy (pre-2.0) file ordering to stay compatible with older baselines
 + `-rwauto` - Auto-detect and remove a watermark (a stamped outline like a diagonal "UAT - Proof"). See [Watermark Removal](#watermark-removal).
 + `-rwo [dir]` - Standalone output mode: write cleaned PDFs to the directory and exit without uploading. Combine with `-rwauto`. See [Watermark Removal](#watermark-removal).
 
 ### Font Normalization
 Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
-false-positive diffs when comparing PDFs across document generation pipelines. The `-nf` / `--normalizeFont` flag provides
-a middle ground: before a PDF page is rasterized, all font references in the content stream are rewritten
-to **Helvetica 12pt**, producing a deterministic render that is insensitive to typographic changes while
-still catching structural differences (missing text, reordered content, layout regressions).
+false-positive diffs when comparing PDFs across document generation pipelines. Two flags rewrite text
+to fixed fonts before a PDF page is rasterized, producing a deterministic render that is insensitive
+to typographic changes while still catching structural differences (missing text, reordered content,
+layout regressions):
+
++ `-nf` / `--normalizeFont` — rewrites **Latin-script** text to **Helvetica 12pt**.
++ `-nfj` / `--normalizeFontJP` — rewrites **Japanese** text (Hiragana, Katakana, Kanji, fullwidth
+  forms) to a bundled **Noto Sans JP 12pt** (SIL OFL 1.1 licensed, embedded in the JAR — no fonts
+  need to be installed, and renders are identical on every OS).
+
+Classification is per text run: a run counts as Japanese if it contains at least one Japanese
+character, so mixed runs like `2025年10月31日` normalize as Japanese (Noto covers their Latin
+characters too). Runs written in Japanese CID fonts are decoded through the font's Unicode mapping
+and re-encoded — never reinterpreted byte-for-byte. For full normalization of mixed-language
+documents, combine both flags:
 
 **Usage:**
 ```
-java -jar ImageTester.jar -k [api-key] -f report.pdf -nf
+java -jar ImageTester.jar -k [api-key] -f report.pdf -nf -nfj
 ```
 
 **Behavior:**
 - The original PDF document on disk is **never modified**. Normalization operates on a copy of the page's
   content stream and resources; the baseline file and any downstream consumers are untouched.
 - Image content, vector graphics, and page geometry (media box, matrix) are preserved as-is.
+- Text that cannot be decoded to Unicode (no ToUnicode mapping) keeps its original font — it renders
+  faithfully rather than as garbage, but font differences in those runs still diff.
+- Characters missing from Noto Sans JP render as 〓 (geta mark) on both sides of the comparison.
 
 **When to use it:**
 - Baselines are breaking because the document generator upgraded a font library or switched a typeface.
@@ -260,8 +275,8 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf
 - Typography is part of what you are validating (brand compliance, marketing collateral).
 - You need to verify that a specific font is present and rendered correctly.
 
-**Note:** Enabling `-nf` invalidates existing baselines — normalized renders will not match a baseline
-captured without normalization. Plan for a baseline refresh when rolling this out.
+**Note:** Enabling either flag invalidates affected baselines — normalized renders will not match a
+baseline captured without normalization. Plan for a baseline refresh when rolling this out.
 
 ### Watermark Removal
 
