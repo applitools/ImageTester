@@ -46,7 +46,7 @@ public class PdfFontNormalizer {
     private static final COSName NOTO_JP = COSName.getPDFName("NotoJP");
     private static final float NORMALIZED_FONT_SIZE = 12f;
     private static final float NORMALIZED_LEADING = NORMALIZED_FONT_SIZE * 1.2f;
-    private static final char MISSING_JP_GLYPH = '〓'; // 〓 geta mark (escape survives any source encoding)
+    private static final char MISSING_JP_GLYPH = '\u3013'; // 〓 geta mark (escape survives any source encoding)
     private static final char MISSING_LATIN_GLYPH = '?';
     private static final java.util.logging.Logger LOG =
             java.util.logging.Logger.getLogger(PdfFontNormalizer.class.getName());

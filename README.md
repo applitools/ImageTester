@@ -278,7 +278,9 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf -nfj
 - You need to verify that a specific font is present and rendered correctly.
 
 **Note:** Enabling either flag invalidates affected baselines — normalized renders will not match a
-baseline captured without normalization. Plan for a baseline refresh when rolling this out.
+baseline captured without normalization. Plan for a baseline refresh when rolling this out. Upgrading
+from an earlier ImageTester whose `-nf` rewrote all fonts also changes output on documents with
+non-ASCII text or fonts lacking Unicode mappings — expect a one-time re-approval there as well.
 
 ### Watermark Removal
 

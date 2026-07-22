@@ -675,7 +675,7 @@ public class ImageTester {
             .build());
         options.addOption(Option.builder("nf")
             .longOpt("normalizeFont")
-            .desc("Normalize all PDF fonts to Helvetica 12pt before rendering. Useful for ignoring font styling changes in visual comparisons.")
+            .desc("Normalize Latin-script PDF text to Helvetica 12pt before rendering. Japanese text is left untouched — combine with -nfj to normalize it too.")
             .hasArg(false)
             .build());
         options.addOption(Option.builder("nfj")
