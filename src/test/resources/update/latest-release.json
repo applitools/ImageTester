@@ -1,0 +1,12 @@
+{
+  "tag_name": "v9.9.9",
+  "html_url": "https://github.com/applitools/ImageTester/releases/tag/v9.9.9",
+  "assets": [
+    { "name": "ImageTester-9.9.9-Windows.msi", "browser_download_url": "https://example.invalid/dl/ImageTester-9.9.9-Windows.msi" },
+    { "name": "ImageTester-9.9.9-macOS-AppleSilicon.dmg", "browser_download_url": "https://example.invalid/dl/ImageTester-9.9.9-macOS-AppleSilicon.dmg" },
+    { "name": "ImageTester-9.9.9-macOS-Intel.dmg", "browser_download_url": "https://example.invalid/dl/ImageTester-9.9.9-macOS-Intel.dmg" },
+    { "name": "ImageTester-9.9.9-Linux.deb", "browser_download_url": "https://example.invalid/dl/ImageTester-9.9.9-Linux.deb" },
+    { "name": "ImageTester_9.9.9.jar", "browser_download_url": "https://example.invalid/dl/ImageTester_9.9.9.jar" },
+    { "name": "SHA256SUMS.txt", "browser_download_url": "https://example.invalid/dl/SHA256SUMS.txt" }
+  ]
+}

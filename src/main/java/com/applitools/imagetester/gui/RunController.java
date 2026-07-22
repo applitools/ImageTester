@@ -2,6 +2,7 @@ package com.applitools.imagetester.gui;
 
 import com.applitools.imagetester.ImageTester;
 import com.applitools.imagetester.Suite;
+import com.applitools.imagetester.lib.CompareRunner;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.EyesFactory;
 import com.applitools.imagetester.lib.Logger;
@@ -19,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +75,9 @@ public final class RunController {
     private final AtomicReference<RunState> state_ = new AtomicReference<>(RunState.Idle.INSTANCE);
     private final AtomicReference<TestExecutor> currentExecutor_ = new AtomicReference<>();
     private final AtomicReference<Path> currentSourceRoot_ = new AtomicReference<>();
+    // Compare mode has no single root to prefix-check (doc1/doc2 can live in unrelated
+    // directories), so it authorizes previews by exact canonical file path instead.
+    private final AtomicReference<Set<Path>> currentComparePaths_ = new AtomicReference<>();
     private final ExecutorService runExecutor_ = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "RunController-run");
         t.setDaemon(true);
@@ -93,15 +99,22 @@ public final class RunController {
     public SecretsStore secrets() { return secrets_; }
     /** Root of the most recently validated source path, so the preview endpoint can reject paths outside it. */
     public Path sourceRoot() { return currentSourceRoot_.get(); }
+    /** Exact canonical doc1/doc2 paths for the most recent compare-mode run, so the preview
+     *  endpoint can authorize them without a shared root (they may live in unrelated directories). */
+    public Set<Path> compareModePaths() { return currentComparePaths_.get(); }
 
     public void setSecretApiKey(String value) { secrets_.setApiKey(value); }
 
     public StartResult start(RunRequest req) {
-        Path validated = SourcePathValidator.validate(req.sourcePath);
+        boolean compareMode = req.doc1Path != null && req.doc2Path != null;
+        Path validatedDoc1 = compareMode ? SourcePathValidator.validate(req.doc1Path) : null;
+        Path validatedDoc2 = compareMode ? SourcePathValidator.validate(req.doc2Path) : null;
+        Path validated = compareMode ? null : SourcePathValidator.validate(req.sourcePath);
         String apiKey = secrets_.getApiKey();
         if (apiKey == null || apiKey.isEmpty()) throw new MissingApiKeyException();
 
         validateWatermarkFlags(req); // throws InvalidOptionsException synchronously
+        validateCompareModeFlags(req, compareMode); // throws InvalidOptionsException synchronously
 
         Logger logger = new Logger();
         RunConfig rc = factoryBuilder_.build(req, logger); // throws on malformed options synchronously
@@ -119,7 +132,11 @@ public final class RunController {
         // Emitted before the HTTP response returns so the frontend can enter "running" from the
         // stream itself instead of racing its optimistic dispatch against test-started.
         runStream_.emit(new SseEvent.RunStarted(running.runId));
-        runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, rc, logger, running));
+        if (compareMode) {
+            runExecutor_.submit(() -> executeCompareRun(validatedDoc1.toFile(), validatedDoc2.toFile(), apiKey, rc, logger, running));
+        } else {
+            runExecutor_.submit(() -> executeRun(validated.toFile(), req, apiKey, rc, logger, running));
+        }
         return new StartResult(running.runId);
     }
 
@@ -131,6 +148,14 @@ public final class RunController {
         Object rw = req.options.get("rw");
         boolean hasRw = rw != null && !rw.toString().trim().isEmpty();
         if (!auto && !hasRw) throw new InvalidOptionsException("-rwo requires -rw or -rwauto");
+    }
+
+    private static void validateCompareModeFlags(RunRequest req, boolean compareMode) {
+        if (!compareMode) return;
+        Object fn = req.options == null ? null : req.options.get("fn");
+        boolean hasFn = fn != null && !fn.toString().trim().isEmpty();
+        if (!hasFn) throw new InvalidOptionsException(
+                "-doc1/-doc2 require -fn so the two documents share a test identity.");
     }
 
     public void cancel() {
@@ -175,6 +200,8 @@ public final class RunController {
         }
         // Preview thumbnails are read from disk by path on request; scope the endpoint to files
         // under whatever directory the Suite actually runs against (source, or the rwauto temp dir).
+        // Clear any leftover compare-mode authorization from a prior run so it can't outlive its run.
+        currentComparePaths_.set(null);
         try {
             currentSourceRoot_.set(effectiveSource.getCanonicalFile().toPath());
         } catch (IOException e) {
@@ -221,6 +248,66 @@ public final class RunController {
             RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
             state_.set(done);
             runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
+        }
+    }
+
+    private void executeCompareRun(File doc1, File doc2, String apiKey, RunConfig rc, Logger logger, RunState.Running running) {
+        long startedNs = System.nanoTime();
+        Config config = rc.config;
+        config.apiKey = apiKey;
+        rc.factory.apiKey(apiKey);
+        config.shouldThrowException = false; // CRITICAL: a thrown diff calls System.exit
+        if (config.logger == null) config.logger = logger;
+
+        Consumer<String> logListener = line -> runStream_.emit(new SseEvent.LogLine(LogRedactor.redact(line, apiKey)));
+        config.logger.addListener(logListener);
+
+        // Compare mode has no single root (doc1/doc2 can live in unrelated directories), so the
+        // preview endpoint is authorized by exact canonical path instead. Clear any leftover
+        // folder/file-mode root from a prior run so it can't outlive its run.
+        currentSourceRoot_.set(null);
+        currentComparePaths_.set(canonicalPathsOf(doc1, doc2));
+
+        int passed = 0, failed = 0;
+        try {
+            String name = config.forcedName;
+            runStream_.emit(new SseEvent.TestStarted(name, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
+            CompareRunner.CompareResult result = CompareRunner.run(doc1, doc2, config, rc.factory);
+            String status = result.doc2Result != null && result.doc2Result.isDifferent() ? "fail" : "pass";
+            String dashboard = result.doc2Result != null ? result.doc2Result.getUrl() : null;
+            long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
+            runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
+            RunState.TestRow row = new RunState.TestRow(name);
+            row.status = status; row.durationMs = ms; row.dashboardUrl = dashboard;
+            row.previewPath = doc1.getAbsolutePath(); row.doc2PreviewPath = doc2.getAbsolutePath();
+            running.tests.add(row);
+        } catch (Throwable t) {
+            config.logger.reportException(t);
+        } finally {
+            config.logger.removeListener(logListener);
+            for (RunState.TestRow r : running.tests) {
+                if ("pass".equals(r.status)) passed++;
+                else if ("fail".equals(r.status)) failed++;
+            }
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
+            RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
+            state_.set(done);
+            runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
+        }
+    }
+
+    private static Set<Path> canonicalPathsOf(File doc1, File doc2) {
+        Set<Path> paths = new HashSet<>();
+        paths.add(canonicalPath(doc1));
+        paths.add(canonicalPath(doc2));
+        return paths;
+    }
+
+    private static Path canonicalPath(File file) {
+        try {
+            return file.getCanonicalFile().toPath();
+        } catch (IOException e) {
+            return file.getAbsoluteFile().toPath();
         }
     }
 

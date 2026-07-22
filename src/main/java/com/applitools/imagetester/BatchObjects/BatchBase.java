@@ -32,6 +32,11 @@ public abstract class BatchBase implements IBatch {
         return tests_.isEmpty();
     }
 
+    /** Read-only view of this batch's tests, for callers that run them directly instead of via a TestExecutor. */
+    public List<TestBase> tests() {
+        return java.util.Collections.unmodifiableList(tests_);
+    }
+
     public BatchInfo batchInfo() {
         return this.batchInfo_;
     }

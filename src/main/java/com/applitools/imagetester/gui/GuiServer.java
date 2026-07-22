@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 public final class GuiServer {
@@ -52,10 +53,13 @@ public final class GuiServer {
     public GuiToken token() { return token_; }
     public RunController controller() { return controller_; }
 
-    public static GuiServer start() throws Exception { return start(false); }
-    public static GuiServer startForTest() throws Exception { return start(true); }
+    public static GuiServer start() throws Exception { return start(false, null); }
+    public static GuiServer startForTest() throws Exception { return startForTest(UpdateService.disabled()); }
 
-    private static GuiServer start(boolean testMode) throws Exception {
+    /** Test-only entry point that lets callers drive real update-service behavior (202/409 paths). */
+    public static GuiServer startForTest(UpdateService updates) throws Exception { return start(true, updates); }
+
+    private static GuiServer start(boolean testMode, UpdateService injectedUpdates) throws Exception {
         GuiToken token = GuiToken.generate();
         Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
@@ -83,12 +87,17 @@ public final class GuiServer {
         RunStream stream = new RunStream();
         RunController controller = new RunController(secrets, stream);
 
+        UpdateService updates = testMode
+                ? injectedUpdates
+                : new UpdateService(com.applitools.imagetester.lib.UpdateChecker.production(), UpdateInstaller.production());
+        updates.startBackgroundCheck();
+
         ctx.addServlet(new ServletHolder(new IndexHtmlServlet(token)), "/");
         ctx.addServlet(new ServletHolder(new IndexHtmlServlet(token)), "/index.html");
         ctx.addServlet(new ServletHolder(new StaticAssetServlet()), "/assets/*");
         ctx.addServlet(new ServletHolder(new SseServlet(controller)), "/api/events");
         ctx.addServlet(new ServletHolder(new PreviewServlet(controller)), "/api/preview");
-        ctx.addServlet(new ServletHolder(new ApiServlet(controller)), "/api/*");
+        ctx.addServlet(new ServletHolder(new ApiServlet(controller, updates)), "/api/*");
 
         server.setHandler(ctx);
         server.start();
@@ -121,9 +130,10 @@ public final class GuiServer {
 
     private static final class ApiServlet extends HttpServlet {
         private final RunController controller_;
+        private final UpdateService updates_;
         private final ObjectMapper json_ = new ObjectMapper();
 
-        ApiServlet(RunController c) { this.controller_ = c; }
+        ApiServlet(RunController c, UpdateService u) { this.controller_ = c; this.updates_ = u; }
 
         @Override
         protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -137,8 +147,12 @@ public final class GuiServer {
                 if (method.equals("PUT")    && path.equals("/secret/api-key")) { handleSetSecret(req, resp); return; }
                 if (method.equals("DELETE") && path.equals("/secret/api-key")) { controller_.secrets().deleteApiKey(); resp.setStatus(204); return; }
                 if (method.equals("POST")   && path.equals("/choose-path"))    { handleChoosePath(req, resp); return; }
+                if (method.equals("GET")    && path.equals("/update"))         { writeJson(resp, updates_.statusJson()); return; }
+                if (method.equals("POST")   && path.equals("/update/install")) { updates_.startInstall(); resp.setStatus(202); return; }
                 resp.setStatus(404);
             } catch (RunController.RunInProgressException e) {
+                resp.setStatus(409); writeJson(resp, Map.of("error", e.getMessage()));
+            } catch (UpdateService.InstallInProgressException e) {
                 resp.setStatus(409); writeJson(resp, Map.of("error", e.getMessage()));
             } catch (RunController.MissingApiKeyException | SourcePathValidator.InvalidSourceException e) {
                 resp.setStatus(400); writeJson(resp, Map.of("error", e.getMessage()));
@@ -237,10 +251,15 @@ public final class GuiServer {
                 resp.setStatus(404); return;
             }
 
-            // Only serve files under the currently running/last-run source root — the path
-            // parameter otherwise lets any local client read arbitrary files off disk.
+            // Only serve files under the currently running/last-run source root (folder/file mode)
+            // or one of the exact doc1/doc2 paths from the last compare-mode run (compare mode has
+            // no shared root — doc1/doc2 can live in unrelated directories) — the path parameter
+            // otherwise lets any local client read arbitrary files off disk.
             Path root = controller_.sourceRoot();
-            if (root == null || !resolved.startsWith(root) || !Files.isRegularFile(resolved)) {
+            boolean underSourceRoot = root != null && resolved.startsWith(root);
+            Set<Path> comparePaths = controller_.compareModePaths();
+            boolean isAllowedComparePath = comparePaths != null && comparePaths.contains(resolved);
+            if ((!underSourceRoot && !isAllowedComparePath) || !Files.isRegularFile(resolved)) {
                 resp.setStatus(403); return;
             }
 

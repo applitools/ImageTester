@@ -66,6 +66,32 @@ public class PreviewServletIT {
     }
 
     @Test
+    public void servesBothCompareModeDocsAndRejectsAnUnrelatedPath() throws Exception {
+        server = GuiServer.startForTest();
+        String base = "http://127.0.0.1:" + server.port();
+        String token = server.token().value();
+
+        // doc1 and doc2 deliberately live in unrelated directories — compare mode has no
+        // shared root to prefix-check, unlike folder/file mode.
+        File doc1 = makePng(tmp.newFolder("doc1"), "doc1.png");
+        File doc2 = makePng(tmp.newFolder("doc2"), "doc2.png");
+        File unrelated = makePng(tmp.newFolder("elsewhere"), "other.png");
+
+        String body = "{\"doc1Path\":\"" + escape(doc1.getAbsolutePath()) + "\",\"doc2Path\":\""
+            + escape(doc2.getAbsolutePath()) + "\",\"options\":{\"fn\":\"compare-1\"}}";
+        int runStatus = postJson(base + "/api/run", body, token);
+        assertEquals(200, runStatus);
+
+        // Compare-mode preview authorization is set synchronously at the start of the compare
+        // run, before either document's Eyes test actually opens/closes.
+        waitUntil(() -> server.controller().compareModePaths() != null);
+
+        assertEquals(200, getPreviewStatus(base, token, doc1));
+        assertEquals(200, getPreviewStatus(base, token, doc2));
+        assertEquals(403, getPreviewStatus(base, token, unrelated));
+    }
+
+    @Test
     public void rejectsPathOutsideTheSourceRoot() throws Exception {
         server = GuiServer.startForTest();
         String base = "http://127.0.0.1:" + server.port();
@@ -101,6 +127,16 @@ public class PreviewServletIT {
             ImageIO.write(img, "png", out);
         }
         return png;
+    }
+
+    private static int getPreviewStatus(String base, String token, File file) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        String previewUrl = base + "/api/preview?path=" + java.net.URLEncoder.encode(file.getAbsolutePath(), "UTF-8")
+            + "&token=" + token;
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create(previewUrl)).GET().build(),
+            HttpResponse.BodyHandlers.ofString());
+        return resp.statusCode();
     }
 
     private static String escape(String path) {

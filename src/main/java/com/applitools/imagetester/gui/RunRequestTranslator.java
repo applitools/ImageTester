@@ -17,7 +17,12 @@ public final class RunRequestTranslator {
 
     public static String[] toArgv(RunRequest req) {
         List<String> argv = new ArrayList<>();
-        if (req.sourcePath != null) {
+        if (req.doc1Path != null && req.doc2Path != null) {
+            argv.add("-doc1");
+            argv.add(req.doc1Path);
+            argv.add("-doc2");
+            argv.add(req.doc2Path);
+        } else if (req.sourcePath != null) {
             argv.add("-f");
             argv.add(req.sourcePath);
         }

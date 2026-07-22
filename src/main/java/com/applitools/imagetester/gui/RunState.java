@@ -50,6 +50,7 @@ public abstract class RunState {
         public Long durationMs;
         public String dashboardUrl;
         public String previewPath;
+        public String doc2PreviewPath;
         public TestRow(String name) { this.name = name; this.status = "running"; }
     }
 }

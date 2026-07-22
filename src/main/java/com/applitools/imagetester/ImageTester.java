@@ -69,6 +69,9 @@ public class ImageTester {
             CommandLine cmd = parser.parse(options, args);
             logger.setDebug(cmd.hasOption("debug"));
             logger.printVersion(CUR_VER);
+            com.applitools.imagetester.lib.UpdateChecker.production().checkAsync(update ->
+                    System.err.println("Note: ImageTester " + update.version
+                            + " is available - " + update.releasePageUrl));
 
             if (cmd.getOptions().length == 0) {
                 logger.printHelp(options);
@@ -80,6 +83,9 @@ public class ImageTester {
 
             int watermarkValidation = validateWatermarkFlags(cmd, logger);
             if (watermarkValidation != 0) return watermarkValidation;
+
+            int compareValidation = validateCompareFlags(cmd, logger);
+            if (compareValidation != 0) return compareValidation;
 
             if (cmd.hasOption("rwauto") && cmd.hasOption("rwo")) {
                 File inputRoot = new File(cmd.getOptionValue("f", "."));
@@ -107,6 +113,15 @@ public class ImageTester {
             if (batchMapperPath != null) {
                 runTestWithBatchMapper(logger, cmd);
                 return 0;
+            }
+
+            if (cmd.hasOption("doc1")) {
+                RunConfig compareRc = RunConfigFactory.from(cmd, logger);
+                File doc1 = new File(cmd.getOptionValue("doc1"));
+                File doc2 = new File(cmd.getOptionValue("doc2"));
+                com.applitools.imagetester.lib.CompareRunner.run(doc1, doc2, compareRc.config, compareRc.factory);
+                compareRc.config.closeBatches();
+                return computeExitCode(compareRc.config, logger);
             }
 
             RunConfig rc = RunConfigFactory.from(cmd, logger);
@@ -163,6 +178,25 @@ public class ImageTester {
                 logger.printMessage("ERROR: -rw value cannot be blank.");
                 return 1;
             }
+        }
+        return 0;
+    }
+
+    private static int validateCompareFlags(CommandLine cmd, Logger logger) {
+        boolean hasDoc1 = cmd.hasOption("doc1");
+        boolean hasDoc2 = cmd.hasOption("doc2");
+        if (!hasDoc1 && !hasDoc2) return 0;
+        if (cmd.hasOption("f")) {
+            logger.printMessage("ERROR: -doc1/-doc2 cannot be combined with -f.");
+            return 1;
+        }
+        if (hasDoc1 != hasDoc2) {
+            logger.printMessage(hasDoc1 ? "ERROR: -doc1 was given without -doc2." : "ERROR: -doc2 was given without -doc1.");
+            return 1;
+        }
+        if (cmd.getOptionValue("fn") == null || cmd.getOptionValue("fn").trim().isEmpty()) {
+            logger.printMessage("ERROR: -doc1/-doc2 require -fn so the two documents share a test identity.");
+            return 1;
         }
         return 0;
     }
@@ -338,6 +372,16 @@ public class ImageTester {
         options.addOption(Option.builder("f")
                 .longOpt("folder")
                 .desc("Set the root folder to start the analysis, default: \\.")
+                .hasArg()
+                .argName("path")
+                .build());
+        options.addOption(Option.builder("doc1")
+                .desc("First document for direct two-document comparison (use with -doc2 and -fn)")
+                .hasArg()
+                .argName("path")
+                .build());
+        options.addOption(Option.builder("doc2")
+                .desc("Second document for direct two-document comparison (use with -doc1 and -fn)")
                 .hasArg()
                 .argName("path")
                 .build());
