@@ -446,6 +446,9 @@ public class PdfFontNormalizerTest {
      * /ToUnicode CMap stream (PDFBox writes one covering the whole glyph
      * range at save time) to map it to U+1F600.
      */
+    private static final int UNMAPPABLE_CID = 0xFFFE; // outside Noto Sans JP's real glyph range
+    private static final String EMOJI_UTF16BE_HEX = "D83DDE00"; // surrogate pair for U+1F600
+
     private File createJapanesePdfWithUnrepresentableGlyph(float size) throws IOException {
         COSName fontRes = COSName.getPDFName("F1");
         File unpatched = tempFolder.newFile();
@@ -457,7 +460,7 @@ public class PdfFontNormalizerTest {
             page.getResources().put(fontRes, noto);
 
             byte[] before = noto.encode("日本");
-            byte[] unmappableCid = { (byte) 0xFF, (byte) 0xFE };
+            byte[] unmappableCid = { (byte) (UNMAPPABLE_CID >> 8), (byte) UNMAPPABLE_CID };
             byte[] after = noto.encode("語");
 
             org.apache.pdfbox.cos.COSStream contentStream = new org.apache.pdfbox.cos.COSStream();
@@ -478,8 +481,9 @@ public class PdfFontNormalizerTest {
             org.apache.pdfbox.cos.COSStream toUnicode = (org.apache.pdfbox.cos.COSStream)
                     font.getCOSObject().getDictionaryObject(COSName.getPDFName("ToUnicode"));
             String cmap = readAllAsLatin1(toUnicode);
-            String withEntry = cmap.replace("endcmap",
-                    "1 beginbfchar\n<FFFE> <D83DDE00>\nendbfchar\nendcmap");
+            String bfCharEntry = String.format("1 beginbfchar\n<%04X> <%s>\nendbfchar\n",
+                    UNMAPPABLE_CID, EMOJI_UTF16BE_HEX);
+            String withEntry = cmap.replace("endcmap", bfCharEntry + "endcmap");
             toUnicode.removeItem(COSName.FILTER);
             toUnicode.removeItem(COSName.getPDFName("DecodeParms"));
             try (java.io.OutputStream out = toUnicode.createOutputStream()) {
