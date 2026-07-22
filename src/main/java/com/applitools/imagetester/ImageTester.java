@@ -289,6 +289,7 @@ public class ImageTester {
                 currentConfiguration.sequenceName = cmd.getOptionValue("sq", null);
                 currentConfiguration.legacyFileOrder = cmd.hasOption("lo");
                 currentConfiguration.normalizeFont = cmd.hasOption("nf");
+                currentConfiguration.normalizeFontJP = cmd.hasOption("nfj");
                 currentConfiguration.removeWatermarkText = cmd.getOptionValue("rw");
                 currentConfiguration.removeWatermarkOutDir = cmd.getOptionValue("rwo");
                 currentConfiguration.regexFileNameFilter = cmd.getOptionValue("rf");
@@ -675,6 +676,13 @@ public class ImageTester {
         options.addOption(Option.builder("nf")
             .longOpt("normalizeFont")
             .desc("Normalize all PDF fonts to Helvetica 12pt before rendering. Useful for ignoring font styling changes in visual comparisons.")
+            .hasArg(false)
+            .build());
+        options.addOption(Option.builder("nfj")
+            .longOpt("normalizeFontJP")
+            .desc("Normalize Japanese (Hiragana/Katakana/Kanji) PDF text to bundled " +
+                  "Noto Sans JP 12pt before rendering. Latin-only text is left untouched — " +
+                  "combine with -nf to normalize it too.")
             .hasArg(false)
             .build());
 

@@ -59,6 +59,7 @@ public final class RunConfigFactory {
         config.dontCloseBatches = cmd.hasOption("dcb");
         config.shouldThrowException = cmd.hasOption("te");
         config.normalizeFont = cmd.hasOption("nf");
+        config.normalizeFontJP = cmd.hasOption("nfj");
         config.removeWatermarkText = cmd.getOptionValue("rw");
         config.removeWatermarkOutDir = cmd.getOptionValue("rwo");
         config.regexFileNameFilter = cmd.getOptionValue("rf");

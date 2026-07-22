@@ -10,9 +10,10 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 
 /**
  * Selects the rendering strategy for a PDF page based on Config flags:
- * removeWatermarkText (-rw) and normalizeFont (-nf). When both are set,
- * watermark removal runs first and the cleaned page is then font-normalized.
- * When neither is set, the supplied PDFRenderer fallback is used directly.
+ * removeWatermarkText (-rw), normalizeFont (-nf), and normalizeFontJP (-nfj).
+ * When combined, watermark removal runs first and the cleaned page is then
+ * font-normalized. When no flag is set, the supplied PDFRenderer fallback is
+ * used directly.
  */
 public final class PdfPageRenderer {
 
@@ -24,7 +25,7 @@ public final class PdfPageRenderer {
                                        PDFRenderer fallback,
                                        Config config) throws IOException {
         boolean removeWatermark = config.removeWatermarkText != null;
-        boolean normalize = config.normalizeFont;
+        boolean normalize = config.normalizeFont || config.normalizeFontJP;
         // Resolve against the original page: watermark removal must not erase the crop marks first.
         PDRectangle trimCrop = PdfPageTrimmer.resolveCropBox(originalPage, config);
 
@@ -40,7 +41,7 @@ public final class PdfPageRenderer {
         }
         try (PDDocument tempDoc = new PDDocument()) {
             if (normalize) {
-                page = PdfFontNormalizer.normalize(page, tempDoc, config.normalizeFont, false);
+                page = PdfFontNormalizer.normalize(page, tempDoc, config.normalizeFont, config.normalizeFontJP);
             }
             if (trimCrop != null) page.setCropBox(trimCrop);
             tempDoc.addPage(page);

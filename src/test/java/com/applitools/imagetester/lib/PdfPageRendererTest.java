@@ -135,6 +135,22 @@ public class PdfPageRendererTest {
         }
     }
 
+    @Test
+    public void with_nfj_set_normalizes_japanese_fonts() throws IOException {
+        File pdf24 = createJapanesePdf("変更手続きのご案内", 24f);
+        File pdf12 = createJapanesePdf("変更手続きのご案内", 12f);
+        try (PDDocument doc24 = PDDocument.load(pdf24);
+             PDDocument doc12 = PDDocument.load(pdf12)) {
+            Config configNfj = baseConfig();
+            configNfj.normalizeFontJP = true;
+
+            BufferedImage img24 = PdfPageRenderer.render(doc24.getPage(0), 0, new PDFRenderer(doc24), configNfj);
+            BufferedImage img12 = PdfPageRenderer.render(doc12.getPage(0), 0, new PDFRenderer(doc12), configNfj);
+
+            assertImagesMatch(img24, img12);
+        }
+    }
+
     private Config baseConfig() {
         Config config = new Config();
         config.DocumentConversionDPI = TEST_DPI;
@@ -149,6 +165,24 @@ public class PdfPageRendererTest {
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
                 cs.beginText();
                 cs.setFont(font, size);
+                cs.newLineAtOffset(72, 700);
+                cs.showText(text);
+                cs.endText();
+            }
+            doc.save(file);
+        }
+        return file;
+    }
+
+    private File createJapanesePdf(String text, float size) throws IOException {
+        File file = tempFolder.newFile();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            org.apache.pdfbox.pdmodel.font.PDType0Font noto = NotoFontProvider.load(doc);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.beginText();
+                cs.setFont(noto, size);
                 cs.newLineAtOffset(72, 700);
                 cs.showText(text);
                 cs.endText();
