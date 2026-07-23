@@ -119,6 +119,8 @@ public final class RunController {
         Logger logger = new Logger();
         RunConfig rc = factoryBuilder_.build(req, logger); // throws on malformed options synchronously
 
+        if (compareMode) failOnPrecheckErrors(validatedDoc1.toFile(), validatedDoc2.toFile(), rc.config);
+
         RunState.Running running = new RunState.Running();
         // Race-safe transition: only one caller can win; stale Done is also replaced atomically.
         while (true) {
@@ -156,6 +158,24 @@ public final class RunController {
         boolean hasFn = fn != null && !fn.toString().trim().isEmpty();
         if (!hasFn) throw new InvalidOptionsException(
                 "-doc1/-doc2 require -fn so the two documents share a test identity.");
+    }
+
+    /** ERROR-level precheck findings abort the run before run-started; warnings pass through. */
+    private static void failOnPrecheckErrors(File doc1, File doc2, Config config) {
+        for (com.applitools.imagetester.lib.PdfComparePrechecker.Finding finding
+                : com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1, doc2, config)) {
+            if (finding.severity == com.applitools.imagetester.lib.PdfComparePrechecker.Severity.ERROR) {
+                throw new InvalidOptionsException(finding.message);
+            }
+        }
+    }
+
+    /** Live precheck for the GUI: validates paths, parses options, returns all findings. */
+    public java.util.List<com.applitools.imagetester.lib.PdfComparePrechecker.Finding> precheckCompare(RunRequest req) {
+        Path doc1 = SourcePathValidator.validate(req.doc1Path);
+        Path doc2 = SourcePathValidator.validate(req.doc2Path);
+        RunConfig rc = factoryBuilder_.build(req, new Logger());
+        return com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1.toFile(), doc2.toFile(), rc.config);
     }
 
     public void cancel() {

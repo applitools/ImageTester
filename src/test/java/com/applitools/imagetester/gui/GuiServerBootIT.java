@@ -224,4 +224,61 @@ public class GuiServerBootIT {
             return java.nio.file.Paths.get(".");
         }
     }
+
+    /** Authors a one-page PDF with the given page size (points). */
+    private static java.io.File pdfFixture(java.io.File dir, String name, float width, float height) throws Exception {
+        java.io.File f = new java.io.File(dir, name);
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = new org.apache.pdfbox.pdmodel.PDDocument()) {
+            doc.addPage(new org.apache.pdfbox.pdmodel.PDPage(
+                    new org.apache.pdfbox.pdmodel.common.PDRectangle(width, height)));
+            doc.save(f);
+        }
+        return f;
+    }
+
+    private static String jsonEscape(String path) {
+        return path.replace("\\", "\\\\");
+    }
+
+    @Test
+    public void precheckReportsDimensionMismatch() throws Exception {
+        server = GuiServer.startForTest();
+        java.io.File dir = java.nio.file.Files.createTempDirectory("precheck-it").toFile();
+        java.io.File a = pdfFixture(dir, "a.pdf", 595f, 842f);
+        java.io.File b = pdfFixture(dir, "b.pdf", 612f, 792f);
+        String url = "http://127.0.0.1:" + server.port() + "/api/precheck-compare";
+        String body = "{\"doc1Path\":\"" + jsonEscape(a.getAbsolutePath())
+                + "\",\"doc2Path\":\"" + jsonEscape(b.getAbsolutePath()) + "\",\"options\":{}}";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + server.token().value())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.ofString());
+        assertTrue("expected dimension-mismatch in body, got: " + resp.body(),
+                resp.body().contains("\"dimension-mismatch\""));
+    }
+
+    @Test
+    public void precheckWithMissingPathReturns400() throws Exception {
+        server = GuiServer.startForTest();
+        String url = "http://127.0.0.1:" + server.port() + "/api/precheck-compare";
+        String body = "{\"doc1Path\":\"C:/does/not/exist.pdf\",\"doc2Path\":\"C:/nope.pdf\",\"options\":{}}";
+        assertEquals(400, postJson(url, body, server.token().value()));
+    }
+
+    @Test
+    public void compareRunWithCorruptDocReturns400() throws Exception {
+        server = GuiServer.startForTest();
+        java.io.File dir = java.nio.file.Files.createTempDirectory("precheck-it").toFile();
+        java.io.File good = pdfFixture(dir, "good.pdf", 595f, 842f);
+        java.io.File junk = new java.io.File(dir, "junk.pdf");
+        java.nio.file.Files.write(junk.toPath(), "not a pdf".getBytes(StandardCharsets.UTF_8));
+        String url = "http://127.0.0.1:" + server.port() + "/api/run";
+        String body = "{\"doc1Path\":\"" + jsonEscape(good.getAbsolutePath())
+                + "\",\"doc2Path\":\"" + jsonEscape(junk.getAbsolutePath())
+                + "\",\"options\":{\"fn\":\"precheck-it\"}}";
+        assertEquals(400, postJson(url, body, server.token().value()));
+    }
 }

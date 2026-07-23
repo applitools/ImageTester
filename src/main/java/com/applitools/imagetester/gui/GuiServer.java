@@ -160,6 +160,7 @@ public final class GuiServer {
                 if (method.equals("PUT")    && path.equals("/secret/api-key")) { handleSetSecret(req, resp); return; }
                 if (method.equals("DELETE") && path.equals("/secret/api-key")) { controller_.secrets().deleteApiKey(); resp.setStatus(204); return; }
                 if (method.equals("POST")   && path.equals("/choose-path"))    { handleChoosePath(req, resp); return; }
+                if (method.equals("POST")   && path.equals("/precheck-compare")) { handlePrecheckCompare(req, resp); return; }
                 if (method.equals("POST")   && path.equals("/upload"))         { handleUpload(req, resp); return; }
                 if (method.equals("GET")    && path.equals("/update"))         { writeJson(resp, updates_.statusJson()); return; }
                 if (method.equals("POST")   && path.equals("/update/install")) { updates_.startInstall(); resp.setStatus(202); return; }
@@ -202,6 +203,18 @@ public final class GuiServer {
             } else {
                 writeJson(resp, new HashMap<>());
             }
+        }
+
+        private void handlePrecheckCompare(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            RunRequest runReq = json_.readValue(req.getInputStream(), RunRequest.class);
+            java.util.List<java.util.Map<String, String>> findings =
+                    controller_.precheckCompare(runReq).stream()
+                            .map(f -> java.util.Map.of(
+                                    "severity", f.severity.name(),
+                                    "code", f.code,
+                                    "message", f.message))
+                            .collect(java.util.stream.Collectors.toList());
+            writeJson(resp, Map.of("findings", findings));
         }
 
         private void handleUpload(HttpServletRequest req, HttpServletResponse resp) throws IOException {

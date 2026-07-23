@@ -36,6 +36,13 @@ public final class CompareRunner {
     }
 
     public static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory) throws IOException {
+        for (PdfComparePrechecker.Finding finding : PdfComparePrechecker.check(doc1, doc2, config)) {
+            if (finding.severity == PdfComparePrechecker.Severity.ERROR) {
+                throw new RuntimeException(finding.message);
+            }
+            config.logger.printMessage(String.format("Precheck %s: %s%n", finding.severity, finding.message));
+        }
+
         validatePageRangeFits(doc1, config);
         validatePageRangeFits(doc2, config);
 
