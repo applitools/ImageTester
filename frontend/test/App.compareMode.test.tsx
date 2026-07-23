@@ -58,10 +58,10 @@ describe("App compare mode", () => {
     fireEvent.click(await screen.findByRole("button", { name: /compare two documents/i }));
 
     fireEvent.click(screen.getByRole("button", { name: /choose file for doc 1/i }));
-    await waitFor(() => expect(screen.getByText("/docs/one.pdf")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: /choose file for doc 1/i })).toHaveAttribute("title", "/docs/one.pdf"));
 
     fireEvent.click(screen.getByRole("button", { name: /choose file for doc 2/i }));
-    await waitFor(() => expect(screen.getByText("/docs/two.pdf")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: /choose file for doc 2/i })).toHaveAttribute("title", "/docs/two.pdf"));
 
     fireEvent.change(screen.getByLabelText("Comparison name"), { target: { value: "shared-name" } });
 
@@ -93,7 +93,7 @@ describe("App compare mode", () => {
     fireEvent.click(await screen.findByRole("button", { name: /compare two documents/i }));
 
     fireEvent.click(screen.getByRole("button", { name: /choose file for doc 1/i }));
-    await waitFor(() => expect(screen.getByText("/docs/x.pdf")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: /choose file for doc 1/i })).toHaveAttribute("title", "/docs/x.pdf"));
 
     fireEvent.click(screen.getByRole("button", { name: /choose file for doc 2/i }));
 

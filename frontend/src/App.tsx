@@ -63,10 +63,24 @@ export function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
+  const [doc1UploadError, setDoc1UploadError] = useState<string | null>(null);
+  const [doc2UploadError, setDoc2UploadError] = useState<string | null>(null);
   const esRef = useRef<SseHandle | null>(null);
 
   const setOption = (flag: string, value: unknown) => {
     setOptions((prev) => { const next = { ...prev, [flag]: value }; saveOptions(next); return next; });
+  };
+
+  const dropDoc = async (slot: 1 | 2, file: File) => {
+    const setPath = slot === 1 ? setDoc1Path : setDoc2Path;
+    const setError = slot === 1 ? setDoc1UploadError : setDoc2UploadError;
+    setError(null);
+    try {
+      const r = await api.upload(file);
+      setPath(r.path);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   useEffect(() => {
@@ -120,6 +134,10 @@ export function App() {
             onToggleCompareMode={() => setCompareMode((v) => !v)}
             onChooseDoc1={async () => { const r = await api.choosePath("file", doc1Path || undefined); if (r.path) setDoc1Path(r.path); }}
             onChooseDoc2={async () => { const r = await api.choosePath("file", doc2Path || undefined); if (r.path) setDoc2Path(r.path); }}
+            onDropDoc1={(f) => dropDoc(1, f)}
+            onDropDoc2={(f) => dropDoc(2, f)}
+            doc1UploadError={doc1UploadError ?? undefined}
+            doc2UploadError={doc2UploadError ?? undefined}
             onToggleDrawer={() => setDrawerOpen((v) => !v)}
             onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
             onChoosePath={async (t) => { const r = await api.choosePath(t, sourcePath || undefined); if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); } }}

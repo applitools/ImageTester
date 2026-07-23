@@ -1,3 +1,4 @@
+import { DocDropZone } from "./DocDropZone";
 import type { MatchLevel } from "../types";
 
 interface Props {
@@ -15,6 +16,10 @@ interface Props {
   onChoosePath: (type: "file" | "folder") => void;
   onChooseDoc1: () => void;
   onChooseDoc2: () => void;
+  onDropDoc1: (file: File) => void;
+  onDropDoc2: (file: File) => void;
+  doc1UploadError?: string;
+  doc2UploadError?: string;
   onForcedNameChange: (value: string) => void;
   onToggleCompareMode: () => void;
   onMatchLevel: (l: MatchLevel) => void;
@@ -55,19 +60,9 @@ export function SetupCard(p: Props) {
 
       {p.compareMode ? (
         <div className="space-y-2">
-          <div>
-            <label className="block text-sm text-gray-700">Doc 1 <span className="text-rose-600">*</span></label>
-            <div className="mt-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 truncate">
-              {p.doc1Path || "No file chosen"}
-            </div>
-            <button type="button" onClick={p.onChooseDoc1} aria-label="Choose file for Doc 1" className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm transition-colors hover:bg-gray-100">Choose file…</button>
-          </div>
-          <div>
-            <label className="block text-sm text-gray-700">Doc 2 <span className="text-rose-600">*</span></label>
-            <div className="mt-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 truncate">
-              {p.doc2Path || "No file chosen"}
-            </div>
-            <button type="button" onClick={p.onChooseDoc2} aria-label="Choose file for Doc 2" className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm transition-colors hover:bg-gray-100">Choose file…</button>
+          <div className="grid grid-cols-2 gap-2">
+            <DocDropZone label="Doc 1" path={p.doc1Path} uploadError={p.doc1UploadError} onChoose={p.onChooseDoc1} onDropFile={p.onDropDoc1} />
+            <DocDropZone label="Doc 2" path={p.doc2Path} uploadError={p.doc2UploadError} onChoose={p.onChooseDoc2} onDropFile={p.onDropDoc2} />
           </div>
           <div>
             <div className="text-sm text-gray-700">Comparison name <span className="text-rose-600">*</span></div>

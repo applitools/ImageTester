@@ -18,6 +18,19 @@ async function http<T>(method: string, path: string, body?: unknown): Promise<T>
   return res.json();
 }
 
+async function uploadFile(file: File): Promise<{ path: string }> {
+  const res = await fetch(`/api/upload?name=${encodeURIComponent(file.name)}`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${getToken()}` },
+    body: file,
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`${res.status}: ${detail}`);
+  }
+  return res.json();
+}
+
 export const api = {
   status: () => http<unknown>("GET", "/api/status"),
   hasApiKey: () => http<{ hasKey: boolean }>("GET", "/api/secret/api-key"),
@@ -29,4 +42,5 @@ export const api = {
   cancel: () => http<void>("POST", "/api/cancel"),
   updateStatus: () => http<UpdateStatus>("GET", "/api/update"),
   startUpdate: () => http<void>("POST", "/api/update/install"),
+  upload: uploadFile,
 };
