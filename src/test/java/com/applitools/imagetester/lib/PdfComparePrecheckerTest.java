@@ -78,7 +78,9 @@ public class PdfComparePrecheckerTest {
     @Test
     public void matchingDistinctPdfsReportNothing() throws Exception {
         File c = pdf("c.pdf", A4);
-        File d = pdf("d.pdf", A4);
+        // d.pdf differs by a within-tolerance size so the two saves can never be byte-identical
+        // (PDFBox can emit identical bytes for same-shaped docs, which made this test flaky).
+        File d = pdf("d.pdf", new float[] { 595.5f, 842.5f });
         assertEquals(List.of(), codes(PdfComparePrechecker.check(c, d, new Config())));
     }
 
