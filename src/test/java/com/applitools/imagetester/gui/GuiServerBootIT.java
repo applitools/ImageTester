@@ -126,6 +126,51 @@ public class GuiServerBootIT {
         installer.release.countDown();
     }
 
+    @Test
+    public void uploadedBytesAreReadableAtReturnedPath() throws Exception {
+        server = GuiServer.startForTest();
+        String url = "http://127.0.0.1:" + server.port() + "/api/upload?name=doc.pdf";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + server.token().value())
+                .POST(HttpRequest.BodyPublishers.ofString("pdf-bytes")).build(),
+            HttpResponse.BodyHandlers.ofString());
+        String path = new com.fasterxml.jackson.databind.ObjectMapper().readTree(resp.body()).get("path").asText();
+        assertEquals("pdf-bytes", new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void uploadWithTraversalNameReturns400() throws Exception {
+        server = GuiServer.startForTest();
+        String url = "http://127.0.0.1:" + server.port() + "/api/upload?name=" + java.net.URLEncoder.encode("../evil.pdf", "UTF-8");
+        assertEquals(400, postJson(url, "x", server.token().value()));
+    }
+
+    @Test
+    public void uploadWithoutNameReturns400() throws Exception {
+        server = GuiServer.startForTest();
+        String url = "http://127.0.0.1:" + server.port() + "/api/upload";
+        assertEquals(400, postJson(url, "x", server.token().value()));
+    }
+
+    @Test
+    public void uploadedFileIsDeletedOnServerStop() throws Exception {
+        server = GuiServer.startForTest();
+        String url = "http://127.0.0.1:" + server.port() + "/api/upload?name=doc.pdf";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + server.token().value())
+                .POST(HttpRequest.BodyPublishers.ofString("pdf-bytes")).build(),
+            HttpResponse.BodyHandlers.ofString());
+        String path = new com.fasterxml.jackson.databind.ObjectMapper().readTree(resp.body()).get("path").asText();
+        GuiServer s = server;
+        server = null;
+        s.stop();
+        assertFalse(java.nio.file.Files.exists(java.nio.file.Paths.get(path)));
+    }
+
     /** Posts a JSON body to the given URL with a Bearer token and returns the HTTP status code. */
     private static int postJson(String url, String body, String token) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();

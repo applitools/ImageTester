@@ -41,12 +41,14 @@ public final class GuiServer {
     private final GuiToken token_;
     private final int port_;
     private final RunController controller_;
+    private final UploadStore uploads_;
 
-    private GuiServer(Server server, GuiToken token, int port, RunController controller) {
+    private GuiServer(Server server, GuiToken token, int port, RunController controller, UploadStore uploads) {
         this.server_ = server;
         this.token_ = token;
         this.port_ = port;
         this.controller_ = controller;
+        this.uploads_ = uploads;
     }
 
     public int port() { return port_; }
@@ -86,6 +88,7 @@ public final class GuiServer {
         if (testMode) secrets.setApiKey("sk_test_test");
         RunStream stream = new RunStream();
         RunController controller = new RunController(secrets, stream);
+        UploadStore uploads = new UploadStore();
 
         UpdateService updates = testMode
                 ? injectedUpdates
@@ -97,7 +100,7 @@ public final class GuiServer {
         ctx.addServlet(new ServletHolder(new StaticAssetServlet()), "/assets/*");
         ctx.addServlet(new ServletHolder(new SseServlet(controller)), "/api/events");
         ctx.addServlet(new ServletHolder(new PreviewServlet(controller)), "/api/preview");
-        ctx.addServlet(new ServletHolder(new ApiServlet(controller, updates)), "/api/*");
+        ctx.addServlet(new ServletHolder(new ApiServlet(controller, updates, uploads)), "/api/*");
 
         server.setHandler(ctx);
         server.start();
@@ -107,10 +110,13 @@ public final class GuiServer {
         // Skip in test mode — Swing init can be problematic on headless CI.
         if (!testMode) NativePathChooser.prewarm();
 
-        return new GuiServer(server, token, port, controller);
+        return new GuiServer(server, token, port, controller, uploads);
     }
 
-    public void stop() throws Exception { server_.stop(); }
+    public void stop() throws Exception {
+        server_.stop();
+        try { uploads_.deleteAll(); } catch (java.io.IOException ignored) { /* temp files; best effort */ }
+    }
     public void join() throws InterruptedException { server_.join(); }
 
     // ---- Inline servlets ----
@@ -131,9 +137,10 @@ public final class GuiServer {
     private static final class ApiServlet extends HttpServlet {
         private final RunController controller_;
         private final UpdateService updates_;
+        private final UploadStore uploads_;
         private final ObjectMapper json_ = new ObjectMapper();
 
-        ApiServlet(RunController c, UpdateService u) { this.controller_ = c; this.updates_ = u; }
+        ApiServlet(RunController c, UpdateService u, UploadStore up) { this.controller_ = c; this.updates_ = u; this.uploads_ = up; }
 
         @Override
         protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -147,6 +154,7 @@ public final class GuiServer {
                 if (method.equals("PUT")    && path.equals("/secret/api-key")) { handleSetSecret(req, resp); return; }
                 if (method.equals("DELETE") && path.equals("/secret/api-key")) { controller_.secrets().deleteApiKey(); resp.setStatus(204); return; }
                 if (method.equals("POST")   && path.equals("/choose-path"))    { handleChoosePath(req, resp); return; }
+                if (method.equals("POST")   && path.equals("/upload"))         { handleUpload(req, resp); return; }
                 if (method.equals("GET")    && path.equals("/update"))         { writeJson(resp, updates_.statusJson()); return; }
                 if (method.equals("POST")   && path.equals("/update/install")) { updates_.startInstall(); resp.setStatus(202); return; }
                 resp.setStatus(404);
@@ -187,6 +195,17 @@ public final class GuiServer {
                 writeJson(resp, Map.of("path", chosen));
             } else {
                 writeJson(resp, new HashMap<>());
+            }
+        }
+
+        private void handleUpload(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+            try {
+                java.nio.file.Path saved = uploads_.save(req.getParameter("name"), req.getInputStream());
+                writeJson(resp, Map.of("path", saved.toString()));
+            } catch (UploadStore.InvalidNameException e) {
+                resp.setStatus(400); writeJson(resp, Map.of("error", e.getMessage()));
+            } catch (UploadStore.TooLargeException e) {
+                resp.setStatus(413); writeJson(resp, Map.of("error", e.getMessage()));
             }
         }
 
