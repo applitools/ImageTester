@@ -15,13 +15,13 @@ describe("DocDropZone", () => {
   });
 
   it("shows only the file basename when a path is set", () => {
-    render(<DocDropZone {...baseProps} path="C:\\tmp\\uploads\\1\\contract.pdf" />);
+    render(<DocDropZone {...baseProps} path={"C:\\tmp\\uploads\\1\\contract.pdf"} />);
     expect(screen.getByText("contract.pdf")).toBeInTheDocument();
   });
 
   it("puts the full path in the zone tooltip", () => {
-    render(<DocDropZone {...baseProps} path="/tmp/uploads/1/contract.pdf" />);
-    expect(zone()).toHaveAttribute("title", "/tmp/uploads/1/contract.pdf");
+    render(<DocDropZone {...baseProps} path={"C:\\tmp\\uploads\\1\\contract.pdf"} />);
+    expect(zone()).toHaveAttribute("title", "C:\\tmp\\uploads\\1\\contract.pdf");
   });
 
   it("clicking the zone calls onChoose", () => {
