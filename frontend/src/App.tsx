@@ -132,8 +132,8 @@ export function App() {
             forcedName={(options.fn as string) ?? ""}
             onForcedNameChange={(v) => setOption("fn", v)}
             onToggleCompareMode={() => setCompareMode((v) => !v)}
-            onChooseDoc1={async () => { const r = await api.choosePath("file", doc1Path || undefined); if (r.path) setDoc1Path(r.path); }}
-            onChooseDoc2={async () => { const r = await api.choosePath("file", doc2Path || undefined); if (r.path) setDoc2Path(r.path); }}
+            onChooseDoc1={async () => { const r = await api.choosePath("file", doc1Path || undefined); if (r.path) { setDoc1Path(r.path); setDoc1UploadError(null); } }}
+            onChooseDoc2={async () => { const r = await api.choosePath("file", doc2Path || undefined); if (r.path) { setDoc2Path(r.path); setDoc2UploadError(null); } }}
             onDropDoc1={(f) => dropDoc(1, f)}
             onDropDoc2={(f) => dropDoc(2, f)}
             doc1UploadError={doc1UploadError ?? undefined}

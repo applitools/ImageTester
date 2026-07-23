@@ -46,7 +46,7 @@ export function DocDropZone(p: Props) {
         type="button"
         aria-label={`Choose file for ${p.label}`}
         title={p.path || undefined}
-        onClick={p.onChoose}
+        onClick={() => { setDropError(null); p.onChoose(); }}
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}

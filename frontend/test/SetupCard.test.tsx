@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SetupCard } from "../src/components/SetupCard";
 import { App } from "../src/App";
 
@@ -162,5 +162,40 @@ describe("App layout", () => {
     render(<App />);
     fireEvent.click(screen.getByText("⚙ Options"));
     expect(screen.getByText(/Logs|No file/i)).toBeInTheDocument();
+  });
+});
+
+describe("App upload error clearing", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.removeItem("imagetester.options");
+  });
+
+  it("clears the Doc 1 upload error after recovering via the native chooser", async () => {
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
+      const path = url.toString();
+      const method = init?.method ?? "GET";
+      if (path.includes("/api/upload") && method === "POST") {
+        return { ok: false, status: 500, text: async () => "boom", json: async () => ({}) };
+      }
+      if (path.endsWith("/api/choose-path") && method === "POST") {
+        return { ok: true, status: 200, text: async () => "", json: async () => ({ path: "C:\\ok.pdf" }) };
+      }
+      return { ok: true, status: 200, text: async () => "", json: async () => ({ kind: "idle", hasKey: true }) };
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /compare two documents/i }));
+
+    const doc1Zone = () => screen.getByRole("button", { name: /choose file for doc 1/i });
+    const file = new File(["content"], "a.pdf", { type: "application/pdf" });
+    fireEvent.drop(doc1Zone(), { dataTransfer: { files: [file], items: [] } });
+
+    await screen.findByRole("alert");
+
+    fireEvent.click(doc1Zone());
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 });

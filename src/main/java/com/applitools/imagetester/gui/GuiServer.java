@@ -89,6 +89,12 @@ public final class GuiServer {
         RunStream stream = new RunStream();
         RunController controller = new RunController(secrets, stream);
         UploadStore uploads = new UploadStore();
+        // Production runs exit via window close / Ctrl+C (ImageTester.join()), never calling
+        // stop(), so uploads_.deleteAll() there would otherwise never run and dropped files
+        // would accumulate in %TEMP% indefinitely. This hook is the customer-facing cleanup path.
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try { uploads.deleteAll(); } catch (Throwable ignored) { /* best effort */ }
+        }, "imagetester-uploads-cleanup"));
 
         UpdateService updates = testMode
                 ? injectedUpdates

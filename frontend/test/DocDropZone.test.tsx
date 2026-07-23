@@ -70,6 +70,13 @@ describe("DocDropZone", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("clicking the zone clears a previous rejection message", () => {
+    render(<DocDropZone {...baseProps} />);
+    fireEvent.drop(zone(), { dataTransfer: { files: [makeFile("a.pdf"), makeFile("b.pdf")], items: [] } });
+    fireEvent.click(zone());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("shows the upload error passed in from the app", () => {
     render(<DocDropZone {...baseProps} uploadError="413: too large" />);
     expect(screen.getByRole("alert")).toHaveTextContent("413: too large");
