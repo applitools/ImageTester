@@ -36,6 +36,8 @@ public final class CompareRunner {
     }
 
     public static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory) throws IOException {
+        // GUI runs also precheck in RunController.start; this gate stays so the CLI -doc1/-doc2
+        // path is covered — don't deduplicate.
         for (PdfComparePrechecker.Finding finding : PdfComparePrechecker.check(doc1, doc2, config)) {
             if (finding.severity == PdfComparePrechecker.Severity.ERROR) {
                 throw new RuntimeException(finding.message);

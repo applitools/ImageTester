@@ -13,6 +13,7 @@ import type { RunOptions } from "./lib/options";
 import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow, PrecheckFinding } from "./types";
 
 const LAST_SOURCE_PATH_KEY = "imagetester.lastSourcePath";
+const PRECHECK_DEBOUNCE_MS = 300;
 
 function readLastSourcePath(): string {
   try { return window.localStorage.getItem(LAST_SOURCE_PATH_KEY) ?? ""; } catch { return ""; }
@@ -102,6 +103,9 @@ export function App() {
 
   useEffect(() => {
     if (!compareMode || !doc1Path || !doc2Path) {
+      // Bump the sequence so a response already in flight from a prior doc1/doc2/compareMode
+      // combination can't win the race and repopulate findings we just cleared.
+      precheckSeq.current++;
       setPrecheckFindings([]);
       return;
     }
@@ -110,7 +114,7 @@ export function App() {
       api.precheckCompare(doc1Path, doc2Path, options)
         .then((r) => { if (seq === precheckSeq.current) setPrecheckFindings(r.findings); })
         .catch(() => { if (seq === precheckSeq.current) setPrecheckFindings([]); });
-    }, 300);
+    }, PRECHECK_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [compareMode, doc1Path, doc2Path, options]);
 

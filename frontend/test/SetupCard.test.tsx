@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { SetupCard } from "../src/components/SetupCard";
 import { App } from "../src/App";
 
@@ -222,5 +222,72 @@ describe("App upload error clearing", () => {
     fireEvent.click(doc1Zone());
 
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  });
+});
+
+describe("App precheck findings latch", () => {
+  // Mirrors App.tsx's PRECHECK_DEBOUNCE_MS — kept in sync manually since the constant isn't exported.
+  const PRECHECK_DEBOUNCE_MS = 300;
+  const RESPONSE_DELAY_MS = 1000;
+  const STALE_WARNING_TEXT = "STALE_WARNING_do_not_render";
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    window.localStorage.removeItem("imagetester.options");
+  });
+
+  it("does not repopulate findings from a response that resolves after compare mode was turned off", async () => {
+    vi.useFakeTimers();
+    let choosePathCallCount = 0;
+    let precheckCallCount = 0;
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
+      const path = url.toString();
+      const method = init?.method ?? "GET";
+      if (path.endsWith("/api/secret/api-key") && method === "GET") {
+        return new Response(JSON.stringify({ hasKey: true }), { status: 200 });
+      }
+      if (path.endsWith("/api/choose-path") && method === "POST") {
+        choosePathCallCount += 1;
+        const chosenPath = choosePathCallCount === 1 ? "/docs/one.pdf" : "/docs/two.pdf";
+        return new Response(JSON.stringify({ path: chosenPath }), { status: 200 });
+      }
+      if (path.endsWith("/api/precheck-compare") && method === "POST") {
+        precheckCallCount += 1;
+        await new Promise((resolve) => setTimeout(resolve, RESPONSE_DELAY_MS));
+        return new Response(JSON.stringify({
+          findings: [{ severity: "WARNING", code: "stale-test-warning", message: STALE_WARNING_TEXT }],
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ kind: "idle" }), { status: 200 });
+    });
+
+    render(<App />);
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    fireEvent.click(screen.getByRole("button", { name: /compare two documents/i }));
+
+    fireEvent.click(screen.getByRole("button", { name: /choose file for doc 1/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    fireEvent.click(screen.getByRole("button", { name: /choose file for doc 2/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    // Fires the debounced precheck-compare fetch; its own response is still pending.
+    await act(async () => { await vi.advanceTimersByTimeAsync(PRECHECK_DEBOUNCE_MS); });
+    expect(precheckCallCount).toBe(1);
+
+    // Leave compare mode before the in-flight response resolves.
+    fireEvent.click(screen.getByRole("button", { name: /folder\/file/i }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    // Let the stale response resolve while compare mode is off.
+    await act(async () => { await vi.advanceTimersByTimeAsync(RESPONSE_DELAY_MS); });
+
+    // Re-enter compare mode (before the fresh debounce it schedules can fire) to observe
+    // whatever precheckFindings currently holds — the panel is only rendered in compare mode.
+    fireEvent.click(screen.getByRole("button", { name: /compare two documents/i }));
+
+    expect(screen.queryByText(STALE_WARNING_TEXT)).not.toBeInTheDocument();
   });
 });

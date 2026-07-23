@@ -5,8 +5,10 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ public final class PdfComparePrechecker {
 
     static final float DIMENSION_TOLERANCE_PT = 1.0f;
     static final int MAX_LISTED_PAGES = 5;
+    private static final int HASH_BUFFER_SIZE = 64 * 1024;
 
     public enum Severity { ERROR, WARNING, INFO }
 
@@ -173,7 +176,13 @@ public final class PdfComparePrechecker {
     private static String sha256(File file) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(Files.readAllBytes(file.toPath()));
+            byte[] buffer = new byte[HASH_BUFFER_SIZE];
+            try (InputStream in = new DigestInputStream(new FileInputStream(file), digest)) {
+                while (in.read(buffer) != -1) {
+                    // DigestInputStream updates the digest as bytes are read; nothing to do with them here.
+                }
+            }
+            byte[] hash = digest.digest();
             StringBuilder hex = new StringBuilder(hash.length * 2);
             for (byte b : hash) hex.append(String.format("%02x", b));
             return hex.toString();

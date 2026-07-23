@@ -216,6 +216,12 @@ For multi-page PDFs, use `-sp` (see [PDF and document options](#pdf-and-document
 which pages to compare — the same range applies to both documents, so both must actually have
 that many pages.
 
+Before running, ImageTester pre-checks Doc 1 and Doc 2 and warns you when page dimensions or page
+counts don't match — since Eyes resolves baselines by rendered viewport, a mismatch would silently
+produce new baselines instead of a comparison. The warning suggests remedies like `-sp`, `-ms`,
+`-vs`, or `-tp`. The run is blocked outright for a corrupt document, a password-protected PDF
+without `-pp`, or a PDF with no pages.
+
 In the GUI, this is the "Compare two documents" toggle on the Setup card: it swaps the single
 Source picker for Doc 1 / Doc 2 file pickers and a required Comparison name field (the same `-fn`
 value, editable from either place).
