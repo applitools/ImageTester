@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
  */
 public final class PdfComparePrechecker {
 
-    static final float DIMENSION_TOLERANCE_PT = 1.0f;
     static final int MAX_LISTED_PAGES = 5;
     private static final int HASH_BUFFER_SIZE = 64 * 1024;
 
@@ -39,12 +38,24 @@ public final class PdfComparePrechecker {
         }
     }
 
+    /** Crop-box size and /Rotate for one page — what the renderer actually uses, not the media box. */
+    private static final class PageBox {
+        final float cropWidth;
+        final float cropHeight;
+        final int rotation;
+        PageBox(float cropWidth, float cropHeight, int rotation) {
+            this.cropWidth = cropWidth;
+            this.cropHeight = cropHeight;
+            this.rotation = rotation;
+        }
+    }
+
     private static final class DocFacts {
         final int pageCount;
-        final List<float[]> pageSizes;
-        DocFacts(int pageCount, List<float[]> pageSizes) {
+        final List<PageBox> pageBoxes;
+        DocFacts(int pageCount, List<PageBox> pageBoxes) {
             this.pageCount = pageCount;
-            this.pageSizes = pageSizes;
+            this.pageBoxes = pageBoxes;
         }
     }
 
@@ -92,12 +103,13 @@ public final class PdfComparePrechecker {
                         label + " (" + doc.getName() + ") has no pages."));
                 return null;
             }
-            List<float[]> sizes = new ArrayList<>(pages);
+            List<PageBox> boxes = new ArrayList<>(pages);
             for (int i = 0; i < pages; i++) {
-                PDRectangle box = document.getPage(i).getMediaBox();
-                sizes.add(new float[] { box.getWidth(), box.getHeight() });
+                PDRectangle box = document.getPage(i).getCropBox();
+                int rotation = document.getPage(i).getRotation();
+                boxes.add(new PageBox(box.getWidth(), box.getHeight(), rotation));
             }
-            return new DocFacts(pages, sizes);
+            return new DocFacts(pages, boxes);
         } catch (InvalidPasswordException e) {
             findings.add(new Finding(Severity.ERROR, "encrypted",
                     label + " (" + doc.getName() + ") is password-protected — set the PDF password option (-pp)."));
@@ -121,12 +133,20 @@ public final class PdfComparePrechecker {
         List<Integer> pagesToCheck = pagesToCheck(config, Math.min(facts1.pageCount, facts2.pageCount));
         List<Integer> mismatched = new ArrayList<>();
         List<Integer> rotated = new ArrayList<>();
+        int[] firstMismatchPx1 = null;
+        int[] firstMismatchPx2 = null;
         for (int page : pagesToCheck) {
-            float[] s1 = facts1.pageSizes.get(page - 1);
-            float[] s2 = facts2.pageSizes.get(page - 1);
-            if (matches(s1, s2)) continue;
+            PageBox b1 = facts1.pageBoxes.get(page - 1);
+            PageBox b2 = facts2.pageBoxes.get(page - 1);
+            int[] px1 = renderedPixelSize(b1.cropWidth, b1.cropHeight, b1.rotation, config.DocumentConversionDPI);
+            int[] px2 = renderedPixelSize(b2.cropWidth, b2.cropHeight, b2.rotation, config.DocumentConversionDPI);
+            if (px1[0] == px2[0] && px1[1] == px2[1]) continue;
             mismatched.add(page);
-            if (matches(s1, new float[] { s2[1], s2[0] })) rotated.add(page);
+            if (firstMismatchPx1 == null) {
+                firstMismatchPx1 = px1;
+                firstMismatchPx2 = px2;
+            }
+            if (px1[0] == px2[1] && px1[1] == px2[0]) rotated.add(page);
         }
         if (mismatched.isEmpty()) return;
 
@@ -150,8 +170,31 @@ public final class PdfComparePrechecker {
             message.append("Consider different PDFs, Match size (-ms), Viewport size (-vs), "
                     + "or Trim print margins (-tp).");
         }
+        message.append(String.format(" — page %d renders %dx%d px vs %dx%d px at %.0f DPI",
+                mismatched.get(0), firstMismatchPx1[0], firstMismatchPx1[1],
+                firstMismatchPx2[0], firstMismatchPx2[1], config.DocumentConversionDPI));
         findings.add(new Finding(hasSizeOverride ? Severity.INFO : Severity.WARNING,
                 "dimension-mismatch", message.toString()));
+    }
+
+    /**
+     * Rendered pixel size for a page, mirroring PDFBox renderImageWithDPI: crop-box
+     * dimensions (swapped for 90/270 rotation), scaled by dpi/72 and floor-rounded
+     * with a 1px minimum. Eyes uses this rendered size as the baseline viewport.
+     */
+    private static int[] renderedPixelSize(float cropWidth, float cropHeight, int rotation, float dpi) {
+        float scale = dpi / 72f;
+        float width = cropWidth;
+        float height = cropHeight;
+        if (rotation == 90 || rotation == 270) {
+            float tmp = width;
+            width = height;
+            height = tmp;
+        }
+        return new int[] {
+                (int) Math.max(Math.floor(width * scale), 1),
+                (int) Math.max(Math.floor(height * scale), 1)
+        };
     }
 
     /** 1-based page numbers to compare: the -sp selection when set, else the whole common range. */
@@ -166,11 +209,6 @@ public final class PdfComparePrechecker {
         List<Integer> all = new ArrayList<>(commonPageCount);
         for (int i = 1; i <= commonPageCount; i++) all.add(i);
         return all;
-    }
-
-    private static boolean matches(float[] a, float[] b) {
-        return Math.abs(a[0] - b[0]) <= DIMENSION_TOLERANCE_PT
-                && Math.abs(a[1] - b[1]) <= DIMENSION_TOLERANCE_PT;
     }
 
     private static String sha256(File file) throws IOException {

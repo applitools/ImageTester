@@ -78,9 +78,10 @@ public class PdfComparePrecheckerTest {
     @Test
     public void matchingDistinctPdfsReportNothing() throws Exception {
         File c = pdf("c.pdf", A4);
-        // d.pdf differs by a within-tolerance size so the two saves can never be byte-identical
-        // (PDFBox can emit identical bytes for same-shaped docs, which made this test flaky).
-        File d = pdf("d.pdf", new float[] { 595.5f, 842.5f });
+        // d.pdf differs by a sub-pixel size so the two saves can never be byte-identical
+        // (PDFBox can emit identical bytes for same-shaped docs, which made this test flaky)
+        // while still rendering to the same pixel dimensions as A4 at 250 DPI.
+        File d = pdf("d.pdf", new float[] { 594.90f, 842.10f });
         assertEquals(List.of(), codes(PdfComparePrechecker.check(c, d, new Config())));
     }
 
@@ -217,17 +218,63 @@ public class PdfComparePrecheckerTest {
     }
 
     @Test
-    public void withinToleranceDimensionsDoNotWarn() throws Exception {
-        File a = pdf("a.pdf", new float[] { 595f, 842f });
-        File b = pdf("b.pdf", new float[] { 595.9f, 842.9f });
+    public void subPointDifferenceThatChangesRenderedPixelsWarns() throws Exception {
+        File a = pdf("a.pdf", new float[] { 1191.00f, 842.25f });
+        File b = pdf("b.pdf", new float[] { 1190.70f, 842.00f });
+        assertTrue(codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+    }
+
+    @Test
+    public void subPointDifferenceWithSameRenderedPixelsDoesNotWarn() throws Exception {
+        File a = pdf("a.pdf", new float[] { 594.80f, 842.00f });
+        File b = pdf("b.pdf", new float[] { 595.00f, 842.00f });
+        assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+    }
+
+    // PDFBox clips CropBox to the intersection with MediaBox (PDPage.clipToMediaBox), so the crop
+    // box can never exceed the media box on either axis. To exercise "crop box governs" without
+    // that clipping kicking in, the media box here is an oversized container the crop box fits
+    // inside — its exact size is irrelevant and must NOT match either LETTER or A4.
+    private static final float[] OVERSIZED_MEDIA_BOX = { 1000f, 1200f };
+
+    @Test
+    public void cropBoxGovernsRenderedSizeNotMediaBox() throws Exception {
+        File a = tmp.newFile("a.pdf");
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(new PDRectangle(OVERSIZED_MEDIA_BOX[0], OVERSIZED_MEDIA_BOX[1]));
+            page.setCropBox(new PDRectangle(LETTER[0], LETTER[1]));
+            doc.addPage(page);
+            doc.save(a);
+        }
+        File b = pdf("b.pdf", LETTER);
         assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
     }
 
     @Test
-    public void beyondToleranceDimensionsWarn() throws Exception {
-        File a = pdf("a.pdf", new float[] { 595f, 842f });
-        File b = pdf("b.pdf", new float[] { 596.1f, 842f });
+    public void cropBoxGovernsRenderedSizeMismatchAgainstPlainMediaBox() throws Exception {
+        File a = tmp.newFile("a.pdf");
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(new PDRectangle(OVERSIZED_MEDIA_BOX[0], OVERSIZED_MEDIA_BOX[1]));
+            page.setCropBox(new PDRectangle(LETTER[0], LETTER[1]));
+            doc.addPage(page);
+            doc.save(a);
+        }
+        File b = pdf("b.pdf", A4);
         assertTrue(codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+    }
+
+    @Test
+    public void pageRotationAttributeGetsOrientationHint() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = tmp.newFile("b.pdf");
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(new PDRectangle(A4[0], A4[1]));
+            page.setRotation(90);
+            doc.addPage(page);
+            doc.save(b);
+        }
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch")
+                .message.contains("rotated"));
     }
 
     @Test
