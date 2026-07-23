@@ -25,6 +25,9 @@ public final class NativePathChooser {
     static void ensureLookAndFeel() {
         if (isLookAndFeelInstalled) return;
         isLookAndFeelInstalled = true;
+        // FlatLaf's custom window decorations mis-place dialogs on multi-monitor
+        // setups (dialog opens on the wrong screen); keep native title bars.
+        System.setProperty("flatlaf.useWindowDecorations", "false");
         try {
             if (SwingUtilities.isEventDispatchThread()) FlatLightLaf.setup();
             else SwingUtilities.invokeAndWait(FlatLightLaf::setup);

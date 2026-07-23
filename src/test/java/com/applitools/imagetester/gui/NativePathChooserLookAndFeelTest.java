@@ -13,4 +13,10 @@ public class NativePathChooserLookAndFeelTest {
         NativePathChooser.ensureLookAndFeel();
         assertEquals("FlatLaf Light", UIManager.getLookAndFeel().getName());
     }
+
+    @Test
+    public void shouldDisableFlatLafWindowDecorationsWhenEnsureLookAndFeelRuns() {
+        NativePathChooser.ensureLookAndFeel();
+        assertEquals("false", System.getProperty("flatlaf.useWindowDecorations"));
+    }
 }
