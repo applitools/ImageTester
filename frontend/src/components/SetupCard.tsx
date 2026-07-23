@@ -1,5 +1,6 @@
 import { DocDropZone } from "./DocDropZone";
-import type { MatchLevel } from "../types";
+import { PrecheckPanel } from "./PrecheckPanel";
+import type { MatchLevel, PrecheckFinding } from "../types";
 
 interface Props {
   hasKey: boolean;
@@ -12,6 +13,7 @@ interface Props {
   doc1Path: string;
   doc2Path: string;
   forcedName: string;
+  precheckFindings: PrecheckFinding[];
   onSetKey: (value: string) => void;
   onChoosePath: (type: "file" | "folder") => void;
   onChooseDoc1: () => void;
@@ -29,9 +31,11 @@ interface Props {
 }
 
 export function SetupCard(p: Props) {
-  const canRun = p.compareMode
+  const hasPrecheckError = p.compareMode && p.precheckFindings.some((f) => f.severity === "ERROR");
+  const hasPrecheckWarning = p.compareMode && p.precheckFindings.some((f) => f.severity === "WARNING");
+  const canRun = !hasPrecheckError && (p.compareMode
     ? p.hasKey && p.doc1Path.length > 0 && p.doc2Path.length > 0 && p.forcedName.trim().length > 0
-    : p.hasKey && p.sourcePath.length > 0;
+    : p.hasKey && p.sourcePath.length > 0);
   return (
     <div className="card p-6 space-y-4">
       <h2 className="text-xs uppercase tracking-wider text-gray-500">Setup</h2>
@@ -64,6 +68,7 @@ export function SetupCard(p: Props) {
             <DocDropZone label="Doc 1" path={p.doc1Path} uploadError={p.doc1UploadError} onChoose={p.onChooseDoc1} onDropFile={p.onDropDoc1} />
             <DocDropZone label="Doc 2" path={p.doc2Path} uploadError={p.doc2UploadError} onChoose={p.onChooseDoc2} onDropFile={p.onDropDoc2} />
           </div>
+          <PrecheckPanel findings={p.precheckFindings} />
           <div>
             <div className="text-sm text-gray-700">Comparison name <span className="text-rose-600">*</span></div>
             <input
@@ -111,7 +116,7 @@ export function SetupCard(p: Props) {
       {p.running ? (
         <button type="button" onClick={p.onCancel} className="w-full rounded-lg bg-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:bg-gray-300">Cancel</button>
       ) : (
-        <button type="button" disabled={!canRun} onClick={p.onRun} className="w-full rounded-lg bg-brand-teal py-2.5 font-semibold text-white transition-colors hover:bg-brand-tealDark disabled:bg-gray-200 disabled:text-gray-400">▶ Run test</button>
+        <button type="button" disabled={!canRun} onClick={p.onRun} className="w-full rounded-lg bg-brand-teal py-2.5 font-semibold text-white transition-colors hover:bg-brand-tealDark disabled:bg-gray-200 disabled:text-gray-400">{hasPrecheckWarning ? "Run anyway" : "▶ Run test"}</button>
       )}
     </div>
   );

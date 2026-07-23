@@ -31,3 +31,9 @@ export type UpdateStatus = {
   state: "idle" | "downloading" | "launched" | "error";
   error?: string;
 };
+
+export interface PrecheckFinding {
+  severity: "ERROR" | "WARNING" | "INFO";
+  code: string;
+  message: string;
+}

@@ -10,7 +10,7 @@ import type { SseHandle } from "./lib/sse";
 import { getVersion } from "./lib/version";
 import { loadOptions, saveOptions, countNonDefault, toRunPayload, toComparePayload } from "./lib/options";
 import type { RunOptions } from "./lib/options";
-import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow } from "./types";
+import type { MatchLevel, RunStateSnapshot, SseEvent, TestRow, PrecheckFinding } from "./types";
 
 const LAST_SOURCE_PATH_KEY = "imagetester.lastSourcePath";
 
@@ -65,6 +65,8 @@ export function App() {
   const [runError, setRunError] = useState<string | null>(null);
   const [doc1UploadError, setDoc1UploadError] = useState<string | null>(null);
   const [doc2UploadError, setDoc2UploadError] = useState<string | null>(null);
+  const [precheckFindings, setPrecheckFindings] = useState<PrecheckFinding[]>([]);
+  const precheckSeq = useRef(0);
   const esRef = useRef<SseHandle | null>(null);
 
   const setOption = (flag: string, value: unknown) => {
@@ -98,6 +100,20 @@ export function App() {
     return () => esRef.current?.close();
   }, []);
 
+  useEffect(() => {
+    if (!compareMode || !doc1Path || !doc2Path) {
+      setPrecheckFindings([]);
+      return;
+    }
+    const seq = ++precheckSeq.current;
+    const timer = setTimeout(() => {
+      api.precheckCompare(doc1Path, doc2Path, options)
+        .then((r) => { if (seq === precheckSeq.current) setPrecheckFindings(r.findings); })
+        .catch(() => { if (seq === precheckSeq.current) setPrecheckFindings([]); });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [compareMode, doc1Path, doc2Path, options]);
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
       <header className="mb-8">
@@ -130,6 +146,7 @@ export function App() {
             doc1Path={doc1Path}
             doc2Path={doc2Path}
             forcedName={(options.fn as string) ?? ""}
+            precheckFindings={precheckFindings}
             onForcedNameChange={(v) => setOption("fn", v)}
             onToggleCompareMode={() => setCompareMode((v) => !v)}
             onChooseDoc1={async () => { const r = await api.choosePath("file", doc1Path || undefined); if (r.path) { setDoc1Path(r.path); setDoc1UploadError(null); } }}

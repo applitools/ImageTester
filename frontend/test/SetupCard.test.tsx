@@ -4,22 +4,22 @@ import { App } from "../src/App";
 
 describe("SetupCard", () => {
   it("disables the Run button when api key is missing", () => {
-    render(<SetupCard hasKey={false} sourcePath="/x" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
+    render(<SetupCard hasKey={false} sourcePath="/x" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" precheckFindings={[]} onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
     expect(screen.getByRole("button", { name: /run test/i })).toBeDisabled();
   });
 
   it("disables the Run button when source path is empty", () => {
-    render(<SetupCard hasKey={true} sourcePath="" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
+    render(<SetupCard hasKey={true} sourcePath="" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" precheckFindings={[]} onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
     expect(screen.getByRole("button", { name: /run test/i })).toBeDisabled();
   });
 
   it("enables the Run button when both api key and source are set", () => {
-    render(<SetupCard hasKey={true} sourcePath="/x" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
+    render(<SetupCard hasKey={true} sourcePath="/x" matchLevel="Strict" running={false} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" precheckFindings={[]} onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
     expect(screen.getByRole("button", { name: /run test/i })).not.toBeDisabled();
   });
 
   it("shows Cancel instead of Run while a run is in flight", () => {
-    render(<SetupCard hasKey={true} sourcePath="/x" matchLevel="Strict" running={true} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
+    render(<SetupCard hasKey={true} sourcePath="/x" matchLevel="Strict" running={true} optionsCount={0} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" precheckFindings={[]} onForcedNameChange={() => {}} onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}} onRun={() => {}} onCancel={() => {}} onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}} onToggleDrawer={() => {}} />);
     expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
   });
 });
@@ -27,7 +27,7 @@ describe("SetupCard", () => {
 describe("SetupCard options gear", () => {
   it("shows the non-default option count in the gear badge", () => {
     render(<SetupCard hasKey sourcePath="/x" matchLevel="Strict" running={false}
-      optionsCount={3} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" onForcedNameChange={() => {}}
+      optionsCount={3} drawerOpen={false} compareMode={false} doc1Path="" doc2Path="" forcedName="cmp" precheckFindings={[]} onForcedNameChange={() => {}}
       onToggleCompareMode={() => {}} onChooseDoc1={() => {}} onChooseDoc2={() => {}} onDropDoc1={() => {}} onDropDoc2={() => {}}
       onSetKey={() => {}} onChoosePath={() => {}} onMatchLevel={() => {}}
       onRun={() => {}} onCancel={() => {}} onToggleDrawer={() => {}} />);
@@ -46,6 +46,7 @@ describe("SetupCard compare mode", () => {
     doc1Path: "",
     doc2Path: "",
     forcedName: "cmp",
+    precheckFindings: [],
     onSetKey: () => {},
     onChoosePath: () => {},
     onChooseDoc1: () => {},
@@ -154,6 +155,30 @@ describe("SetupCard compare mode", () => {
   it("shows the Doc 1 upload error next to its zone", () => {
     render(<SetupCard {...baseProps} compareMode={true} doc1UploadError="500: boom" />);
     expect(screen.getByRole("alert")).toHaveTextContent("500: boom");
+  });
+
+  it("shows precheck findings under the doc pickers", () => {
+    render(<SetupCard {...baseProps} compareMode={true}
+      precheckFindings={[{ severity: "WARNING", code: "page-count-mismatch", message: "Doc 1 has 3 page(s) but Doc 2 has 1 page(s)" }]} />);
+    expect(screen.getByRole("status")).toHaveTextContent(/Doc 1 has 3 page/);
+  });
+
+  it("disables Run when a precheck error exists", () => {
+    render(<SetupCard {...baseProps} compareMode={true} doc1Path="/a.pdf" doc2Path="/b.pdf" forcedName="cmp"
+      precheckFindings={[{ severity: "ERROR", code: "doc-unreadable", message: "Doc 2 can't be read" }]} />);
+    expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
+  });
+
+  it("relabels Run to Run anyway when a precheck warning exists", () => {
+    render(<SetupCard {...baseProps} compareMode={true} doc1Path="/a.pdf" doc2Path="/b.pdf" forcedName="cmp"
+      precheckFindings={[{ severity: "WARNING", code: "dimension-mismatch", message: "Page dimensions differ" }]} />);
+    expect(screen.getByRole("button", { name: /run anyway/i })).toBeInTheDocument();
+  });
+
+  it("keeps the normal Run label when findings are info-only", () => {
+    render(<SetupCard {...baseProps} compareMode={true} doc1Path="/a.pdf" doc2Path="/b.pdf" forcedName="cmp"
+      precheckFindings={[{ severity: "INFO", code: "identical-content", message: "identical" }]} />);
+    expect(screen.getByRole("button", { name: /run test/i })).toBeInTheDocument();
   });
 });
 
