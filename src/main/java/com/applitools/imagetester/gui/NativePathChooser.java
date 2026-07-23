@@ -1,5 +1,7 @@
 package com.applitools.imagetester.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -17,6 +19,18 @@ public final class NativePathChooser {
     private static final boolean IS_WINDOWS =
             System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win");
 
+    private static volatile boolean isLookAndFeelInstalled;
+
+    /** Installs FlatLaf once for the chooser dialogs; on failure the default L&F still works. */
+    static void ensureLookAndFeel() {
+        if (isLookAndFeelInstalled) return;
+        isLookAndFeelInstalled = true;
+        try {
+            if (SwingUtilities.isEventDispatchThread()) FlatLightLaf.setup();
+            else SwingUtilities.invokeAndWait(FlatLightLaf::setup);
+        } catch (Throwable ignored) { /* styling is best-effort; Metal fallback still works */ }
+    }
+
     private NativePathChooser() {}
 
     /**
@@ -29,6 +43,7 @@ public final class NativePathChooser {
             try {
                 java.awt.Toolkit.getDefaultToolkit();
                 javax.swing.filechooser.FileSystemView.getFileSystemView().getRoots();
+                ensureLookAndFeel();
                 SwingUtilities.invokeAndWait(JFileChooser::new);
             } catch (Throwable ignored) { /* prewarm is best-effort */ }
         }, "NativePathChooser-prewarm");
@@ -64,6 +79,7 @@ public final class NativePathChooser {
     }
 
     private static String choose(boolean folder, String startPath) {
+        ensureLookAndFeel();
         System.out.println("[NativePathChooser] choose folder=" + folder + " edt=" + SwingUtilities.isEventDispatchThread() + " start=" + startPath);
         AtomicReference<String> result = new AtomicReference<>();
         File startDir = resolveStartDir(startPath);
