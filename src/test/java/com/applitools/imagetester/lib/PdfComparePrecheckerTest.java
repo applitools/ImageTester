@@ -147,12 +147,19 @@ public class PdfComparePrecheckerTest {
     }
 
     @Test
-    public void pageCountMismatchReportsBothCounts() throws Exception {
+    public void pageCountMismatchReportsDoc1Count() throws Exception {
         File a = pdf("a.pdf", A4, A4, A4);
         File b = pdf("b.pdf", A4);
-        PdfComparePrechecker.Finding f =
-                byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch");
-        assertTrue(f.message, f.message.contains("3 page(s)") && f.message.contains("1 page(s)"));
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch")
+                .message.contains("3 page(s)"));
+    }
+
+    @Test
+    public void pageCountMismatchReportsDoc2Count() throws Exception {
+        File a = pdf("a.pdf", A4, A4, A4);
+        File b = pdf("b.pdf", A4);
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch")
+                .message.contains("1 page(s)"));
     }
 
     @Test
@@ -180,13 +187,23 @@ public class PdfComparePrecheckerTest {
     }
 
     @Test
-    public void dimensionMismatchCapsListedPagesAtFive() throws Exception {
+    public void dimensionMismatchListsFirstFivePages() throws Exception {
         float[][] sevenA4 = { A4, A4, A4, A4, A4, A4, A4 };
         float[][] sevenLetter = { LETTER, LETTER, LETTER, LETTER, LETTER, LETTER, LETTER };
         File a = pdf("a.pdf", sevenA4);
         File b = pdf("b.pdf", sevenLetter);
         String msg = byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch").message;
-        assertTrue(msg, msg.contains("1, 2, 3, 4, 5") && !msg.contains("1, 2, 3, 4, 5, 6") && msg.contains("7 page(s)"));
+        assertTrue(msg.contains("1, 2, 3, 4, 5, …"));
+    }
+
+    @Test
+    public void dimensionMismatchReportsTotalPageCount() throws Exception {
+        float[][] sevenA4 = { A4, A4, A4, A4, A4, A4, A4 };
+        float[][] sevenLetter = { LETTER, LETTER, LETTER, LETTER, LETTER, LETTER, LETTER };
+        File a = pdf("a.pdf", sevenA4);
+        File b = pdf("b.pdf", sevenLetter);
+        String msg = byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch").message;
+        assertTrue(msg.contains("7 page(s)"));
     }
 
     @Test
