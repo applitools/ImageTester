@@ -10,6 +10,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class NativePathChooser {
 
+    // The Windows common dialog is not an AWT window: it ignores setAlwaysOnTop and doesn't
+    // inherit the anchor's topmost state, so it opens behind the browser (focus-stealing
+    // prevention blocks a background process from raising it). Swing dialogs inherit topmost
+    // from the anchor, so Windows routes files through JFileChooser like folders.
+    private static final boolean IS_WINDOWS =
+            System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win");
+
     private NativePathChooser() {}
 
     /**
@@ -61,23 +68,24 @@ public final class NativePathChooser {
         AtomicReference<String> result = new AtomicReference<>();
         File startDir = resolveStartDir(startPath);
         Runnable task = () -> {
-            // Anchor an off-screen, always-on-top, focusable frame so the file dialog inherits
+            // Anchor a 1px, always-on-top, focusable frame so the file dialog inherits
             // its z-order and comes to the foreground — without a real owner the OS leaves the
-            // dialog behind the browser window that just made this HTTP call.
+            // dialog behind the browser window that just made this HTTP call. Centered on screen
+            // so the dialog (which centers on its parent) opens centered, not in a corner.
             JFrame anchor = new JFrame();
             anchor.setUndecorated(true);
             anchor.setSize(1, 1);
-            anchor.setLocation(-10000, -10000);
+            anchor.setLocationRelativeTo(null);
             anchor.setAlwaysOnTop(true);
             anchor.setType(java.awt.Window.Type.UTILITY);
             anchor.setVisible(true);
             anchor.toFront();
             requestForeground();
             try {
-                if (folder) {
+                if (folder || IS_WINDOWS) {
                     JFileChooser fc = new JFileChooser();
-                    fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                    fc.setDialogTitle("Choose source folder");
+                    fc.setFileSelectionMode(folder ? JFileChooser.DIRECTORIES_ONLY : JFileChooser.FILES_ONLY);
+                    fc.setDialogTitle(folder ? "Choose source folder" : "Choose source file");
                     if (startDir != null) fc.setCurrentDirectory(startDir);
                     System.out.println("[NativePathChooser] showing JFileChooser");
                     int rc = fc.showOpenDialog(anchor);
