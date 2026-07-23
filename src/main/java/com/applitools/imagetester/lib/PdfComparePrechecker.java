@@ -156,6 +156,9 @@ public final class PdfComparePrechecker {
         StringBuilder message = new StringBuilder(String.format(
                 "Page dimensions differ on %d page(s) (pages %s%s)",
                 mismatched.size(), listed, mismatched.size() > MAX_LISTED_PAGES ? ", …" : ""));
+        message.append(String.format(" — page %d renders %dx%d px vs %dx%d px at %.0f DPI",
+                mismatched.get(0), firstMismatchPx1[0], firstMismatchPx1[1],
+                firstMismatchPx2[0], firstMismatchPx2[1], config.DocumentConversionDPI));
         if (!rotated.isEmpty()) {
             message.append(String.format(" — page %s appears rotated", rotated.get(0)));
         }
@@ -170,9 +173,6 @@ public final class PdfComparePrechecker {
             message.append("Consider different PDFs, Match size (-ms), Viewport size (-vs), "
                     + "or Trim print margins (-tp).");
         }
-        message.append(String.format(" — page %d renders %dx%d px vs %dx%d px at %.0f DPI",
-                mismatched.get(0), firstMismatchPx1[0], firstMismatchPx1[1],
-                firstMismatchPx2[0], firstMismatchPx2[1], config.DocumentConversionDPI));
         findings.add(new Finding(hasSizeOverride ? Severity.INFO : Severity.WARNING,
                 "dimension-mismatch", message.toString()));
     }
