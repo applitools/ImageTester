@@ -80,4 +80,18 @@ describe("StatusPane scrolling", () => {
     rerender(<StatusPane state={runningWith(11)} logLines={[]} />);
     expect(container.scrollTop).toBe(0);
   });
+
+  it("re-arms auto-follow when a new run starts after scrolling up", () => {
+    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={[]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 0, scrollHeight: 600, clientHeight: 60 });
+    rerender(<StatusPane state={{ ...runningWith(5), runId: "r2" } as RunStateSnapshot} logLines={[]} />);
+    expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("makes the scroll region keyboard-focusable", () => {
+    render(<StatusPane state={runningWith(3)} logLines={[]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    expect(container).toHaveAttribute("tabindex", "0");
+  });
 });

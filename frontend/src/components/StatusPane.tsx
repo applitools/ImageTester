@@ -15,6 +15,8 @@ export function StatusPane({ state, logLines }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const listRef = useRef<HTMLDivElement | null>(null);
   const testCount = state.kind === "idle" ? 0 : state.tests.length;
+  // Defaults true and is captured before React appends a row, so scrolling up to
+  // inspect an earlier test is never overridden.
   const wasNearBottomRef = useRef(true);
 
   const handleListScroll = () => {
@@ -23,6 +25,13 @@ export function StatusPane({ state, logLines }: Props) {
     wasNearBottomRef.current =
       el.scrollHeight - el.scrollTop - el.clientHeight <= STICK_TO_BOTTOM_THRESHOLD_PX;
   };
+
+  const runId = state.kind === "running" ? state.runId : null;
+  // A new run starts a fresh list; re-arm auto-follow regardless of where the
+  // user left the previous run's scroll position.
+  useEffect(() => {
+    if (runId !== null) wasNearBottomRef.current = true;
+  }, [runId]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -49,7 +58,7 @@ export function StatusPane({ state, logLines }: Props) {
       )}
 
       {state.kind !== "idle" && (
-        <div ref={listRef} onScroll={handleListScroll} className="max-h-[45vh] space-y-0.5 overflow-y-auto">
+        <div ref={listRef} onScroll={handleListScroll} className="max-h-[45vh] space-y-0.5 overflow-y-auto" tabIndex={0} aria-label="Test results">
           {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}
         </div>
       )}
