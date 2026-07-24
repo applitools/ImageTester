@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { RunStateSnapshot } from "../types";
 import { TestRow } from "./TestRow";
 
@@ -8,10 +8,27 @@ interface Props {
 }
 
 const TICK_INTERVAL_MS = 500;
+const STICK_TO_BOTTOM_THRESHOLD_PX = 40;
 
 export function StatusPane({ state, logLines }: Props) {
   const [showLog, setShowLog] = useState(true);
   const [now, setNow] = useState(() => Date.now());
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const testCount = state.kind === "idle" ? 0 : state.tests.length;
+  const wasNearBottomRef = useRef(true);
+
+  const handleListScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    wasNearBottomRef.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight <= STICK_TO_BOTTOM_THRESHOLD_PX;
+  };
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || state.kind !== "running") return;
+    if (wasNearBottomRef.current) el.scrollTop = el.scrollHeight;
+  }, [testCount, state.kind]);
 
   const hasRunning = state.kind === "running" && state.tests.some((t) => t.status === "running");
   useEffect(() => {
@@ -32,7 +49,7 @@ export function StatusPane({ state, logLines }: Props) {
       )}
 
       {state.kind !== "idle" && (
-        <div className="space-y-0.5">
+        <div ref={listRef} onScroll={handleListScroll} className="max-h-[45vh] space-y-0.5 overflow-y-auto">
           {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}
         </div>
       )}

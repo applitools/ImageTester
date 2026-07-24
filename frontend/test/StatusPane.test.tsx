@@ -36,3 +36,48 @@ describe("StatusPane", () => {
     expect(screen.queryByText(/0 passed/i)).not.toBeInTheDocument();
   });
 });
+
+describe("StatusPane scrolling", () => {
+  function runningWith(n: number): RunStateSnapshot {
+    return {
+      kind: "running",
+      runId: "r1",
+      tests: Array.from({ length: n }, (_, i) => ({ name: `doc-${i}.pdf`, status: "running" as const })),
+    } as RunStateSnapshot;
+  }
+
+  function primeScroll(container: HTMLElement, { scrollTop, scrollHeight, clientHeight }: { scrollTop: number; scrollHeight: number; clientHeight: number }) {
+    Object.defineProperty(container, "scrollHeight", { configurable: true, value: scrollHeight });
+    Object.defineProperty(container, "clientHeight", { configurable: true, value: clientHeight });
+    container.scrollTop = scrollTop;
+    fireEvent.scroll(container);
+  }
+
+  it("renders the test rows inside a height-capped scroll container", () => {
+    render(<StatusPane state={runningWith(3)} logLines={[]} />);
+    const row = screen.getByText("doc-0.pdf");
+    const container = row.closest(".overflow-y-auto");
+    expect(container).toHaveClass("max-h-[45vh]");
+  });
+
+  it("still renders every row inside the scroll container", () => {
+    render(<StatusPane state={runningWith(40)} logLines={[]} />);
+    expect(screen.getAllByText(/doc-\d+\.pdf/)).toHaveLength(40);
+  });
+
+  it("follows new rows when already near the bottom", () => {
+    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={[]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 560, scrollHeight: 600, clientHeight: 60 });
+    rerender(<StatusPane state={runningWith(11)} logLines={[]} />);
+    expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("does not yank the view down when scrolled up to inspect an earlier test", () => {
+    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={[]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 0, scrollHeight: 600, clientHeight: 60 });
+    rerender(<StatusPane state={runningWith(11)} logLines={[]} />);
+    expect(container.scrollTop).toBe(0);
+  });
+});
