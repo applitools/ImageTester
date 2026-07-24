@@ -17,12 +17,15 @@ import java.util.stream.Collectors;
 /**
  * Validates a doc1/doc2 pair before a compare run. Eyes resolves baselines by test name
  * and viewport (= rendered page size for PDFs), so dimension or page-count mismatches
- * silently produce new baselines instead of comparisons — this reports them up front.
+ * silently produce new baselines instead of comparisons -- this reports them up front.
  */
 public final class PdfComparePrechecker {
 
     static final int MAX_LISTED_PAGES = 5;
     private static final int HASH_BUFFER_SIZE = 64 * 1024;
+
+    /** Which surface a Finding's message will be shown on: GUI reads Options labels, CLI reads flags. */
+    public enum MessageStyle { GUI, CLI }
 
     public enum Severity { ERROR, WARNING, INFO }
 
@@ -38,7 +41,7 @@ public final class PdfComparePrechecker {
         }
     }
 
-    /** Crop-box size and /Rotate for one page — what the renderer actually uses, not the media box. */
+    /** Crop-box size and /Rotate for one page -- what the renderer actually uses, not the media box. */
     private static final class PageBox {
         final float cropWidth;
         final float cropHeight;
@@ -61,19 +64,19 @@ public final class PdfComparePrechecker {
 
     private PdfComparePrechecker() {}
 
-    public static List<Finding> check(File doc1, File doc2, Config config) {
+    public static List<Finding> check(File doc1, File doc2, Config config, MessageStyle style) {
         List<Finding> findings = new ArrayList<>();
         boolean samePath = addFileLevelFindings(doc1, doc2, findings);
         boolean bothPdfs = Patterns.PDF.matcher(doc1.getName()).matches()
                 && Patterns.PDF.matcher(doc2.getName()).matches();
         if (!bothPdfs) return findings;
 
-        DocFacts facts1 = loadFacts("Doc 1", doc1, config, findings);
-        DocFacts facts2 = loadFacts("Doc 2", doc2, config, findings);
+        DocFacts facts1 = loadFacts("Doc 1", doc1, config, style, findings);
+        DocFacts facts2 = loadFacts("Doc 2", doc2, config, style, findings);
         if (facts1 == null || facts2 == null || samePath) return findings;
 
-        addPageCountFindings(facts1, facts2, findings);
-        addDimensionFindings(facts1, facts2, config, findings);
+        addPageCountFindings(facts1, facts2, style, findings);
+        addDimensionFindings(facts1, facts2, config, style, findings);
         return findings;
     }
 
@@ -82,12 +85,12 @@ public final class PdfComparePrechecker {
         try {
             if (doc1.getCanonicalPath().equals(doc2.getCanonicalPath())) {
                 findings.add(new Finding(Severity.WARNING, "same-file",
-                        "Doc 1 and Doc 2 are the same file — the comparison will compare the document with itself."));
+                        "Doc 1 and Doc 2 are the same file. The comparison will compare the document with itself."));
                 return true;
             }
             if (doc1.length() == doc2.length() && sha256(doc1).equals(sha256(doc2))) {
                 findings.add(new Finding(Severity.INFO, "identical-content",
-                        "Doc 1 and Doc 2 have identical content — the comparison will trivially pass."));
+                        "Doc 1 and Doc 2 have identical content. The comparison will trivially pass."));
             }
         } catch (IOException ignored) {
             // Unreadable files are reported by loadFacts with a precise message.
@@ -95,7 +98,7 @@ public final class PdfComparePrechecker {
         return false;
     }
 
-    private static DocFacts loadFacts(String label, File doc, Config config, List<Finding> findings) {
+    private static DocFacts loadFacts(String label, File doc, Config config, MessageStyle style, List<Finding> findings) {
         try (PDDocument document = PDDocument.load(doc, config.pdfPass)) {
             int pages = document.getNumberOfPages();
             if (pages == 0) {
@@ -112,24 +115,25 @@ public final class PdfComparePrechecker {
             return new DocFacts(pages, boxes);
         } catch (InvalidPasswordException e) {
             findings.add(new Finding(Severity.ERROR, "encrypted",
-                    label + " (" + doc.getName() + ") is password-protected — set the PDF password option (-pp)."));
+                    label + " (" + doc.getName() + ") is password-protected. " + pdfPasswordRemedy(style)));
             return null;
         } catch (IOException e) {
             findings.add(new Finding(Severity.ERROR, "doc-unreadable",
-                    label + " (" + doc.getName() + ") can't be read as a PDF — it may be corrupt or not a PDF."));
+                    label + " (" + doc.getName() + ") can't be read as a PDF. It may be corrupt or not a PDF."));
             return null;
         }
     }
 
-    private static void addPageCountFindings(DocFacts facts1, DocFacts facts2, List<Finding> findings) {
+    private static void addPageCountFindings(DocFacts facts1, DocFacts facts2, MessageStyle style, List<Finding> findings) {
         if (facts1.pageCount == facts2.pageCount) return;
         findings.add(new Finding(Severity.WARNING, "page-count-mismatch", String.format(
-                "Doc 1 has %d page(s) but Doc 2 has %d page(s) — the extra page(s) will create new baselines "
-                        + "instead of comparisons. Consider Selected pages (-sp) to align the ranges.",
-                facts1.pageCount, facts2.pageCount)));
+                "Doc 1 has %d page(s) but Doc 2 has %d page(s). The extra page(s) will create new baselines "
+                        + "instead of comparisons. %s",
+                facts1.pageCount, facts2.pageCount, selectedPagesRemedy(style))));
     }
 
-    private static void addDimensionFindings(DocFacts facts1, DocFacts facts2, Config config, List<Finding> findings) {
+    private static void addDimensionFindings(DocFacts facts1, DocFacts facts2, Config config,
+                                              MessageStyle style, List<Finding> findings) {
         List<Integer> pagesToCheck = pagesToCheck(config, Math.min(facts1.pageCount, facts2.pageCount));
         List<Integer> mismatched = new ArrayList<>();
         List<Integer> rotated = new ArrayList<>();
@@ -155,26 +159,46 @@ public final class PdfComparePrechecker {
                 .map(String::valueOf).collect(Collectors.joining(", "));
         StringBuilder message = new StringBuilder(String.format(
                 "Page dimensions differ on %d page(s) (pages %s%s)",
-                mismatched.size(), listed, mismatched.size() > MAX_LISTED_PAGES ? ", …" : ""));
-        message.append(String.format(" — page %d renders %dx%d px vs %dx%d px at %.0f DPI",
+                mismatched.size(), listed, mismatched.size() > MAX_LISTED_PAGES ? ", ..." : ""));
+        message.append(String.format(": page %d renders %dx%d px vs %dx%d px at %.0f DPI",
                 mismatched.get(0), firstMismatchPx1[0], firstMismatchPx1[1],
                 firstMismatchPx2[0], firstMismatchPx2[1], config.DocumentConversionDPI));
         if (!rotated.isEmpty()) {
-            message.append(String.format(" — page %s appears rotated", rotated.get(0)));
+            message.append(String.format(", page %s appears rotated", rotated.get(0)));
         }
         if (config.pdfTrim != null) {
             message.append(" (dimensions compared before trimming)");
         }
         message.append(". Eyes resolves baselines by viewport, so mismatched pages won't be compared. ");
         if (hasSizeOverride) {
-            message.append("Match size/Viewport size is set — Eyes will use your override, "
+            message.append("Match size/Viewport size is set. Eyes will use your override, "
                     + "but rendered content may still differ.");
         } else {
-            message.append("Consider different PDFs, Match size (-ms), Viewport size (-vs), "
-                    + "or Trim print margins (-tp).");
+            message.append(dimensionRemedy(style));
         }
         findings.add(new Finding(hasSizeOverride ? Severity.INFO : Severity.WARNING,
                 "dimension-mismatch", message.toString()));
+    }
+
+    /** GUI points at the Options drawer's "Selected pages" field; CLI names the -sp flag. */
+    private static String selectedPagesRemedy(MessageStyle style) {
+        return style == MessageStyle.GUI
+                ? "Consider setting Selected pages in Options to align the ranges."
+                : "Consider Selected pages (-sp) to align the ranges.";
+    }
+
+    /** GUI points at the Options drawer's size fields; CLI names the -ms/-vs/-tp flags. */
+    private static String dimensionRemedy(MessageStyle style) {
+        return style == MessageStyle.GUI
+                ? "Consider choosing different PDFs, or set Match size, Viewport size, or Trim print margins in Options."
+                : "Consider different PDFs, Match size (-ms), Viewport size (-vs), or Trim print margins (-tp).";
+    }
+
+    /** GUI points at the Options drawer's "PDF password" field; CLI names the -pp flag. */
+    private static String pdfPasswordRemedy(MessageStyle style) {
+        return style == MessageStyle.GUI
+                ? "Set PDF password in Options."
+                : "Set the PDF password option (-pp).";
     }
 
     /**

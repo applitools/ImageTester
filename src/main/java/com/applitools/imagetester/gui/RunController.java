@@ -163,7 +163,8 @@ public final class RunController {
     /** ERROR-level precheck findings abort the run before run-started; warnings pass through. */
     private static void failOnPrecheckErrors(File doc1, File doc2, Config config) {
         for (com.applitools.imagetester.lib.PdfComparePrechecker.Finding finding
-                : com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1, doc2, config)) {
+                : com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1, doc2, config,
+                        com.applitools.imagetester.lib.PdfComparePrechecker.MessageStyle.GUI)) {
             if (finding.severity == com.applitools.imagetester.lib.PdfComparePrechecker.Severity.ERROR) {
                 throw new InvalidOptionsException(finding.message);
             }
@@ -175,7 +176,8 @@ public final class RunController {
         Path doc1 = SourcePathValidator.validate(req.doc1Path);
         Path doc2 = SourcePathValidator.validate(req.doc2Path);
         RunConfig rc = factoryBuilder_.build(req, new Logger());
-        return com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1.toFile(), doc2.toFile(), rc.config);
+        return com.applitools.imagetester.lib.PdfComparePrechecker.check(doc1.toFile(), doc2.toFile(), rc.config,
+                com.applitools.imagetester.lib.PdfComparePrechecker.MessageStyle.GUI);
     }
 
     public void cancel() {

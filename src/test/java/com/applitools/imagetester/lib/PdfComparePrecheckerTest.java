@@ -19,6 +19,9 @@ import static org.junit.Assert.assertTrue;
 
 public class PdfComparePrecheckerTest {
 
+    private static final PdfComparePrechecker.MessageStyle GUI = PdfComparePrechecker.MessageStyle.GUI;
+    private static final PdfComparePrechecker.MessageStyle CLI = PdfComparePrechecker.MessageStyle.CLI;
+
     @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
     /** Authors a PDF whose pages have the given {width,height} sizes in points. */
@@ -62,7 +65,7 @@ public class PdfComparePrecheckerTest {
         File a = pdf("a.pdf", A4, A4);
         File b = tmp.newFile("b.pdf");
         Files.write(b.toPath(), Files.readAllBytes(a.toPath()));
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, b, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, b, new Config(), GUI);
         assertEquals(List.of("identical-content"), codes(findings));
     }
 
@@ -71,7 +74,7 @@ public class PdfComparePrecheckerTest {
         File a = pdf("a.pdf", A4);
         File b = tmp.newFile("b.pdf");
         Files.write(b.toPath(), Files.readAllBytes(a.toPath()));
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, b, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, b, new Config(), GUI);
         assertEquals(PdfComparePrechecker.Severity.INFO, byCode(findings, "identical-content").severity);
     }
 
@@ -82,20 +85,20 @@ public class PdfComparePrecheckerTest {
         // (PDFBox can emit identical bytes for same-shaped docs, which made this test flaky)
         // while still rendering to the same pixel dimensions as A4 at 250 DPI.
         File d = pdf("d.pdf", new float[] { 594.90f, 842.10f });
-        assertEquals(List.of(), codes(PdfComparePrechecker.check(c, d, new Config())));
+        assertEquals(List.of(), codes(PdfComparePrechecker.check(c, d, new Config(), GUI)));
     }
 
     @Test
     public void samePathReportsSameFileWarning() throws Exception {
         File a = pdf("a.pdf", A4);
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, a, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, a, new Config(), GUI);
         assertEquals(PdfComparePrechecker.Severity.WARNING, byCode(findings, "same-file").severity);
     }
 
     @Test
     public void samePathDoesNotAlsoReportIdenticalContent() throws Exception {
         File a = pdf("a.pdf", A4);
-        assertTrue(!codes(PdfComparePrechecker.check(a, a, new Config())).contains("identical-content"));
+        assertTrue(!codes(PdfComparePrechecker.check(a, a, new Config(), GUI)).contains("identical-content"));
     }
 
     @Test
@@ -103,7 +106,7 @@ public class PdfComparePrecheckerTest {
         File a = pdf("a.pdf", A4);
         File junk = tmp.newFile("junk.pdf");
         Files.write(junk.toPath(), "not a pdf".getBytes());
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, junk, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, junk, new Config(), GUI);
         assertEquals(PdfComparePrechecker.Severity.ERROR, byCode(findings, "doc-unreadable").severity);
     }
 
@@ -111,7 +114,7 @@ public class PdfComparePrecheckerTest {
     public void encryptedPdfWithoutPasswordReportsEncryptedError() throws Exception {
         File a = pdf("a.pdf", A4);
         File enc = encryptedPdf("enc.pdf");
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, enc, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, enc, new Config(), GUI);
         assertEquals(PdfComparePrechecker.Severity.ERROR, byCode(findings, "encrypted").severity);
     }
 
@@ -121,22 +124,30 @@ public class PdfComparePrecheckerTest {
         File enc2 = encryptedPdf("enc2.pdf");
         Config config = new Config();
         config.pdfPass = "user-secret";
-        assertEquals(List.of(), codes(PdfComparePrechecker.check(enc1, enc2, config)));
+        assertEquals(List.of(), codes(PdfComparePrechecker.check(enc1, enc2, config, GUI)));
     }
 
     @Test
-    public void encryptedMessageNamesThePasswordOption() throws Exception {
+    public void encryptedMessageNamesThePasswordFlagInCliStyle() throws Exception {
         File a = pdf("a.pdf", A4);
         File enc = encryptedPdf("enc.pdf");
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, enc, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, enc, new Config(), CLI);
         assertTrue(byCode(findings, "encrypted").message.contains("-pp"));
+    }
+
+    @Test
+    public void encryptedMessageNamesOptionsInGuiStyle() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File enc = encryptedPdf("enc.pdf");
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, enc, new Config(), GUI);
+        assertTrue(byCode(findings, "encrypted").message.contains("PDF password in Options"));
     }
 
     @Test
     public void zeroPagePdfReportsError() throws Exception {
         File a = pdf("a.pdf", A4);
         File empty = pdf("empty.pdf");
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, empty, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(a, empty, new Config(), GUI);
         assertEquals(PdfComparePrechecker.Severity.ERROR, byCode(findings, "zero-pages").severity);
     }
 
@@ -145,7 +156,7 @@ public class PdfComparePrecheckerTest {
         File junk = tmp.newFile("junk.pdf");
         Files.write(junk.toPath(), "not a pdf".getBytes());
         File b = pdf("b.pdf", A4, A4);
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(junk, b, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(junk, b, new Config(), GUI);
         assertEquals(List.of("doc-unreadable"), codes(findings));
     }
 
@@ -153,7 +164,7 @@ public class PdfComparePrecheckerTest {
     public void pageCountMismatchReportsDoc1Count() throws Exception {
         File a = pdf("a.pdf", A4, A4, A4);
         File b = pdf("b.pdf", A4);
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "page-count-mismatch")
                 .message.contains("3 page(s)"));
     }
 
@@ -161,16 +172,24 @@ public class PdfComparePrecheckerTest {
     public void pageCountMismatchReportsDoc2Count() throws Exception {
         File a = pdf("a.pdf", A4, A4, A4);
         File b = pdf("b.pdf", A4);
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "page-count-mismatch")
                 .message.contains("1 page(s)"));
     }
 
     @Test
-    public void pageCountMismatchNudgesSelectedPages() throws Exception {
+    public void pageCountMismatchNudgesSelectedPagesFlagInCliStyle() throws Exception {
         File a = pdf("a.pdf", A4, A4);
         File b = pdf("b.pdf", A4);
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "page-count-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), CLI), "page-count-mismatch")
                 .message.contains("-sp"));
+    }
+
+    @Test
+    public void pageCountMismatchNudgesOptionsInGuiStyle() throws Exception {
+        File a = pdf("a.pdf", A4, A4);
+        File b = pdf("b.pdf", A4);
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "page-count-mismatch")
+                .message.contains("Selected pages in Options"));
     }
 
     @Test
@@ -178,14 +197,14 @@ public class PdfComparePrecheckerTest {
         File a = pdf("a.pdf", A4);
         File b = pdf("b.pdf", LETTER);
         assertEquals(PdfComparePrechecker.Severity.WARNING,
-                byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch").severity);
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch").severity);
     }
 
     @Test
     public void dimensionMismatchListsThePageNumbers() throws Exception {
         File a = pdf("a.pdf", A4, A4, A4);
         File b = pdf("b.pdf", A4, LETTER, LETTER);
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
                 .message.contains("2, 3"));
     }
 
@@ -195,8 +214,8 @@ public class PdfComparePrecheckerTest {
         float[][] sevenLetter = { LETTER, LETTER, LETTER, LETTER, LETTER, LETTER, LETTER };
         File a = pdf("a.pdf", sevenA4);
         File b = pdf("b.pdf", sevenLetter);
-        String msg = byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch").message;
-        assertTrue(msg.contains("1, 2, 3, 4, 5, …"));
+        String msg = byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch").message;
+        assertTrue(msg.contains("1, 2, 3, 4, 5, ..."));
     }
 
     @Test
@@ -205,7 +224,7 @@ public class PdfComparePrecheckerTest {
         float[][] sevenLetter = { LETTER, LETTER, LETTER, LETTER, LETTER, LETTER, LETTER };
         File a = pdf("a.pdf", sevenA4);
         File b = pdf("b.pdf", sevenLetter);
-        String msg = byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch").message;
+        String msg = byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch").message;
         assertTrue(msg.contains("7 page(s)"));
     }
 
@@ -213,7 +232,7 @@ public class PdfComparePrecheckerTest {
     public void rotatedPageGetsOrientationHint() throws Exception {
         File a = pdf("a.pdf", A4);
         File b = pdf("b.pdf", A4_ROTATED);
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
                 .message.contains("rotated"));
     }
 
@@ -221,20 +240,20 @@ public class PdfComparePrecheckerTest {
     public void subPointDifferenceThatChangesRenderedPixelsWarns() throws Exception {
         File a = pdf("a.pdf", new float[] { 1191.00f, 842.25f });
         File b = pdf("b.pdf", new float[] { 1190.70f, 842.00f });
-        assertTrue(codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+        assertTrue(codes(PdfComparePrechecker.check(a, b, new Config(), GUI)).contains("dimension-mismatch"));
     }
 
     @Test
     public void subPointDifferenceWithSameRenderedPixelsDoesNotWarn() throws Exception {
         File a = pdf("a.pdf", new float[] { 594.80f, 842.00f });
         File b = pdf("b.pdf", new float[] { 595.00f, 842.00f });
-        assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+        assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config(), GUI)).contains("dimension-mismatch"));
     }
 
     // PDFBox clips CropBox to the intersection with MediaBox (PDPage.clipToMediaBox), so the crop
     // box can never exceed the media box on either axis. To exercise "crop box governs" without
     // that clipping kicking in, the media box here is an oversized container the crop box fits
-    // inside — its exact size is irrelevant and must NOT match either LETTER or A4.
+    // inside -- its exact size is irrelevant and must NOT match either LETTER or A4.
     private static final float[] OVERSIZED_MEDIA_BOX = { 1000f, 1200f };
 
     @Test
@@ -247,7 +266,7 @@ public class PdfComparePrecheckerTest {
             doc.save(a);
         }
         File b = pdf("b.pdf", LETTER);
-        assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+        assertTrue(!codes(PdfComparePrechecker.check(a, b, new Config(), GUI)).contains("dimension-mismatch"));
     }
 
     @Test
@@ -260,7 +279,7 @@ public class PdfComparePrecheckerTest {
             doc.save(a);
         }
         File b = pdf("b.pdf", A4);
-        assertTrue(codes(PdfComparePrechecker.check(a, b, new Config())).contains("dimension-mismatch"));
+        assertTrue(codes(PdfComparePrechecker.check(a, b, new Config(), GUI)).contains("dimension-mismatch"));
     }
 
     @Test
@@ -273,7 +292,7 @@ public class PdfComparePrecheckerTest {
             doc.addPage(page);
             doc.save(b);
         }
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config()), "dimension-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
                 .message.contains("rotated"));
     }
 
@@ -283,7 +302,7 @@ public class PdfComparePrecheckerTest {
         File b = pdf("b.pdf", A4, A4, A4);
         Config config = new Config();
         config.pages = "1,3";
-        assertTrue(!codes(PdfComparePrechecker.check(a, b, config)).contains("dimension-mismatch"));
+        assertTrue(!codes(PdfComparePrechecker.check(a, b, config, GUI)).contains("dimension-mismatch"));
     }
 
     @Test
@@ -293,7 +312,7 @@ public class PdfComparePrecheckerTest {
         Config config = new Config();
         config.setViewport("1000x600");
         assertEquals(PdfComparePrechecker.Severity.INFO,
-                byCode(PdfComparePrechecker.check(a, b, config), "dimension-mismatch").severity);
+                byCode(PdfComparePrechecker.check(a, b, config, GUI), "dimension-mismatch").severity);
     }
 
     @Test
@@ -303,7 +322,7 @@ public class PdfComparePrecheckerTest {
         Config config = new Config();
         config.setMatchSize("1000x600");
         assertEquals(PdfComparePrechecker.Severity.INFO,
-                byCode(PdfComparePrechecker.check(a, b, config), "dimension-mismatch").severity);
+                byCode(PdfComparePrechecker.check(a, b, config, GUI), "dimension-mismatch").severity);
     }
 
     @Test
@@ -312,7 +331,7 @@ public class PdfComparePrecheckerTest {
         File b = pdf("b.pdf", LETTER);
         Config config = new Config();
         config.setPdfTrim("auto");
-        assertTrue(byCode(PdfComparePrechecker.check(a, b, config), "dimension-mismatch")
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, config, GUI), "dimension-mismatch")
                 .message.contains("before trimming"));
     }
 
@@ -320,7 +339,31 @@ public class PdfComparePrecheckerTest {
     public void nonPdfInputsOnlyGetFileLevelChecks() throws Exception {
         File img = tmp.newFile("a.png");
         Files.write(img.toPath(), new byte[] { 1, 2, 3 });
-        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(img, img, new Config());
+        List<PdfComparePrechecker.Finding> findings = PdfComparePrechecker.check(img, img, new Config(), GUI);
         assertEquals(List.of("same-file"), codes(findings));
+    }
+
+    @Test
+    public void dimensionMismatchGuiMessageDoesNotMentionCliFlags() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        assertTrue(!byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
+                .message.contains("-ms"));
+    }
+
+    @Test
+    public void dimensionMessageIsAsciiSafeForConsolesInCliStyle() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        String message = byCode(PdfComparePrechecker.check(a, b, new Config(), CLI), "dimension-mismatch").message;
+        assertTrue(message.chars().allMatch(c -> c < 128));
+    }
+
+    @Test
+    public void dimensionMessageIsAsciiSafeForConsolesInGuiStyle() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        String message = byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch").message;
+        assertTrue(message.chars().allMatch(c -> c < 128));
     }
 }
