@@ -136,6 +136,7 @@ public final class GuiServer {
             resp.setHeader("Cache-Control", "public,max-age=31536000,immutable");
             if (path.endsWith(".js"))  resp.setContentType("application/javascript");
             if (path.endsWith(".css")) resp.setContentType("text/css");
+            if (path.endsWith(".png")) resp.setContentType("image/png");
             try (InputStream in = url.openStream()) { in.transferTo(resp.getOutputStream()); }
         }
     }
