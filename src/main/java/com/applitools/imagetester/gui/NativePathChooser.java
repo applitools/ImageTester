@@ -2,11 +2,13 @@ package com.applitools.imagetester.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import java.awt.FileDialog;
 import java.awt.Frame;
+import java.awt.Image;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,7 +21,21 @@ public final class NativePathChooser {
     private static final boolean IS_WINDOWS =
             System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win");
 
+    private static final String ICON_RESOURCE = "/icons/app-icon.png";
+
     private static volatile boolean isLookAndFeelInstalled;
+    private static volatile Image dialogIcon;
+
+    /** Loads the app icon once for the chooser dialogs; on failure the default Java icon still shows. */
+    private static Image dialogIcon() {
+        if (dialogIcon == null) {
+            try {
+                java.net.URL url = NativePathChooser.class.getResource(ICON_RESOURCE);
+                if (url != null) dialogIcon = ImageIO.read(url);
+            } catch (Throwable ignored) { /* icon is cosmetic; best effort */ }
+        }
+        return dialogIcon;
+    }
 
     /** Installs FlatLaf once for the chooser dialogs; on failure the default L&F still works. */
     static void ensureLookAndFeel() {
@@ -92,6 +108,9 @@ public final class NativePathChooser {
             // dialog behind the browser window that just made this HTTP call. Centered on screen
             // so the dialog (which centers on its parent) opens centered, not in a corner.
             JFrame anchor = new JFrame();
+            // The chooser dialog inherits the owner frame's icon into its title bar.
+            Image icon = dialogIcon();
+            if (icon != null) anchor.setIconImage(icon);
             anchor.setUndecorated(true);
             anchor.setSize(1, 1);
             anchor.setLocationRelativeTo(null);
