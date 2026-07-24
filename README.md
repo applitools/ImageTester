@@ -10,6 +10,8 @@ and get your Applitools api-key that will be used next to execute the tests.
 
 ## ImageTester GUI
 
+<img width="1153" height="996" alt="image" src="https://github.com/user-attachments/assets/ed12b67d-1c54-4824-b082-752fffca6a2c" />
+
 The ImageTester GUI is the recommended way to use ImageTester — a full desktop application that
 puts everything ImageTester can do behind a point-and-click interface. No Java to install, no
 terminal, no setup.
