@@ -37,7 +37,7 @@ export function StatusPane({ state, logLines }: Props) {
     const el = listRef.current;
     if (!el || state.kind !== "running") return;
     if (wasNearBottomRef.current) el.scrollTop = el.scrollHeight;
-  }, [testCount, state.kind]);
+  }, [testCount, state.kind, logLines.length]);
 
   const hasRunning = state.kind === "running" && state.tests.some((t) => t.status === "running");
   useEffect(() => {
@@ -57,27 +57,29 @@ export function StatusPane({ state, logLines }: Props) {
         <p className="text-sm text-gray-500">Pick a source and click Run to start.</p>
       )}
 
-      {state.kind !== "idle" && (
-        <div ref={listRef} onScroll={handleListScroll} className="max-h-[45vh] space-y-0.5 overflow-y-auto" tabIndex={0} aria-label="Test results">
-          {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}
-        </div>
-      )}
+      <div ref={listRef} onScroll={handleListScroll} className="max-h-[60vh] overflow-y-auto" tabIndex={0} aria-label="Test results">
+        {state.kind !== "idle" && (
+          <div className="space-y-0.5">
+            {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}
+          </div>
+        )}
 
-      {state.kind === "done" && state.outputDir && (
-        <div className="rounded-lg bg-gray-50 p-3 text-sm">
-          <div className="font-medium text-gray-700">Cleaned {state.fileCount ?? 0} PDF(s)</div>
-          <div className="mt-1 truncate text-gray-500">{state.outputDir}</div>
-        </div>
-      )}
+        {state.kind === "done" && state.outputDir && (
+          <div className="rounded-lg bg-gray-50 p-3 text-sm">
+            <div className="font-medium text-gray-700">Cleaned {state.fileCount ?? 0} PDF(s)</div>
+            <div className="mt-1 truncate text-gray-500">{state.outputDir}</div>
+          </div>
+        )}
 
-      <button type="button" onClick={() => setShowLog(!showLog)} className="mt-4 text-xs text-gray-500 transition-colors hover:text-gray-800">
-        {showLog ? "▾" : "▸"} Show log
-      </button>
-      {showLog && (
-        <pre className="mt-2 max-h-64 overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-words rounded-lg bg-gray-900 p-3 font-mono text-xs text-emerald-200">
-          {logLines.join("")}
-        </pre>
-      )}
+        <button type="button" onClick={() => setShowLog(!showLog)} className="mt-4 text-xs text-gray-500 transition-colors hover:text-gray-800">
+          {showLog ? "▾" : "▸"} Show log
+        </button>
+        {showLog && (
+          <pre className="mt-2 overflow-x-hidden whitespace-pre-wrap break-words rounded-lg bg-gray-900 p-3 font-mono text-xs text-emerald-200">
+            {logLines.join("")}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }

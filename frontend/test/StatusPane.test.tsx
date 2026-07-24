@@ -57,12 +57,24 @@ describe("StatusPane scrolling", () => {
     render(<StatusPane state={runningWith(3)} logLines={[]} />);
     const row = screen.getByText("doc-0.pdf");
     const container = row.closest(".overflow-y-auto");
-    expect(container).toHaveClass("max-h-[45vh]");
+    expect(container).toHaveClass("max-h-[60vh]");
   });
 
   it("still renders every row inside the scroll container", () => {
     render(<StatusPane state={runningWith(40)} logLines={[]} />);
     expect(screen.getAllByText(/doc-\d+\.pdf/)).toHaveLength(40);
+  });
+
+  it("renders the log inside the same scroll container as the rows", () => {
+    render(<StatusPane state={runningWith(3)} logLines={["[INFO] hello"]} />);
+    const rowContainer = screen.getByText("doc-0.pdf").closest(".overflow-y-auto");
+    const logContainer = screen.getByText("[INFO] hello").closest(".overflow-y-auto");
+    expect(logContainer).toBe(rowContainer);
+  });
+
+  it("has exactly one scroll region in the card", () => {
+    const { container } = render(<StatusPane state={runningWith(3)} logLines={["[INFO] hello"]} />);
+    expect(container.querySelectorAll(".overflow-y-auto")).toHaveLength(1);
   });
 
   it("follows new rows when already near the bottom", () => {
@@ -86,6 +98,14 @@ describe("StatusPane scrolling", () => {
     const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
     primeScroll(container, { scrollTop: 0, scrollHeight: 600, clientHeight: 60 });
     rerender(<StatusPane state={{ ...runningWith(5), runId: "r2" } as RunStateSnapshot} logLines={[]} />);
+    expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("follows new log lines when already near the bottom", () => {
+    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={["[INFO] one"]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 560, scrollHeight: 600, clientHeight: 60 });
+    rerender(<StatusPane state={runningWith(10)} logLines={["[INFO] one", "[INFO] two"]} />);
     expect(container.scrollTop).toBe(container.scrollHeight);
   });
 
