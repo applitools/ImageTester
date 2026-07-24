@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  /* Always show the page scrollbar so opening the Options drawer (which makes
+     the page scrollable) doesn't shrink the viewport and shift the layout left. */
+  html {
+    overflow-y: scroll;
+  }
+
   /* Every interactive element gets this ring on keyboard focus - components
      must not silently remove the outline without it. */
   *:focus-visible {
