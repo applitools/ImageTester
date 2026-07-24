@@ -186,7 +186,15 @@ export function App() {
           />
           {runError && <p role="alert" className="text-sm text-rose-700">{runError}</p>}
         </div>
-        <StatusPane state={snapshot} logLines={logLines} />
+        {/* md:relative + md:absolute/md:inset-0: at md+ this cell contributes zero
+            height to the grid row, so Status always matches the Setup column's
+            natural height. Below md it flows normally (StatusPane's own mobile
+            max-h fallback caps its scroll panel instead). */}
+        <div className="md:relative">
+          <div className="md:absolute md:inset-0">
+            <StatusPane state={snapshot} logLines={logLines} />
+          </div>
+        </div>
       </div>
       {drawerOpen && (
         <div className="mt-6">

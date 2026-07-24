@@ -8,7 +8,7 @@ describe("StatusPane", () => {
     expect(screen.getByText(/pick a source/i)).toBeInTheDocument();
   });
 
-  it("renders running tests", () => {
+  it("renders running tests on the Tests tab", () => {
     const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "pass", durationMs: 42 }, { name: "b.pdf", status: "running" }] };
     render(<StatusPane state={s} logLines={[]} />);
     expect(screen.getByText("a.png")).toBeInTheDocument();
@@ -22,18 +22,63 @@ describe("StatusPane", () => {
     expect(screen.getByText(/1 failed/i)).toBeInTheDocument();
   });
 
-  it("shows log by default and hides it when toggled", () => {
-    render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
-    expect(screen.getByText("[INFO] hello")).toBeInTheDocument();
-    fireEvent.click(screen.getByText(/show log/i));
-    expect(screen.queryByText("[INFO] hello")).not.toBeInTheDocument();
-  });
-
   it("shows cleaned-files summary for a watermark-out run", () => {
     render(<StatusPane state={{ kind: "done", runId: "r", tests: [], passed: 0, failed: 0, durationMs: 10, outputDir: "/out", fileCount: 4 }} logLines={[]} />);
     expect(screen.getByText(/Cleaned 4/)).toBeInTheDocument();
     expect(screen.getByText("/out")).toBeInTheDocument();
     expect(screen.queryByText(/0 passed/i)).not.toBeInTheDocument();
+  });
+
+  it("does not render log content while the Tests tab is active", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
+    expect(screen.queryByText("[INFO] hello")).not.toBeInTheDocument();
+  });
+});
+
+describe("StatusPane tabs", () => {
+  it("renders a tablist with a Tests tab and a Log tab", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={[]} />);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Tests", "Log"]);
+  });
+
+  it("marks the Tests tab as selected by default", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={[]} />);
+    expect(screen.getByRole("tab", { name: "Tests" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("marks the Log tab as unselected by default", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={[]} />);
+    expect(screen.getByRole("tab", { name: "Log" })).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("flips aria-selected to the Log tab when it is clicked", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={[]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    expect(screen.getByRole("tab", { name: "Log" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("shows the log content when the Log tab is active", () => {
+    render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    expect(screen.getByText("[INFO] hello")).toBeInTheDocument();
+  });
+
+  it("hides the Tests panel content when the Log tab is active", () => {
+    const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "pass", durationMs: 42 }] };
+    render(<StatusPane state={s} logLines={[]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    expect(screen.queryByText("a.png")).not.toBeInTheDocument();
+  });
+
+  it("renders exactly one scroll region on the Tests tab", () => {
+    const { container } = render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
+    expect(container.querySelectorAll(".overflow-y-auto")).toHaveLength(1);
+  });
+
+  it("renders exactly one scroll region on the Log tab", () => {
+    const { container } = render(<StatusPane state={{ kind: "idle" }} logLines={["[INFO] hello"]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    expect(container.querySelectorAll(".overflow-y-auto")).toHaveLength(1);
   });
 });
 
@@ -53,28 +98,16 @@ describe("StatusPane scrolling", () => {
     fireEvent.scroll(container);
   }
 
-  it("renders the test rows inside a height-capped scroll container", () => {
+  it("renders the test rows inside a scroll panel capped on mobile", () => {
     render(<StatusPane state={runningWith(3)} logLines={[]} />);
     const row = screen.getByText("doc-0.pdf");
     const container = row.closest(".overflow-y-auto");
-    expect(container).toHaveClass("max-h-[60vh]");
+    expect(container).toHaveClass("max-h-[60vh]", "md:max-h-none", "flex-1");
   });
 
   it("still renders every row inside the scroll container", () => {
     render(<StatusPane state={runningWith(40)} logLines={[]} />);
     expect(screen.getAllByText(/doc-\d+\.pdf/)).toHaveLength(40);
-  });
-
-  it("renders the log inside the same scroll container as the rows", () => {
-    render(<StatusPane state={runningWith(3)} logLines={["[INFO] hello"]} />);
-    const rowContainer = screen.getByText("doc-0.pdf").closest(".overflow-y-auto");
-    const logContainer = screen.getByText("[INFO] hello").closest(".overflow-y-auto");
-    expect(logContainer).toBe(rowContainer);
-  });
-
-  it("has exactly one scroll region in the card", () => {
-    const { container } = render(<StatusPane state={runningWith(3)} logLines={["[INFO] hello"]} />);
-    expect(container.querySelectorAll(".overflow-y-auto")).toHaveLength(1);
   });
 
   it("follows new rows when already near the bottom", () => {
@@ -101,17 +134,35 @@ describe("StatusPane scrolling", () => {
     expect(container.scrollTop).toBe(container.scrollHeight);
   });
 
-  it("follows new log lines when already near the bottom", () => {
-    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={["[INFO] one"]} />);
-    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
-    primeScroll(container, { scrollTop: 560, scrollHeight: 600, clientHeight: 60 });
-    rerender(<StatusPane state={runningWith(10)} logLines={["[INFO] one", "[INFO] two"]} />);
-    expect(container.scrollTop).toBe(container.scrollHeight);
-  });
-
   it("makes the scroll region keyboard-focusable", () => {
     render(<StatusPane state={runningWith(3)} logLines={[]} />);
     const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
     expect(container).toHaveAttribute("tabindex", "0");
+  });
+});
+
+describe("StatusPane log scrolling", () => {
+  function runningWith(n: number): RunStateSnapshot {
+    return {
+      kind: "running",
+      runId: "r1",
+      tests: Array.from({ length: n }, (_, i) => ({ name: `doc-${i}.pdf`, status: "running" as const })),
+    } as RunStateSnapshot;
+  }
+
+  function primeScroll(container: HTMLElement, { scrollTop, scrollHeight, clientHeight }: { scrollTop: number; scrollHeight: number; clientHeight: number }) {
+    Object.defineProperty(container, "scrollHeight", { configurable: true, value: scrollHeight });
+    Object.defineProperty(container, "clientHeight", { configurable: true, value: clientHeight });
+    container.scrollTop = scrollTop;
+    fireEvent.scroll(container);
+  }
+
+  it("follows new log lines when already near the bottom", () => {
+    const { rerender } = render(<StatusPane state={runningWith(10)} logLines={["[INFO] one"]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    const container = screen.getByText("[INFO] one").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 560, scrollHeight: 600, clientHeight: 60 });
+    rerender(<StatusPane state={runningWith(10)} logLines={["[INFO] one", "[INFO] two"]} />);
+    expect(container.scrollTop).toBe(container.scrollHeight);
   });
 });
