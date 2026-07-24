@@ -139,6 +139,16 @@ describe("StatusPane scrolling", () => {
     const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
     expect(container).toHaveAttribute("tabindex", "0");
   });
+
+  it("restores the Tests panel scroll position after switching tabs and back", () => {
+    render(<StatusPane state={runningWith(10)} logLines={[]} />);
+    const container = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    primeScroll(container, { scrollTop: 100, scrollHeight: 600, clientHeight: 60 });
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Tests" }));
+    const restored = screen.getByText("doc-0.pdf").closest(".overflow-y-auto") as HTMLElement;
+    expect(restored.scrollTop).toBe(100);
+  });
 });
 
 describe("StatusPane log scrolling", () => {
@@ -164,5 +174,12 @@ describe("StatusPane log scrolling", () => {
     primeScroll(container, { scrollTop: 560, scrollHeight: 600, clientHeight: 60 });
     rerender(<StatusPane state={runningWith(10)} logLines={["[INFO] one", "[INFO] two"]} />);
     expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("makes the Log panel keyboard-focusable", () => {
+    render(<StatusPane state={runningWith(3)} logLines={["[INFO] hello"]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Log" }));
+    const container = screen.getByText("[INFO] hello").closest(".overflow-y-auto") as HTMLElement;
+    expect(container).toHaveAttribute("tabindex", "0");
   });
 });

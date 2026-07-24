@@ -30,40 +30,65 @@ export function StatusPane({ state, logLines }: Props) {
   // appends content, so scrolling up to inspect earlier output is never overridden.
   const testsWasNearBottomRef = useRef(true);
   const logWasNearBottomRef = useRef(true);
+  // Tab switching unmounts the inactive panel, so its scroll offset can't just live
+  // on the DOM node — it has to be saved here and reapplied on remount, or switching
+  // away and back would silently reset a mid-run inspection position to the top.
+  const testsScrollTopRef = useRef(0);
+  const logScrollTopRef = useRef(0);
 
   const handleTestsScroll = () => {
     const el = testsPanelRef.current;
-    if (el) testsWasNearBottomRef.current = isNearBottom(el);
+    if (!el) return;
+    testsWasNearBottomRef.current = isNearBottom(el);
+    testsScrollTopRef.current = el.scrollTop;
   };
 
   const handleLogScroll = () => {
     const el = logPanelRef.current;
-    if (el) logWasNearBottomRef.current = isNearBottom(el);
+    if (!el) return;
+    logWasNearBottomRef.current = isNearBottom(el);
+    logScrollTopRef.current = el.scrollTop;
   };
 
   const runId = state.kind === "running" ? state.runId : null;
-  // A new run starts fresh content in both tabs; re-arm auto-follow regardless of
-  // where the user left either tab's scroll position on the previous run.
+  // A new run starts fresh content in both tabs; re-arm auto-follow and drop any
+  // saved position regardless of where the user left either tab on the prior run.
   useEffect(() => {
     if (runId === null) return;
     testsWasNearBottomRef.current = true;
     logWasNearBottomRef.current = true;
+    testsScrollTopRef.current = 0;
+    logScrollTopRef.current = 0;
   }, [runId]);
 
-  // activeTab is a dependency (not just a guard) so switching tabs re-checks the
-  // freshly mounted panel — it starts at scrollTop 0 and needs to jump to the
-  // bottom immediately if that panel's content should already be following.
   useEffect(() => {
     const el = testsPanelRef.current;
     if (!el || state.kind !== "running") return;
     if (testsWasNearBottomRef.current) el.scrollTop = el.scrollHeight;
-  }, [testCount, state.kind, activeTab]);
+  }, [testCount, state.kind]);
 
   useEffect(() => {
     const el = logPanelRef.current;
     if (!el || state.kind !== "running") return;
     if (logWasNearBottomRef.current) el.scrollTop = el.scrollHeight;
-  }, [logLines.length, state.kind, activeTab]);
+  }, [logLines.length, state.kind]);
+
+  // Tab switch remounts the panel at scrollTop 0; restore wherever the user left
+  // it — the bottom if they were following (the effects above already cover that
+  // case while a panel stays mounted, but a fresh mount needs its own nudge here
+  // too), or their saved inspection position otherwise. The two branches are
+  // mutually exclusive with the follow effects above, so they never fight.
+  useEffect(() => {
+    const el = testsPanelRef.current;
+    if (!el) return;
+    el.scrollTop = testsWasNearBottomRef.current ? el.scrollHeight : testsScrollTopRef.current;
+  }, [activeTab]);
+
+  useEffect(() => {
+    const el = logPanelRef.current;
+    if (!el) return;
+    el.scrollTop = logWasNearBottomRef.current ? el.scrollHeight : logScrollTopRef.current;
+  }, [activeTab]);
 
   const hasRunning = state.kind === "running" && state.tests.some((t) => t.status === "running");
   useEffect(() => {
@@ -91,7 +116,6 @@ export function StatusPane({ state, logLines }: Props) {
           role="tabpanel"
           id="status-tests-panel"
           aria-labelledby="status-tests-tab"
-          aria-label="Test results"
           tabIndex={0}
           className={PANEL_CLASS_NAME}
         >
@@ -121,7 +145,6 @@ export function StatusPane({ state, logLines }: Props) {
           role="tabpanel"
           id="status-log-panel"
           aria-labelledby="status-log-tab"
-          aria-label="Log"
           tabIndex={0}
           className={PANEL_CLASS_NAME}
         >
