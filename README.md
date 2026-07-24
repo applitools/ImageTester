@@ -1,26 +1,47 @@
 # Image Tester [ ![Download](https://img.shields.io/github/v/tag/applitools/ImageTester?label=Download&style=plastic) ](https://github.com/applitools/ImageTester/releases/latest)
 
-ImageTester is a Cli tool to perform visual tests on images, PDF files, Office files, and more!
+ImageTester is a tool to perform visual tests on images, PDF files, Office files, and more!
+Point it at a single file or an entire folder tree and it uploads every image and document page
+to Applitools Eyes for baseline comparison and diff detection.
 
 If you don't have your Applitools account yet, 
-please [sign up first]("https://applitools.com/sign-up/") 
+please [sign up first](https://applitools.com/sign-up/) 
 and get your Applitools api-key that will be used next to execute the tests.
 
-## ImageTester GUI (beta)
+## ImageTester GUI
 
-Prefer an app over the command line? Download the ImageTester GUI installer for your OS from the
-[latest release](https://github.com/applitools/ImageTester/releases) — Windows (`.msi`),
-macOS (`.dmg`, Apple Silicon and Intel), or Linux (`.deb`). Each bundles everything it needs;
-double-click and the app opens in your browser. See the release notes for first-launch
-instructions (demo builds are not yet code-signed, so your OS will ask you to confirm once).
-The GUI checks for new releases on launch and can download and start the installer for you
-with one click.
+The ImageTester GUI is the recommended way to use ImageTester — a full desktop application that
+puts everything ImageTester can do behind a point-and-click interface. No Java to install, no
+terminal, no setup.
 
-Alongside the usual folder/file scan, the GUI has a "Compare two documents" toggle for diffing
-exactly two files directly against each other — see
-[Comparing Two Documents Directly](#comparing-two-documents-directly).
+Download the installer for your OS from the
+[latest release](https://github.com/applitools/ImageTester/releases/latest) — Windows (`.msi`),
+macOS (`.dmg`, Apple Silicon and Intel), or Linux (`.deb`). Each installer bundles everything the
+app needs; double-click and the app opens in your browser.
 
-The tool can be invoked on a single file or a complex folder structure with mixed content.
+Highlights:
+
++ **Run tests in a few clicks** — pick a file or folder, choose a match level, hit Run.
++ **Compare two documents** — a toggle on the Setup card for diffing exactly two files directly
+  against each other; see [Comparing Two Documents Directly](#comparing-two-documents-directly).
++ **Every option, organized** — all of the options documented below are available in the GUI,
+  grouped into tabs that mirror the reference sections in this README; each tab links back to
+  the matching section.
++ **Live progress** — status rows update as tests run, with a thumbnail preview of the image or
+  PDF page being tested.
++ **Stays up to date** — the app checks for new releases on launch and can download, verify, and
+  start the installer for you with one click.
+
+Installers are not yet code-signed, so your OS will ask you to confirm the first launch — the
+release notes walk you through it.
+
+Already have the JAR? The same app is built in — launch it with:
+
+>java -jar ImageTester.jar --gui
+
+## How Tests Are Organized
+
+Whether you run from the GUI or the command line, ImageTester can be invoked on a single file or a complex folder structure with mixed content.
 Once provided a complex folder structure the tool recursively scans the structure and determines on each level what should be the batch-name, 
 the directoryTest-name and the tag values relatively to the target files.  
 For example, given the following folder structure:
@@ -65,8 +86,9 @@ Batch name - A:
 Note that the batch name was derived from the directoryTest name as there is no additional 
 folder level that can be used as batch name.
 
-## Execution
-The tool is built in Java and requires a minimal set of parameters. The minimal command looks as follows:
+## Command Line
+Prefer a terminal, or running in CI? Everything the GUI does is also available from the command
+line. The tool is built in Java and requires a minimal set of parameters. The minimal command looks as follows:
 
 >java -jar ImageTester.jar -k [api-key]
 
@@ -196,6 +218,12 @@ docs/b.pdf|Test3|AppB|||||2-5|200,200,500,500|||
 Sometimes you just want to diff two specific documents against each other — no folder scanning,
 no existing baseline lookup on the dashboard.
 
+In the GUI, this is the "Compare two documents" toggle on the Setup card: it swaps the single
+Source picker for Doc 1 / Doc 2 file pickers and a required Comparison name field (the same
+`-fn` value described below).
+
+On the command line:
+
 + `-doc1 [path]` - First document to compare (image or PDF)
 + `-doc2 [path]` - Second document to compare (image or PDF)
 
@@ -221,10 +249,6 @@ counts don't match — since Eyes resolves baselines by rendered viewport, a mis
 produce new baselines instead of a comparison. The warning suggests remedies like `-sp`, `-ms`,
 `-vs`, or `-tp`. The run is blocked outright for a corrupt document, a password-protected PDF
 without `-pp`, or a PDF with no pages.
-
-In the GUI, this is the "Compare two documents" toggle on the Setup card: it swaps the single
-Source picker for Doc 1 / Doc 2 file pickers and a required Comparison name field (the same `-fn`
-value, editable from either place).
 
 ### PDF and document options
 Options that apply when testing PDFs and other documents.
@@ -344,10 +368,10 @@ The parameters:
 + `APPLITOOLS_BATCH_ID` - Job id, a unique identifier of the current job.
 
 ## Automatic Update Check
-Both the CLI and the GUI check GitHub's releases once per launch and let you know when a newer
-version is available — the CLI prints a one-line note to stderr, the GUI shows a banner with a
-one-click install button (downloaded to your Downloads folder and verified against the release's
-checksum) when running as an installed app.
+Both the GUI and the CLI check GitHub's releases once per launch and let you know when a newer
+version is available — the GUI shows a banner with a one-click install button (downloaded to
+your Downloads folder and verified against the release's checksum) when running as an installed
+app, and the CLI prints a one-line note to stderr.
 
 Set `IMAGETESTER_SKIP_UPDATE_CHECK=1` to disable it entirely — useful for CI runs or air-gapped
 environments where the outbound network call to GitHub isn't wanted.
