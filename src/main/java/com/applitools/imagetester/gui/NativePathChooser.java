@@ -97,11 +97,29 @@ public final class NativePathChooser {
         return (parent != null && parent.isDirectory()) ? parent : null;
     }
 
+    /** Last directory a pick succeeded in; session-scoped so consecutive picks start where the user left off. */
+    private static volatile File lastDir;
+
+    /** The hint wins so re-picking a filled field starts at that field's path; otherwise the last visited directory. */
+    static File startDir(String hint) {
+        File fromHint = resolveStartDir(hint);
+        if (fromHint != null) return fromHint;
+        File last = lastDir;
+        return (last != null && last.isDirectory()) ? last : null;
+    }
+
+    /** Remembers where a pick succeeded: the chosen folder itself, or the chosen file's parent. */
+    static void rememberLastDir(String chosenPath) {
+        lastDir = resolveStartDir(chosenPath);
+    }
+
+    static void resetLastDirForTest() { lastDir = null; }
+
     private static String choose(boolean folder, String startPath) {
         ensureLookAndFeel();
         System.out.println("[NativePathChooser] choose folder=" + folder + " edt=" + SwingUtilities.isEventDispatchThread() + " start=" + startPath);
         AtomicReference<String> result = new AtomicReference<>();
-        File startDir = resolveStartDir(startPath);
+        File startDir = startDir(startPath);
         Runnable task = () -> {
             // Anchor a 1px, always-on-top, focusable frame so the file dialog inherits
             // its z-order and comes to the foreground — without a real owner the OS leaves the
@@ -153,6 +171,8 @@ public final class NativePathChooser {
             System.out.println("[NativePathChooser] exception: " + e);
             return null;
         }
-        return result.get();
+        String chosen = result.get();
+        if (chosen != null) rememberLastDir(chosen);
+        return chosen;
     }
 }
