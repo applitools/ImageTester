@@ -17,12 +17,12 @@ public final class TokenAuthFilter implements Filter {
     private static final String BEARER = "Bearer ";
     private final GuiToken token_;
     private final List<String> allowedHosts_;
-    private final String allowedOrigin_;
+    private final List<String> allowedOrigins_;
 
     public TokenAuthFilter(GuiToken token, int port) {
         this.token_ = token;
         this.allowedHosts_ = Arrays.asList("localhost:" + port, "127.0.0.1:" + port);
-        this.allowedOrigin_ = "http://localhost:" + port;
+        this.allowedOrigins_ = Arrays.asList("http://localhost:" + port, "http://127.0.0.1:" + port);
     }
 
     @Override
@@ -44,7 +44,7 @@ public final class TokenAuthFilter implements Filter {
         }
 
         String origin = req.getHeader("Origin");
-        if (origin != null && !origin.equals(allowedOrigin_)) {
+        if (origin != null && !allowedOrigins_.contains(origin)) {
             resp.setStatus(403);
             return;
         }

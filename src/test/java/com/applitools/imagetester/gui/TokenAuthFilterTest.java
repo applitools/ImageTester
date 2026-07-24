@@ -76,6 +76,16 @@ public class TokenAuthFilterTest {
     }
 
     @Test
+    public void acceptsApiRequestWithLoopbackIpOrigin() throws Exception {
+        when(req.getRequestURI()).thenReturn("/api/status");
+        when(req.getHeader("Authorization")).thenReturn("Bearer " + token.value());
+        when(req.getHeader("Host")).thenReturn("127.0.0.1:" + port);
+        when(req.getHeader("Origin")).thenReturn("http://127.0.0.1:" + port);
+        filter.doFilter(req, resp, chain);
+        verify(chain).doFilter(req, resp);
+    }
+
+    @Test
     public void allowsNonApiPathsWithoutToken() throws Exception {
         when(req.getRequestURI()).thenReturn("/index.html");
         filter.doFilter(req, resp, chain);
