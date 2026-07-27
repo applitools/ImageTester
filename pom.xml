@@ -62,7 +62,7 @@
 		<dependency>
 			<groupId>com.applitools</groupId>
 			<artifactId>eyes-universal-core-arm</artifactId>
-			<version>5.77.10</version>
+			<version>5.77.36</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
