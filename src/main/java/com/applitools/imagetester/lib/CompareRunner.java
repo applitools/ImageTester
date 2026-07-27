@@ -36,6 +36,16 @@ public final class CompareRunner {
     }
 
     public static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory) throws IOException {
+        return run(doc1, doc2, config, factory, () -> false);
+    }
+
+    /**
+     * Cancellation is soft: {@code isCancelled} is polled between tests and between documents,
+     * never mid-test — interrupting an in-flight Eyes call corrupts the shared universal-core
+     * session and breaks the next run.
+     */
+    public static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory,
+                                    java.util.function.BooleanSupplier isCancelled) throws IOException {
         // GUI runs also precheck in RunController.start; this gate stays so the CLI -doc1/-doc2
         // path is covered -- don't deduplicate.
         for (PdfComparePrechecker.Finding finding
@@ -51,11 +61,18 @@ public final class CompareRunner {
 
         boolean hasAccessibilityValidation = factory.hasAccessibilityValidation();
 
+        if (isCancelled.getAsBoolean()) return new CompareResult(null, null);
+
         config.logger.printMessage(String.format("Comparing Doc 1 (baseline): %s%n", doc1.getName()));
-        TestResults doc1Result = runAllSequentially(buildTests(doc1, config), factory, config, hasAccessibilityValidation);
+        TestResults doc1Result = runAllSequentially(buildTests(doc1, config), factory, config, hasAccessibilityValidation, isCancelled);
+
+        if (isCancelled.getAsBoolean()) {
+            config.logger.printMessage(String.format("Run cancelled — skipping Doc 2%n"));
+            return new CompareResult(doc1Result, null);
+        }
 
         config.logger.printMessage(String.format("Comparing Doc 2: %s%n", doc2.getName()));
-        TestResults doc2Result = runAllSequentially(buildTests(doc2, config), factory, config, hasAccessibilityValidation);
+        TestResults doc2Result = runAllSequentially(buildTests(doc2, config), factory, config, hasAccessibilityValidation, isCancelled);
 
         if (config.shouldThrowException && doc2Result != null && doc2Result.isDifferent()) {
             throw new DiffsFoundException(doc2Result, doc2Result.getId(), doc2Result.getName());
@@ -101,9 +118,12 @@ public final class CompareRunner {
      * calls, which CompareRunner would otherwise silently skip by not going through TestExecutor
      * at all - the log pane would show nothing for either document without this.
      */
-    private static TestResults runAllSequentially(List<TestBase> tests, EyesFactory factory, Config config, boolean hasAccessibilityValidation) {
+    private static TestResults runAllSequentially(List<TestBase> tests, EyesFactory factory, Config config,
+                                                  boolean hasAccessibilityValidation,
+                                                  java.util.function.BooleanSupplier isCancelled) {
         TestResults last = null;
         for (TestBase test : tests) {
+            if (isCancelled.getAsBoolean()) break;
             long startNanos = System.nanoTime();
             Eyes eyes = factory.build();
             TestResults result = test.runSafe(eyes);

@@ -39,4 +39,34 @@ describe("App run error", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toBeInTheDocument();
   });
+
+  it("re-syncs to the backend's in-flight run when api run returns 409", async () => {
+    let runRejected = false;
+    globalThis.fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+      const path = url.toString();
+      if (path.endsWith("/api/secret/api-key") && (!init?.method || init.method === "GET")) {
+        return new Response(JSON.stringify({ hasKey: true }), { status: 200 });
+      }
+      if (path.endsWith("/api/run") && init?.method === "POST") {
+        runRejected = true;
+        return new Response(JSON.stringify({ error: "A run is already in progress." }), { status: 409 });
+      }
+      if (path.endsWith("/api/status")) {
+        const snapshot = runRejected
+          ? { kind: "running", runId: "r-9", tests: [{ name: "inflight.pdf", status: "running" }] }
+          : { kind: "idle" };
+        return new Response(JSON.stringify(snapshot), { status: 200 });
+      }
+      return new Response(JSON.stringify({ kind: "idle" }), { status: 200 });
+    };
+
+    render(<App />);
+
+    const runBtn = await screen.findByRole("button", { name: /run test/i });
+    await waitFor(() => expect(runBtn).not.toBeDisabled(), { timeout: 3000 });
+
+    fireEvent.click(runBtn);
+
+    expect(await screen.findByText(/inflight\.pdf/)).toBeInTheDocument();
+  });
 });

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+- GUI: Cancel now works during "Compare two documents" runs — it stops the comparison at the next safe point (in-flight uploads are allowed to settle) instead of silently doing nothing
+- GUI: clicking Cancel keeps the live run on screen with a "Cancelling…" state until the backend confirms, instead of pretending the run stopped — this removes the "409: A run is already in progress" loop on the next Run click
+- GUI: tests that never completed (e.g. a cancelled comparison) are now shown as cancelled (⊘) instead of spinning forever
+- GUI: if Run is rejected because a run is already in progress, the Status pane now re-syncs to show that in-flight run
+
 ## 3.16.0 - 2026/7/21
 - New: Compare two documents directly against each other, without scanning a folder — `-doc1`/`-doc2` on the CLI, or the "Compare two documents" toggle in the GUI
 - GUI: automatic update check with a one-click installer download from the app

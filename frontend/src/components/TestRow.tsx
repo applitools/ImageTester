@@ -14,7 +14,7 @@ function previewUrl(path: string): string {
 export function TestRow({ row, now }: Props) {
   const [preview1Failed, setPreview1Failed] = useState(false);
   const [preview2Failed, setPreview2Failed] = useState(false);
-  const icon = row.status === "running" ? "⟳" : row.status === "pass" ? "✓" : "✕";
+  const icon = row.status === "running" ? "⟳" : row.status === "pass" ? "✓" : row.status === "cancelled" ? "⊘" : "✕";
   const tone = row.status === "pass" ? "text-emerald-700" : row.status === "fail" ? "text-rose-700" : "text-gray-600";
   const showPreview1 = row.previewPath && !preview1Failed;
   const showPreview2 = row.doc2PreviewPath && !preview2Failed;

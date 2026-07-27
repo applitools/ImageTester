@@ -46,7 +46,7 @@ public abstract class RunState {
 
     public static final class TestRow {
         public final String name;
-        public String status;  // "running" | "pass" | "fail"
+        public String status;  // "running" | "pass" | "fail" | "cancelled"
         public Long durationMs;
         public String dashboardUrl;
         public String previewPath;

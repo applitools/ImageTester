@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -74,6 +75,9 @@ public final class RunController {
     private final RunConfigBuilder factoryBuilder_;
     private final AtomicReference<RunState> state_ = new AtomicReference<>(RunState.Idle.INSTANCE);
     private final AtomicReference<TestExecutor> currentExecutor_ = new AtomicReference<>();
+    // Compare runs don't go through a TestExecutor, so they register a plain flag that
+    // CompareRunner polls at its safe checkpoints (between tests / between documents).
+    private final AtomicReference<AtomicBoolean> compareCancel_ = new AtomicReference<>();
     private final AtomicReference<Path> currentSourceRoot_ = new AtomicReference<>();
     // Compare mode has no single root to prefix-check (doc1/doc2 can live in unrelated
     // directories), so it authorizes previews by exact canonical file path instead.
@@ -181,9 +185,10 @@ public final class RunController {
     }
 
     public void cancel() {
+        AtomicBoolean compareCancel = compareCancel_.get();
+        if (compareCancel != null) compareCancel.set(true);
         TestExecutor executor = currentExecutor_.get();
-        if (executor == null) return;
-        executor.cancel();
+        if (executor != null) executor.cancel();
     }
 
     private void executeRun(File source, RunRequest req, String apiKey, RunConfig rc, Logger logger, RunState.Running running) {
@@ -290,12 +295,16 @@ public final class RunController {
         currentSourceRoot_.set(null);
         currentComparePaths_.set(canonicalPathsOf(doc1, doc2));
 
+        AtomicBoolean cancelled = new AtomicBoolean(false);
+        compareCancel_.set(cancelled);
+
         int passed = 0, failed = 0;
         try {
             String name = config.forcedName;
             runStream_.emit(new SseEvent.TestStarted(name, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
-            CompareRunner.CompareResult result = CompareRunner.run(doc1, doc2, config, rc.factory);
-            String status = result.doc2Result != null && result.doc2Result.isDifferent() ? "fail" : "pass";
+            CompareRunner.CompareResult result = CompareRunner.run(doc1, doc2, config, rc.factory, cancelled::get);
+            String status = cancelled.get() ? "cancelled"
+                    : result.doc2Result != null && result.doc2Result.isDifferent() ? "fail" : "pass";
             String dashboard = result.doc2Result != null ? result.doc2Result.getUrl() : null;
             long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
             runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
@@ -306,6 +315,8 @@ public final class RunController {
         } catch (Throwable t) {
             config.logger.reportException(t);
         } finally {
+            compareCancel_.set(null);
+            if (cancelled.get()) config.logger.printMessage("Run cancelled" + System.lineSeparator());
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
                 if ("pass".equals(r.status)) passed++;

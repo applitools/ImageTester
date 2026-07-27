@@ -193,6 +193,28 @@ public class CompareRunnerTest {
     }
 
     @Test
+    public void cancelledBeforeStartRunsNoTests() throws Exception {
+        File doc1 = pngFile(tmp, "doc1.png");
+        File doc2 = pngFile(tmp, "doc2.png");
+        OrderingFactory of = new OrderingFactory(new ArrayList<>());
+
+        CompareRunner.run(doc1, doc2, config("cmp"), of.factory(), () -> true);
+
+        assertTrue("a pre-cancelled run must make no Eyes calls, got: " + of.log, of.log.isEmpty());
+    }
+
+    @Test
+    public void cancelledAfterDoc1SkipsDoc2() throws Exception {
+        File doc1 = pngFile(tmp, "doc1.png");
+        File doc2 = pngFile(tmp, "doc2.png");
+        OrderingFactory of = new OrderingFactory(java.util.Arrays.asList(passedResult(), passedResult()));
+
+        CompareRunner.run(doc1, doc2, config("cmp"), of.factory(), () -> of.log.contains("close-0"));
+
+        assertTrue("doc2 must not open after cancel, got: " + of.log, !of.log.contains("open-1"));
+    }
+
+    @Test
     public void unsupportedFileTypeThrowsClearErrorBeforeAnyEyesCall() throws Exception {
         File doc1 = tmp.newFile("doc1.txt");
         File doc2 = pngFile(tmp, "doc2.png");

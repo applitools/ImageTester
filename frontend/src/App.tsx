@@ -44,8 +44,12 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
         : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath, doc2PreviewPath: e.doc2PreviewPath }];
       return { ...state, tests };
     }
-    case "run-finished":
-      return { kind: "done", runId: state.runId, tests: state.tests, passed: e.passed, failed: e.failed, durationMs: e.durationMs };
+    case "run-finished": {
+      // A row still "running" here means its test never completed (e.g. a cancelled compare) —
+      // carrying it into "done" as-is would leave a spinner ticking forever.
+      const settled = state.tests.map((t): TestRow => t.status === "running" ? { ...t, status: "cancelled" } : t);
+      return { kind: "done", runId: state.runId, tests: settled, passed: e.passed, failed: e.failed, durationMs: e.durationMs };
+    }
     case "watermark-cleaned":
       return { kind: "done", runId: state.runId, tests: state.tests, passed: 0, failed: 0, durationMs: e.durationMs, outputDir: e.outputDir, fileCount: e.fileCount };
     default:
@@ -64,11 +68,18 @@ export function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [logLines, setLogLines] = useState<string[]>([]);
   const [runError, setRunError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [doc1UploadError, setDoc1UploadError] = useState<string | null>(null);
   const [doc2UploadError, setDoc2UploadError] = useState<string | null>(null);
   const [precheckFindings, setPrecheckFindings] = useState<PrecheckFinding[]>([]);
   const precheckSeq = useRef(0);
   const esRef = useRef<SseHandle | null>(null);
+
+  // The backend's cancel is soft — the run stays alive until in-flight tests settle — so the
+  // "Cancelling…" state must persist until run-finished flips the snapshot out of "running".
+  useEffect(() => {
+    if (snapshot.kind !== "running") setCancelling(false);
+  }, [snapshot.kind]);
 
   const setOption = (flag: string, value: unknown) => {
     setOptions((prev) => { const next = { ...prev, [flag]: value }; saveOptions(next); return next; });
@@ -144,6 +155,7 @@ export function App() {
             sourcePath={sourcePath}
             matchLevel={(options.ml as MatchLevel) ?? "Strict"}
             running={snapshot.kind === "running"}
+            cancelling={cancelling}
             optionsCount={countNonDefault(options)}
             drawerOpen={drawerOpen}
             compareMode={compareMode}
@@ -173,15 +185,21 @@ export function App() {
                 const r = await api.run(payload);
                 dispatch({ type: "set", snapshot: { kind: "running", runId: r.runId, tests: [] } });
               } catch (err) {
-                setRunError(err instanceof Error ? err.message : String(err));
+                const message = err instanceof Error ? err.message : String(err);
+                setRunError(message);
+                // 409 means the backend still has a live run this tab doesn't know about —
+                // re-sync so the pane shows that run instead of a stale idle view.
+                if (message.startsWith("409")) {
+                  api.status().then((s) => dispatch({ type: "set", snapshot: s as RunStateSnapshot })).catch(() => {});
+                }
               }
             }}
             onCancel={() => {
-              api.cancel();
-              // Wipe the right pane immediately — the user expects a clean slate, not a frozen final state.
-              // The reducer ignores SSE events when not in "running", so any in-flight test-finished is dropped.
-              dispatch({ type: "set", snapshot: { kind: "idle" } });
-              setLogLines([]);
+              api.cancel().catch(() => {});
+              // Cancel is soft on the backend (in-flight Eyes tests settle first), so keep showing
+              // the live run until run-finished arrives — faking idle here would re-enable Run
+              // against a still-busy backend and turn every click into a 409.
+              setCancelling(true);
             }}
           />
           {runError && <p role="alert" className="text-sm text-rose-700">{runError}</p>}
