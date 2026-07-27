@@ -129,6 +129,78 @@ public class PdfFileTestTest {
     }
 
     @Test
+    public void cancelAfterFirstPage_checksNoFurtherPages() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger checks = new java.util.concurrent.atomic.AtomicInteger();
+        doAnswer(inv -> { checks.incrementAndGet(); return null; })
+                .when(mockEyes).check(anyString(), ArgumentMatchers.any(ICheckSettings.class));
+        config.cancelRequested = () -> checks.get() >= 1;
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-10-page.pdf"), config);
+
+        test.run(mockEyes);
+
+        verify(mockEyes, times(1)).check(anyString(), ArgumentMatchers.any(ICheckSettings.class));
+    }
+
+    @Test
+    public void cancelAfterFirstPage_neverClosesSoTheTestIsAborted() throws Exception {
+        java.util.concurrent.atomic.AtomicInteger checks = new java.util.concurrent.atomic.AtomicInteger();
+        doAnswer(inv -> { checks.incrementAndGet(); return null; })
+                .when(mockEyes).check(anyString(), ArgumentMatchers.any(ICheckSettings.class));
+        config.cancelRequested = () -> checks.get() >= 1;
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-10-page.pdf"), config);
+
+        test.run(mockEyes);
+
+        verify(mockEyes, never()).close(anyBoolean());
+    }
+
+    @Test
+    public void cancelAfterFirstPage_pipelinedRender_neverCloses() throws Exception {
+        config.renderThreads = 2;
+        java.util.concurrent.atomic.AtomicInteger checks = new java.util.concurrent.atomic.AtomicInteger();
+        doAnswer(inv -> { checks.incrementAndGet(); return null; })
+                .when(mockEyes).check(anyString(), ArgumentMatchers.any(ICheckSettings.class));
+        config.cancelRequested = () -> checks.get() >= 1;
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-10-page.pdf"), config);
+
+        test.run(mockEyes);
+
+        verify(mockEyes, never()).close(anyBoolean());
+    }
+
+    @Test
+    public void cancelledRunSafe_neverCallsTheBlockingAbort() {
+        // Aborting a cancelled test hangs/wedges the shared universal core (sync abort blocks
+        // this thread; async abort breaks the next run's makeManager) — the session must be
+        // abandoned untouched and left to time out server-side.
+        config.cancelRequested = () -> true;
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-10-page.pdf"), config);
+
+        test.runSafe(mockEyes);
+
+        verify(mockEyes, never()).abortIfNotClosed();
+    }
+
+    @Test
+    public void cancelledRunSafe_neverCallsTheAsyncAbortEither() {
+        config.cancelRequested = () -> true;
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-10-page.pdf"), config);
+
+        test.runSafe(mockEyes);
+
+        verify(mockEyes, never()).abortAsync();
+    }
+
+    @Test
+    public void normalRunSafe_stillAbortsSynchronously() {
+        PdfFileTest test = new PdfFileTest(new File(FIXTURES, "valid-2-page.pdf"), config);
+
+        test.runSafe(mockEyes);
+
+        verify(mockEyes).abortIfNotClosed();
+    }
+
+    @Test
     public void name_withPageNumbers_includesPagesInName() {
         config.pages = "1-3";
         config.includePageNumbers = true;

@@ -127,7 +127,9 @@ public final class CompareRunner {
             long startNanos = System.nanoTime();
             Eyes eyes = factory.build();
             TestResults result = test.runSafe(eyes);
-            eyes.abortIfNotClosed();
+            // runSafe already aborted a cancelled test asynchronously; the synchronous
+            // abort here would block on the core's never-arriving results.
+            if (!isCancelled.getAsBoolean()) eyes.abortIfNotClosed();
             if (eyes.getBatch() != null) config.addBatchIdToCloseList(eyes.getBatch().getId());
             eyes.setBatch(null);
             if (test instanceof IDisposable) ((IDisposable) test).dispose();

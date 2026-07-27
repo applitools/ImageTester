@@ -39,6 +39,10 @@ public class PdfFileTest extends DocumentTestBase {
                 pageList_ = Utils.generateRange(document.getNumberOfPages() + 1, 1);
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             for (Integer page : pageList_) {
+                // Cancellation checkpoint: returning without close() lets runSafe's
+                // abortIfNotClosed discard the in-flight test, so a cancelled run
+                // never saves a partial baseline.
+                if (config().cancelRequested.getAsBoolean()) return null;
                 try {
                     BufferedImage bim = PdfPageRenderer.render(
                             document.getPage(page - 1), page - 1, pdfRenderer, config());
@@ -47,6 +51,7 @@ public class PdfFileTest extends DocumentTestBase {
                     logger().reportException(e, file().getAbsolutePath());
                 }
             }
+            if (config().cancelRequested.getAsBoolean()) return null;
             return eyes.close(false);
         }
     }
@@ -62,6 +67,9 @@ public class PdfFileTest extends DocumentTestBase {
 
         try (PdfRenderPipeline pipeline = new PdfRenderPipeline(file(), config(), pageList_, renderThreads)) {
             while (pipeline.hasNext()) {
+                // Same cancellation checkpoint as runSerial; the try-with-resources
+                // shuts the render pipeline down on the early return.
+                if (config().cancelRequested.getAsBoolean()) return null;
                 PdfRenderPipeline.RenderedPage page = pipeline.next();
                 if (page.error != null) {
                     logger().reportException(page.error, file().getAbsolutePath());
@@ -69,6 +77,7 @@ public class PdfFileTest extends DocumentTestBase {
                 }
                 checkPage(eyes, page.pageNumber, page.image);
             }
+            if (config().cancelRequested.getAsBoolean()) return null;
             return eyes.close(false);
         }
     }

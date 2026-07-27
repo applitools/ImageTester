@@ -180,6 +180,42 @@ public class RunControllerTest {
 
     // ---- helpers ----
 
+    @Test
+    public void cancelMidDocumentAbortsInsteadOfFinishingAllPages() throws Exception {
+        java.util.concurrent.atomic.AtomicReference<RunController> ctrl = new java.util.concurrent.atomic.AtomicReference<>();
+        Eyes eyes = mock(Eyes.class);
+        when(eyes.getBatch()).thenReturn(new BatchInfo("t"));
+        when(eyes.getIsOpen()).thenReturn(false, true);
+        // Cancel lands while the document is mid-flight: the first page's check triggers it,
+        // and the per-page checkpoint must abort before the remaining nine pages run —
+        // close() never happening is what keeps the partial baseline from being saved.
+        doAnswer(inv -> { ctrl.get().cancel(); return null; })
+                .when(eyes).check(anyString(), org.mockito.ArgumentMatchers.any(com.applitools.ICheckSettings.class));
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenReturn(eyes);
+        RunController c = newController((req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
+        });
+        ctrl.set(c);
+        c.setSecretApiKey("sk_test");
+
+        File folder = tmp.newFolder("pdfs");
+        java.nio.file.Files.copy(new File("src/test/resources/fixtures/valid-10-page.pdf").toPath(),
+                new File(folder, "doc.pdf").toPath());
+
+        c.start(req(folder, "Strict"));
+        long deadline = System.currentTimeMillis() + 15_000;
+        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+
+        // after(): give the (soft-cancelled, still-draining) worker time to prove it aborts
+        // rather than eventually closing the test.
+        verify(eyes, after(1500).never()).close(anyBoolean());
+    }
+
     private RunController newController(RunController.RunConfigBuilder builder) {
         SecretsStore secrets = SecretsStore.inMemoryForTest();
         return new RunController(secrets, new RunStream(), builder);

@@ -104,7 +104,8 @@ public class Utils {
     }
 
     public static void handleResultsDownload(EyesUtilitiesConfig config, TestResults results) throws Exception {
-        if (config == null) return;
+        // results is null when the test was cancelled/aborted — nothing to download.
+        if (config == null || results == null) return;
         if (config.getDownloadDiffs() || config.getGetGifs() || config.getGetImages()) {
             if (config.getViewKey() == null) throw new RuntimeException("The view-key cannot be null");
             if (config.getDownloadDiffs() && !results.isNew() && !results.isPassed())

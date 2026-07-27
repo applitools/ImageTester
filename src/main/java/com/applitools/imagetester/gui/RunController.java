@@ -263,10 +263,16 @@ public final class RunController {
             factory.logHandlerInstance(new EyesLogBridge(config.logger));
             TestExecutor executor = new TestExecutor(rc.threads, factory, config);
             currentExecutor_.set(executor);
+            // Per-page checkpoint inside long document tests — soft cancel otherwise waits
+            // for every in-flight document to render and upload all of its pages.
+            config.cancelRequested = executor::isCancelled;
             executor.setTestStartedListener(info -> runStream_.emit(new SseEvent.TestStarted(info.name, info.previewPath)));
             executor.setTestCompletionListener(result -> {
-                String name = result.testResult != null ? result.testResult.getName() : "(unknown)";
-                String status = toDisplayStatus(result.testResult);
+                String name = result.testResult != null ? result.testResult.getName()
+                        : result.name != null ? result.name : "(unknown)";
+                // A null result during cancellation is an aborted test, not a crashed one.
+                String status = result.testResult == null && executor.isCancelled()
+                        ? "cancelled" : toDisplayStatus(result.testResult);
                 long ms = TimeUnit.NANOSECONDS.toMillis(result.runTimeNs);
                 String dashboard = result.testResult != null ? result.testResult.getUrl() : null;
                 runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, result.previewPath));
@@ -319,6 +325,9 @@ public final class RunController {
 
         AtomicBoolean cancelled = new AtomicBoolean(false);
         compareCancel_.set(cancelled);
+        // Per-page checkpoint inside each document test — without it, cancel waits for the
+        // whole in-flight document (all pages) before the between-documents checkpoint fires.
+        config.cancelRequested = cancelled::get;
 
         int passed = 0, failed = 0;
         try {

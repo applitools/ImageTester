@@ -79,8 +79,14 @@ public abstract class TestBase implements ITest {
         } catch (Exception e) {
             logger().reportException(e);
         } finally {
-            eyes.abortIfNotClosed();
-            eyes.clearProperties();
+            // A cancelled test's session must be abandoned untouched: aborting it (sync OR
+            // async) wedges the shared universal core — the sync abort hangs this thread in
+            // eyesGetResults, the async one leaves the core unable to serve the next run's
+            // makeManager. Eyes' server times the orphaned session out; nothing is saved.
+            if (!conf_.cancelRequested.getAsBoolean()) {
+                eyes.abortIfNotClosed();
+                eyes.clearProperties();
+            }
         }
 
         return null;

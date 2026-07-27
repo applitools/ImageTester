@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- GUI: Cancel now takes effect within a page or two instead of waiting for the whole in-flight document; the cancelled test is never closed, so a cancelled comparison no longer leaves a half-created baseline behind
 - GUI: the Tests list now shows the actual Eyes result status — Passed, Mismatch (Unresolved), Failed, New, Aborted, Error, Cancelled — instead of a ✓/✕ icon; New/Aborted/Cancelled count as neither passed nor failed in the summary
 - GUI: Cancel now works during "Compare two documents" runs — it stops the comparison at the next safe point (in-flight uploads are allowed to settle) instead of silently doing nothing
 - GUI: clicking Cancel keeps the live run on screen with a "Cancelling…" state until the backend confirms, instead of pretending the run stopped — this removes the "409: A run is already in progress" loop on the next Run click

@@ -97,7 +97,9 @@ public class TestExecutor {
             setBatch(eyes, overrideBatch, config_);
             setTimeout(eyes, config_);
             TestResults result = test.runSafe(eyes);
-            eyes.abortIfNotClosed();
+            // runSafe already aborted a cancelled test asynchronously; the synchronous
+            // abort here would block on the core's never-arriving results.
+            if (!config_.cancelRequested.getAsBoolean()) eyes.abortIfNotClosed();
 
             if (config_.shouldThrowException && result.isDifferent()) {
                 throw new DiffsFoundException(result, result.getId(), result.getName());
@@ -111,7 +113,7 @@ public class TestExecutor {
                 ((IDisposable) test).dispose();
             long endTime = System.nanoTime();
 
-            ExecutorResult er = new ExecutorResult(result, (endTime - startTime), previewPath);
+            ExecutorResult er = new ExecutorResult(result, (endTime - startTime), previewPath, name);
             Consumer<ExecutorResult> listener = completionListener_;
             if (listener != null) {
                 try { listener.accept(er); } catch (Throwable ignored) { /* never let a listener disrupt the worker */ }
