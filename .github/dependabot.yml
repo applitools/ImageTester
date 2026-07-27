@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 10
+    groups:
+      jackson:
+        patterns: ["com.fasterxml.jackson*"]
+      twelvemonkeys:
+        patterns: ["com.twelvemonkeys*"]
+      jetty:
+        patterns: ["org.eclipse.jetty*"]
+    ignore:
+      # pdfbox 3.x is a breaking migration (PDF rendering is the core product
+      # path) — majors are deliberate work, not a Monday PR.
+      - dependency-name: "org.apache.pdfbox:pdfbox"
+        update-types: ["version-update:semver-major"]
+      # Jetty 12 moves package namespaces (ee9/ee10) — same reasoning.
+      - dependency-name: "org.eclipse.jetty:*"
+        update-types: ["version-update:semver-major"]
+      # slf4j 2.x changes the binding mechanism; stay on 1.7.x until chosen.
+      - dependency-name: "org.slf4j:*"
+        update-types: ["version-update:semver-major"]
+      # JUnit 5 is a rewrite of the test framework, not a bump.
+      - dependency-name: "junit:junit"
+        update-types: ["version-update:semver-major"]
+      # Internal artifact resolved from the checked-in libs/ file repo;
+      # Dependabot cannot see it.
+      - dependency-name: "com.applitools.eyesutilities:EyesUtilities"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Etc/UTC
