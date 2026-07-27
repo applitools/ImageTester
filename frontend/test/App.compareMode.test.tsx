@@ -136,7 +136,7 @@ describe("App compare mode SSE reducer", () => {
         data: JSON.stringify({
           type: "test-finished",
           name: "compare-1",
-          status: "pass",
+          status: "passed",
           durationMs: 42,
           previewPath: "/docs/one.pdf",
           doc2PreviewPath: "/docs/two.pdf",

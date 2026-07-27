@@ -9,7 +9,7 @@ describe("StatusPane", () => {
   });
 
   it("renders running tests on the Tests tab", () => {
-    const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "pass", durationMs: 42 }, { name: "b.pdf", status: "running" }] };
+    const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "passed", durationMs: 42 }, { name: "b.pdf", status: "running" }] };
     render(<StatusPane state={s} logLines={[]} />);
     expect(screen.getByText("a.png")).toBeInTheDocument();
     expect(screen.getByText("b.pdf")).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe("StatusPane tabs", () => {
   });
 
   it("hides the Tests panel content when the Log tab is active", () => {
-    const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "pass", durationMs: 42 }] };
+    const s: RunStateSnapshot = { kind: "running", runId: "r", tests: [{ name: "a.png", status: "passed", durationMs: 42 }] };
     render(<StatusPane state={s} logLines={[]} />);
     fireEvent.click(screen.getByRole("tab", { name: "Log" }));
     expect(screen.queryByText("a.png")).not.toBeInTheDocument();

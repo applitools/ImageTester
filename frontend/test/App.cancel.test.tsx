@@ -94,6 +94,6 @@ describe("App cancel behavior", () => {
       sse(es, { type: "run-finished", passed: 0, failed: 0, durationMs: 10 });
     });
 
-    expect(await screen.findByText("⊘")).toBeInTheDocument();
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
   });
 });

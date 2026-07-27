@@ -119,7 +119,48 @@ public class RunControllerCompareModeTest {
         assertEquals("cancelled", done.tests.get(0).status);
     }
 
+    @Test
+    public void compareModeWithDiffsMarksRowMismatch() throws Exception {
+        RunController c = new RunController(SecretsStore.inMemoryForTest(), new RunStream(),
+                builderWithResult(TestResultsStatus.Unresolved, true));
+        c.setSecretApiKey("sk_test");
+
+        File doc1 = makeTinyPng(tmp.newFolder("doc1"), "doc1.png");
+        File doc2 = makeTinyPng(tmp.newFolder("doc2"), "doc2.png");
+
+        RunRequest req = new RunRequest();
+        req.doc1Path = doc1.getAbsolutePath();
+        req.doc2Path = doc2.getAbsolutePath();
+        req.options = new HashMap<>();
+        req.options.put("fn", "compare-diffs");
+
+        c.start(req);
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        RunState.Done done = (RunState.Done) c.snapshot();
+        assertEquals("mismatch", done.tests.get(0).status);
+    }
+
     // ---- helpers (mirrors RunControllerTest conventions) ----
+
+    /** Builder whose Eyes always closes with the given result status. */
+    private RunController.RunConfigBuilder builderWithResult(TestResultsStatus status, boolean isDifferent) {
+        TestResults result = mock(TestResults.class);
+        when(result.getStatus()).thenReturn(status);
+        when(result.isDifferent()).thenReturn(isDifferent);
+        when(result.getName()).thenReturn("a");
+        Eyes stubbedEyes = stubEyes();
+        when(stubbedEyes.close(org.mockito.ArgumentMatchers.anyBoolean())).thenReturn(result);
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenReturn(stubbedEyes);
+        return (req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
+        };
+    }
 
     /** Builder whose Eyes.close() blocks until released, so a cancel can land mid-run deterministically. */
     private RunController.RunConfigBuilder blockingCloseBuilder(CountDownLatch closing, CountDownLatch release) {

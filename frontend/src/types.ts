@@ -1,8 +1,10 @@
 export type MatchLevel = "Strict" | "Layout" | "Content" | "Exact";
 
+export type TestStatus = "running" | "passed" | "mismatch" | "failed" | "new" | "aborted" | "error" | "cancelled";
+
 export interface TestRow {
   name: string;
-  status: "running" | "pass" | "fail" | "cancelled";
+  status: TestStatus;
   durationMs?: number;
   dashboardUrl?: string;
   startedAtMs?: number;
@@ -18,7 +20,7 @@ export type RunStateSnapshot =
 export type SseEvent =
   | { type: "run-started"; runId: string }
   | { type: "test-started"; name: string; previewPath?: string; doc2PreviewPath?: string }
-  | { type: "test-finished"; name: string; status: "pass" | "fail" | "cancelled"; durationMs: number; dashboardUrl?: string; previewPath?: string; doc2PreviewPath?: string }
+  | { type: "test-finished"; name: string; status: Exclude<TestStatus, "running">; durationMs: number; dashboardUrl?: string; previewPath?: string; doc2PreviewPath?: string }
   | { type: "log-line"; text: string }
   | { type: "run-finished"; passed: number; failed: number; durationMs: number }
   | { type: "watermark-cleaned"; outputDir: string; fileCount: number; durationMs: number };

@@ -1,5 +1,7 @@
 package com.applitools.imagetester.gui;
 
+import com.applitools.eyes.TestResults;
+import com.applitools.eyes.TestResultsStatus;
 import com.applitools.imagetester.ImageTester;
 import com.applitools.imagetester.Suite;
 import com.applitools.imagetester.lib.CompareRunner;
@@ -184,6 +186,26 @@ public final class RunController {
                 com.applitools.imagetester.lib.PdfComparePrechecker.MessageStyle.GUI);
     }
 
+    /**
+     * Maps an Eyes result to the status shown in the GUI Tests list. "Mismatch" is the
+     * dashboard term for Unresolved (diffs awaiting review); "new" means a baseline was
+     * created so nothing was compared.
+     */
+    static String toDisplayStatus(TestResults result) {
+        if (result == null) return "error";
+        if (result.isAborted()) return "aborted";
+        if (Boolean.TRUE.equals(result.isNew())) return "new";
+        TestResultsStatus status = result.getStatus();
+        if (status == TestResultsStatus.Unresolved) return "mismatch";
+        if (status == TestResultsStatus.Failed) return "failed";
+        if (status == TestResultsStatus.Passed) return "passed";
+        return result.isDifferent() ? "mismatch" : "passed";
+    }
+
+    private static boolean countsAsFailed(String status) {
+        return "mismatch".equals(status) || "failed".equals(status) || "error".equals(status);
+    }
+
     public void cancel() {
         AtomicBoolean compareCancel = compareCancel_.get();
         if (compareCancel != null) compareCancel.set(true);
@@ -244,7 +266,7 @@ public final class RunController {
             executor.setTestStartedListener(info -> runStream_.emit(new SseEvent.TestStarted(info.name, info.previewPath)));
             executor.setTestCompletionListener(result -> {
                 String name = result.testResult != null ? result.testResult.getName() : "(unknown)";
-                String status = result.testResult != null && result.testResult.isDifferent() ? "fail" : "pass";
+                String status = toDisplayStatus(result.testResult);
                 long ms = TimeUnit.NANOSECONDS.toMillis(result.runTimeNs);
                 String dashboard = result.testResult != null ? result.testResult.getUrl() : null;
                 runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, result.previewPath));
@@ -268,8 +290,8 @@ public final class RunController {
                 config.logger.printMessage("Run cancelled" + System.lineSeparator());
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
-                if ("pass".equals(r.status)) passed++;
-                else if ("fail".equals(r.status)) failed++;
+                if ("passed".equals(r.status)) passed++;
+                else if (countsAsFailed(r.status)) failed++;
             }
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
             RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
@@ -303,8 +325,7 @@ public final class RunController {
             String name = config.forcedName;
             runStream_.emit(new SseEvent.TestStarted(name, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
             CompareRunner.CompareResult result = CompareRunner.run(doc1, doc2, config, rc.factory, cancelled::get);
-            String status = cancelled.get() ? "cancelled"
-                    : result.doc2Result != null && result.doc2Result.isDifferent() ? "fail" : "pass";
+            String status = cancelled.get() ? "cancelled" : toDisplayStatus(result.doc2Result);
             String dashboard = result.doc2Result != null ? result.doc2Result.getUrl() : null;
             long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
             runStream_.emit(new SseEvent.TestFinished(name, status, ms, dashboard, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
@@ -319,8 +340,8 @@ public final class RunController {
             if (cancelled.get()) config.logger.printMessage("Run cancelled" + System.lineSeparator());
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
-                if ("pass".equals(r.status)) passed++;
-                else if ("fail".equals(r.status)) failed++;
+                if ("passed".equals(r.status)) passed++;
+                else if (countsAsFailed(r.status)) failed++;
             }
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
             RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
