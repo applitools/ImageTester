@@ -39,7 +39,7 @@ public class MarkdownToPdfConverter implements FormatConverter {
         String html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"/>" +
                 "<style>" + CSS + "</style></head><body>" + body + "</body></html>";
 
-        Path outPath = tempDir.resolve(basenameWithPdfExtension(file));
+        Path outPath = ConverterPaths.resolveWithinTempDir(tempDir, ConverterPaths.basenameWithPdfExtension(file));
         try (OutputStream os = new FileOutputStream(outPath.toFile())) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
             builder.useFastMode();
@@ -48,12 +48,5 @@ public class MarkdownToPdfConverter implements FormatConverter {
             builder.run();
         }
         return outPath.toFile();
-    }
-
-    private static String basenameWithPdfExtension(File file) {
-        String name = file.getName();
-        int dot = name.lastIndexOf('.');
-        String base = dot < 0 ? name : name.substring(0, dot);
-        return base + ".pdf";
     }
 }

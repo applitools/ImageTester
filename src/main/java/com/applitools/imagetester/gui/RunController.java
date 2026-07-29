@@ -61,7 +61,10 @@ public final class RunController {
             CommandLine cmd = new DefaultParser().parse(ImageTester.getOptions(),
                     RunRequestTranslator.toArgv(req));
             // Mirror main()'s -dv side effect (main applies it before the config mapping).
-            if (cmd.hasOption("dv")) Utils.disableCertValidation();
+            if (cmd.hasOption("dv")) {
+                logger.printMessage(Utils.CERT_VALIDATION_DISABLED_WARNING);
+                Utils.disableCertValidation();
+            }
             return RunConfigFactory.from(cmd, logger);
         } catch (ParseException e) {
             throw new InvalidOptionsException(e.getMessage());

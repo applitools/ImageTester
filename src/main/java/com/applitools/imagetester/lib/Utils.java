@@ -16,6 +16,10 @@ import java.util.List;
 
 public class Utils {
 
+    public static final String CERT_VALIDATION_DISABLED_WARNING =
+            "Warning: TLS certificate verification is disabled (-dv) for this JVM. "
+            + "Connections can be intercepted; use only behind a trusted proxy. \n";
+
     public static void disableCertValidation() throws KeyManagementException, NoSuchAlgorithmException {
 
         // Create a trust manager that does not validate certificate chains

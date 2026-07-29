@@ -1,14 +1,12 @@
 package com.applitools.imagetester.gui;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -17,10 +15,13 @@ import org.junit.Test;
 
 import com.applitools.imagetester.lib.UpdateChecker;
 import com.applitools.imagetester.lib.UpdateInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.Assert.*;
 
 public class GuiServerBootIT {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private GuiServer server;
 
@@ -43,6 +44,32 @@ public class GuiServerBootIT {
             HttpResponse.BodyHandlers.ofString());
         assertEquals(200, resp.statusCode());
         assertTrue("expected idle in body, got: " + resp.body(), resp.body().contains("idle"));
+    }
+
+    @Test
+    public void indexResponseCarriesNosniffHeader() throws Exception {
+        server = GuiServer.startForTest();
+        assertEquals("nosniff", headerOnIndex("X-Content-Type-Options"));
+    }
+
+    @Test
+    public void indexResponseCarriesFrameDenyHeader() throws Exception {
+        server = GuiServer.startForTest();
+        assertEquals("DENY", headerOnIndex("X-Frame-Options"));
+    }
+
+    @Test
+    public void indexResponseCarriesHstsHeader() throws Exception {
+        server = GuiServer.startForTest();
+        assertEquals("max-age=31536000", headerOnIndex("Strict-Transport-Security"));
+    }
+
+    private String headerOnIndex(String header) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + server.port() + "/")).GET().build(),
+            HttpResponse.BodyHandlers.ofString());
+        return resp.headers().firstValue(header).orElse(null);
     }
 
     @Test
@@ -173,16 +200,13 @@ public class GuiServerBootIT {
 
     /** Posts a JSON body to the given URL with a Bearer token and returns the HTTP status code. */
     private static int postJson(String url, String body, String token) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Authorization", "Bearer " + token);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(bytes);
-        }
-        return conn.getResponseCode();
+        HttpResponse<Void> resp = HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.discarding());
+        return resp.statusCode();
     }
 
     /** An UpdateChecker whose check() always reports a pending 3.16.0 update. */
@@ -236,10 +260,6 @@ public class GuiServerBootIT {
         return f;
     }
 
-    private static String jsonEscape(String path) {
-        return path.replace("\\", "\\\\");
-    }
-
     @Test
     public void precheckReportsDimensionMismatch() throws Exception {
         server = GuiServer.startForTest();
@@ -247,8 +267,10 @@ public class GuiServerBootIT {
         java.io.File a = pdfFixture(dir, "a.pdf", 595f, 842f);
         java.io.File b = pdfFixture(dir, "b.pdf", 612f, 792f);
         String url = "http://127.0.0.1:" + server.port() + "/api/precheck-compare";
-        String body = "{\"doc1Path\":\"" + jsonEscape(a.getAbsolutePath())
-                + "\",\"doc2Path\":\"" + jsonEscape(b.getAbsolutePath()) + "\",\"options\":{}}";
+        String body = JSON.writeValueAsString(Map.of(
+                "doc1Path", a.getAbsolutePath(),
+                "doc2Path", b.getAbsolutePath(),
+                "options", Map.of()));
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> resp = client.send(
             HttpRequest.newBuilder(URI.create(url))
@@ -276,9 +298,10 @@ public class GuiServerBootIT {
         java.io.File junk = new java.io.File(dir, "junk.pdf");
         java.nio.file.Files.write(junk.toPath(), "not a pdf".getBytes(StandardCharsets.UTF_8));
         String url = "http://127.0.0.1:" + server.port() + "/api/run";
-        String body = "{\"doc1Path\":\"" + jsonEscape(good.getAbsolutePath())
-                + "\",\"doc2Path\":\"" + jsonEscape(junk.getAbsolutePath())
-                + "\",\"options\":{\"fn\":\"precheck-it\"}}";
+        String body = JSON.writeValueAsString(Map.of(
+                "doc1Path", good.getAbsolutePath(),
+                "doc2Path", junk.getAbsolutePath(),
+                "options", Map.of("fn", "precheck-it")));
         assertEquals(400, postJson(url, body, server.token().value()));
     }
 }

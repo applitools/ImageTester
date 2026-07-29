@@ -61,6 +61,11 @@ public class UploadStoreTest {
     }
 
     @Test
+    public void rejectsNameWithColon() {
+        assertThrows(UploadStore.InvalidNameException.class, () -> store.save("D:evil.pdf", bytes("x")));
+    }
+
+    @Test
     public void rejectsEmptyName() {
         assertThrows(UploadStore.InvalidNameException.class, () -> store.save("", bytes("x")));
     }

@@ -178,6 +178,21 @@ public class RunControllerTest {
         assertNotNull(rc.factory);
     }
 
+    @Test
+    public void dvOptionWarnsThatCertificateVerificationIsDisabled() {
+        RunRequest r = new RunRequest();
+        r.sourcePath = ".";
+        r.options = new java.util.HashMap<>();
+        r.options.put("k", "sk_test");
+        r.options.put("dv", Boolean.TRUE);
+        java.io.ByteArrayOutputStream captured = new java.io.ByteArrayOutputStream();
+
+        RunController.buildRunConfig(r, new Logger(new java.io.PrintStream(captured), false));
+
+        assertTrue("expected TLS warning in log, got: " + captured,
+                captured.toString().contains("certificate verification is disabled"));
+    }
+
     // ---- helpers ----
 
     @Test

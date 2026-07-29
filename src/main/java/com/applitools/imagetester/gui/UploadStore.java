@@ -38,8 +38,12 @@ public final class UploadStore {
         validateName(name);
         if (root == null) root = Files.createTempDirectory("imagetester-uploads-");
         Path dir = root.resolve(String.valueOf(++uploadCount));
+        Path file = dir.resolve(name).normalize();
+        // Belt-and-braces after validateName: canonicalize and confirm containment, so a name
+        // that slips past the character blacklist can never land outside the upload directory
+        // (Windows drive-relative names like "D:x" escape without containing any separator).
+        if (!file.startsWith(dir)) throw new InvalidNameException("Invalid file name");
         Files.createDirectories(dir);
-        Path file = dir.resolve(name);
         try (OutputStream out = Files.newOutputStream(file)) {
             long total = 0;
             byte[] buffer = new byte[COPY_BUFFER_BYTES];
@@ -70,7 +74,7 @@ public final class UploadStore {
 
     private static void validateName(String name) {
         if (name == null || name.isEmpty() || name.equals(".") || name.equals("..")
-                || name.contains("/") || name.contains("\\")) {
+                || name.contains("/") || name.contains("\\") || name.contains(":")) {
             throw new InvalidNameException("Invalid file name");
         }
     }

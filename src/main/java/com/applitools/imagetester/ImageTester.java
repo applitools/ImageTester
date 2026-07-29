@@ -31,7 +31,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    public static final String CUR_VER = "3.16.1";
+    public static final String CUR_VER = "3.16.2";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
     public static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
@@ -78,8 +78,10 @@ public class ImageTester {
                 return 0;
             }
 
-            if (cmd.hasOption("dv"))
+            if (cmd.hasOption("dv")) {
+                logger.printMessage(Utils.CERT_VALIDATION_DISABLED_WARNING);
                 Utils.disableCertValidation();
+            }
 
             int watermarkValidation = validateWatermarkFlags(cmd, logger);
             if (watermarkValidation != 0) return watermarkValidation;

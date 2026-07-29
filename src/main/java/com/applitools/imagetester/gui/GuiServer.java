@@ -82,6 +82,7 @@ public final class GuiServer {
                 filterRef[0].doFilter(req, resp, chain);
             }
         };
+        ctx.addFilter(new FilterHolder(new SecurityHeadersFilter()), "/*", EnumSet.of(DispatcherType.REQUEST));
         ctx.addFilter(new FilterHolder(deferredFilter), "/*", EnumSet.of(DispatcherType.REQUEST));
 
         SecretsStore secrets = testMode ? SecretsStore.inMemoryForTest() : SecretsStore.forProduction();
@@ -124,6 +125,22 @@ public final class GuiServer {
         try { uploads_.deleteAll(); } catch (java.io.IOException ignored) { /* temp files; best effort */ }
     }
     public void join() throws InterruptedException { server_.join(); }
+
+    /**
+     * Browsers ignore HSTS received over plain HTTP (RFC 6797 §8.1), so on this loopback-only
+     * server the header is a no-op that exists to satisfy security scanners; nosniff and
+     * frame-deny are real hardening for the token-bearing page.
+     */
+    private static final class SecurityHeadersFilter implements Filter {
+        @Override public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
+                throws IOException, ServletException {
+            HttpServletResponse r = (HttpServletResponse) resp;
+            r.setHeader("Strict-Transport-Security", "max-age=31536000");
+            r.setHeader("X-Content-Type-Options", "nosniff");
+            r.setHeader("X-Frame-Options", "DENY");
+            chain.doFilter(req, resp);
+        }
+    }
 
     // ---- Inline servlets ----
 

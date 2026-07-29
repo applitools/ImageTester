@@ -1,5 +1,6 @@
 package com.applitools.imagetester.gui;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,19 +12,18 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PreviewServletIT {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     @Rule public TemporaryFolder tmp = new TemporaryFolder();
 
@@ -44,7 +44,7 @@ public class PreviewServletIT {
         File png = makePng(dir, "sample.png");
 
         int runStatus = postJson(base + "/api/run",
-            "{\"sourcePath\":\"" + escape(dir.getAbsolutePath()) + "\",\"options\":{}}", token);
+            JSON.writeValueAsString(Map.of("sourcePath", dir.getAbsolutePath(), "options", Map.of())), token);
         assertEquals(200, runStatus);
 
         // The source root (and each test's preview path) is set synchronously as the Suite
@@ -77,8 +77,10 @@ public class PreviewServletIT {
         File doc2 = makePng(tmp.newFolder("doc2"), "doc2.png");
         File unrelated = makePng(tmp.newFolder("elsewhere"), "other.png");
 
-        String body = "{\"doc1Path\":\"" + escape(doc1.getAbsolutePath()) + "\",\"doc2Path\":\""
-            + escape(doc2.getAbsolutePath()) + "\",\"options\":{\"fn\":\"compare-1\"}}";
+        String body = JSON.writeValueAsString(Map.of(
+            "doc1Path", doc1.getAbsolutePath(),
+            "doc2Path", doc2.getAbsolutePath(),
+            "options", Map.of("fn", "compare-1")));
         int runStatus = postJson(base + "/api/run", body, token);
         assertEquals(200, runStatus);
 
@@ -102,7 +104,7 @@ public class PreviewServletIT {
         File outside = makePng(tmp.newFolder("elsewhere"), "other.png");
 
         int runStatus = postJson(base + "/api/run",
-            "{\"sourcePath\":\"" + escape(dir.getAbsolutePath()) + "\",\"options\":{}}", token);
+            JSON.writeValueAsString(Map.of("sourcePath", dir.getAbsolutePath(), "options", Map.of())), token);
         assertEquals(200, runStatus);
         waitUntil(() -> server.controller().sourceRoot() != null);
 
@@ -139,10 +141,6 @@ public class PreviewServletIT {
         return resp.statusCode();
     }
 
-    private static String escape(String path) {
-        return path.replace("\\", "\\\\");
-    }
-
     private static void waitUntil(java.util.function.BooleanSupplier condition) throws InterruptedException {
         long deadline = System.currentTimeMillis() + 5_000;
         while (!condition.getAsBoolean() && System.currentTimeMillis() < deadline) {
@@ -152,15 +150,12 @@ public class PreviewServletIT {
     }
 
     private static int postJson(String url, String body, String token) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Authorization", "Bearer " + token);
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(bytes);
-        }
-        return conn.getResponseCode();
+        HttpResponse<Void> resp = HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.discarding());
+        return resp.statusCode();
     }
 }

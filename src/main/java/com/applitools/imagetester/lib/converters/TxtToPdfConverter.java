@@ -34,7 +34,7 @@ public class TxtToPdfConverter implements FormatConverter {
     public File convertToPdf(File file, Path tempDir) throws IOException {
         String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
         List<String> lines = wrap(content);
-        Path outPath = tempDir.resolve(basenameWithPdfExtension(file));
+        Path outPath = ConverterPaths.resolveWithinTempDir(tempDir, ConverterPaths.basenameWithPdfExtension(file));
 
         try (PDDocument doc = new PDDocument()) {
             renderLines(doc, lines);
@@ -90,12 +90,5 @@ public class TxtToPdfConverter implements FormatConverter {
             sb.append(c < 0x80 ? c : '?');
         }
         return sb.toString();
-    }
-
-    private static String basenameWithPdfExtension(File file) {
-        String name = file.getName();
-        int dot = name.lastIndexOf('.');
-        String base = dot < 0 ? name : name.substring(0, dot);
-        return base + ".pdf";
     }
 }

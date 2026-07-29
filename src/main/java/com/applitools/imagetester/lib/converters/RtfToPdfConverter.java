@@ -24,12 +24,12 @@ public class RtfToPdfConverter implements FormatConverter {
     @Override
     public File convertToPdf(File file, Path tempDir) throws IOException {
         String plainText = extractPlainText(file);
-        File intermediateTxt = tempDir.resolve(file.getName() + ".intermediate.txt").toFile();
+        File intermediateTxt = ConverterPaths.resolveWithinTempDir(tempDir, file.getName() + ".intermediate.txt").toFile();
         Files.write(intermediateTxt.toPath(), plainText.getBytes(StandardCharsets.UTF_8));
 
         File pdf = textRenderer.convertToPdf(intermediateTxt, tempDir);
 
-        File finalPdf = tempDir.resolve(basenameWithPdfExtension(file)).toFile();
+        File finalPdf = ConverterPaths.resolveWithinTempDir(tempDir, ConverterPaths.basenameWithPdfExtension(file)).toFile();
         if (!pdf.equals(finalPdf)) {
             Files.move(pdf.toPath(), finalPdf.toPath(),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -47,12 +47,5 @@ public class RtfToPdfConverter implements FormatConverter {
         } catch (BadLocationException e) {
             throw new IOException("RTF extraction failed for " + file.getName(), e);
         }
-    }
-
-    private static String basenameWithPdfExtension(File file) {
-        String name = file.getName();
-        int dot = name.lastIndexOf('.');
-        String base = dot < 0 ? name : name.substring(0, dot);
-        return base + ".pdf";
     }
 }
