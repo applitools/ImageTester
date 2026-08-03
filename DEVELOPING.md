@@ -321,7 +321,7 @@ Full details in [RELEASING.md](RELEASING.md); short version:
 3. Tag and push:
    ```bash
    git tag v3.17.0
-   git push origin v3.17.0Ok, just
+   git push origin v3.17.0
    ```
 4. The Release workflow builds seven CLI jars + four installers (Windows MSI, macOS
    Intel + Apple Silicon DMGs, Linux DEB), generates `SHA256SUMS.txt`, and publishes
