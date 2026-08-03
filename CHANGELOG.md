@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 3.16.3 - 2026/8/3
+- Fix issue in which Mac environments were not able to click the folder popup
+
+## 3.16.2 - 2026/7/31
 - GUI: Cancel now takes effect within a page or two instead of waiting for the whole in-flight document; the cancelled test is never closed, so a cancelled comparison no longer leaves a half-created baseline behind
 - GUI: the Tests list now shows the actual Eyes result status — Passed, Mismatch (Unresolved), Failed, New, Aborted, Error, Cancelled — instead of a ✓/✕ icon; New/Aborted/Cancelled count as neither passed nor failed in the summary
 - GUI: Cancel now works during "Compare two documents" runs — it stops the comparison at the next safe point (in-flight uploads are allowed to settle) instead of silently doing nothing
