@@ -1,5 +1,9 @@
 # Contributing
 
+For building, running the GUI locally, tests, architecture, releasing, and CI
+debugging, see [DEVELOPING.md](DEVELOPING.md). This file covers the data-handling
+rules every contributor must follow.
+
 ## One-time setup: PII guard
 
 This is a public repository that regularly handles customer files during

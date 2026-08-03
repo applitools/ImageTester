@@ -109,7 +109,7 @@ Labels and identifiers attached to your tests — shown on the Applitools dashbo
 + `-os [osname]` - Set the operating-system label recorded for the test
 + `-ap [browser name]` - Set the browser or hosting-application label recorded for the test
 + `-en [environment]` - Set the environment name identifier for the test
-+ `-dn [device name]` (alias `-de`) - Set the device-name metadata shown on the dashboard
++ `-dn [device name]` - Set the device-name metadata shown on the dashboard
 + `-vs [WidthxHeight]` - Set the viewport size identifier, e.g. `1000x600`
 + `-pr [key1:value1|key2:value2]` - Add custom key/value properties to each test.
   **Example:** `-pr "prop1:value1|prop2:value2|prop3:value3"` adds:
@@ -377,3 +377,10 @@ app, and the CLI prints a one-line note to stderr.
 
 Set `IMAGETESTER_SKIP_UPDATE_CHECK=1` to disable it entirely — useful for CI runs or air-gapped
 environments where the outbound network call to GitHub isn't wanted.
+
+## Developing
+
+Working on ImageTester itself? [DEVELOPING.md](DEVELOPING.md) covers building, running
+the GUI locally, tests, architecture, releasing, and CI debugging.
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the data-handling rules (this repo handles
+customer files during support work).

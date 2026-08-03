@@ -1,0 +1,11 @@
+# Local overrides (not shared with team)
+settings.local.json
+CLAUDE.local.md
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor artifacts
+*.swp
+*~

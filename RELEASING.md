@@ -1,7 +1,8 @@
 # Releasing ImageTester
 
 One tag push builds and publishes everything: seven CLI jars and four GUI
-installers, attached to a GitHub pre-release by `.github/workflows/release.yml`.
+installers, attached to a GitHub release marked Latest by
+`.github/workflows/release.yml`.
 
 ## What a release contains
 
@@ -27,10 +28,10 @@ Release notes come from `.github/release-template.md` (`{{VERSION}}` substituted
    git push origin v3.13.0
    ```
    Suffixed tags (`v3.13.0-rc1`) are allowed; the base must equal the pom version.
-4. The Release workflow creates a **pre-release** with all eleven assets.
-   Download, smoke-test an installer and a jar, then flip the release from
-   pre-release to latest in the GitHub UI. The README's Download badge points at
-   the latest release.
+4. The Release workflow publishes a release marked **Latest** with all eleven
+   assets plus `SHA256SUMS.txt`. The README's Download badge points at the latest
+   release, so it goes live immediately — download and smoke-test an installer
+   and a jar right away.
 
 ## Dry run
 
