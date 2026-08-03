@@ -314,8 +314,8 @@ deep-link to the matching README sections.
 
 Full details in [RELEASING.md](RELEASING.md); short version:
 
-1. **Bump `<version>` in `pom.xml`** and update `CHANGELOG.md` (move Unreleased items
-   under the new version). The release workflow *refuses* tags whose base version
+1. **Bump `<version>` in `pom.xml`**, update `CHANGELOG.md` (move Unreleased items
+   under the new version) and bump version at the top of src/main/java/com/applitools/imagetester/ImageTester.java. The release workflow *refuses* tags whose base version
    disagrees with the pom; suffixed tags (`v3.17.0-rc1`) are fine.
 2. Merge to `main`, wait for CI green.
 3. Tag and push:
