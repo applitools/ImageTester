@@ -19,8 +19,13 @@ fi
 
 recent=$(git log --oneline -5 2>/dev/null || echo "(no commits)")
 
-context=$(printf 'Branch: %s\nWorking tree: %s\n\nRecent commits:\n%s' \
-  "$branch" "$status_block" "$recent")
+hooks_warning=""
+if [ "$(git config core.hooksPath 2>/dev/null)" != ".githooks" ]; then
+  hooks_warning=$'\n\nWARNING: PII guard not enabled in this clone — run: git config core.hooksPath .githooks (see CONTRIBUTING.md)'
+fi
+
+context=$(printf 'Branch: %s\nWorking tree: %s\n\nRecent commits:\n%s%s' \
+  "$branch" "$status_block" "$recent" "$hooks_warning")
 
 # Emit JSON envelope so Claude sees this as additionalContext on session start.
 node -e '

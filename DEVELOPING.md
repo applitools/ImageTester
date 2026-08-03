@@ -79,11 +79,12 @@ installer/                 # Icons/assets for jpackage installers
 TestData/                  # Test fixtures; gitignored EXCEPT deliberately force-added, allowlisted files
 ```
 
-Gitignored and therefore **not present in a fresh clone**: `docs/`, `.claude/`, the
-root-level `demo/` and `debug/` scratch dirs, and most of `TestData/` (the
+Gitignored and therefore **not present in a fresh clone**: `docs/`, the root-level
+`demo/` and `debug/` scratch dirs, and most of `TestData/` (the
 `src/main/java/.../demo` Java package is tracked and clones fine). Anything that
 must survive a fresh clone goes in tracked root files (this file, README,
-RELEASING, CONTRIBUTING).
+RELEASING, CONTRIBUTING) or the shared `.claude/` config (local-only overrides
+belong in `.claude/settings.local.json` / `CLAUDE.local.md`).
 
 ## Building
 

@@ -1,10 +1,7 @@
 ---
 paths:
-  - "src/api/**"
-  - "src/auth/**"
-  - "src/middleware/**"
-  - "**/routes/**"
-  - "**/controllers/**"
+  - "src/main/java/**/gui/**"
+  - "frontend/src/lib/**"
 ---
 
 # Security

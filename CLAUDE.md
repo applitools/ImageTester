@@ -32,5 +32,5 @@ building, running the GUI locally, tests, architecture, releasing, and CI debugg
   CHANGELOG.md first. See RELEASING.md.
 - `libs/` is a checked-in file-based Maven repo (EyesUtilities isn't published
   anywhere public) — don't delete its jars despite the global `*.jar` gitignore.
-- `docs/` and `.claude/` are gitignored; anything that must survive a fresh clone
-  goes in tracked root files.
+- `docs/` is gitignored (local working area); `.claude/` is tracked and shared —
+  local-only overrides go in `.claude/settings.local.json` / `CLAUDE.local.md`.

@@ -1,10 +1,7 @@
 ---
 paths:
-  - "src/api/**"
-  - "src/services/**"
-  - "**/controllers/**"
-  - "**/routes/**"
-  - "**/handlers/**"
+  - "src/main/java/**/gui/**"
+  - "frontend/src/lib/**"
 ---
 
 # Error Handling

@@ -34,6 +34,11 @@ if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+push[[:space:]]+'; then
   fi
 fi
 
+# git add -f / --force — bypasses .gitignore; this repo's PII policy forbids it
+if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+add[[:space:]]+([^;&|]*[[:space:]])?(--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)'; then
+  block "'git add -f/--force' bypasses .gitignore — never force-add files here (PII policy, see CONTRIBUTING.md)"
+fi
+
 # git reset --hard with no explicit target — discards uncommitted work
 if printf '%s' "$cmd" | grep -Eq 'git[[:space:]]+reset[[:space:]]+--hard([[:space:]]*$|[[:space:]]+HEAD([[:space:]]|$))'; then
   block "'git reset --hard' without an explicit ref discards uncommitted work"
