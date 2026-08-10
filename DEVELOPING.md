@@ -228,6 +228,21 @@ includes (or adopting failsafe) and deriving the jar path from the pom version.
 ones** — new-test uploads are a different code path with different timing, and the
 comparison is meaningless.
 
+### -nf test corpus
+
+`NfTestPdfBuilder` (test sources) generates the synthetic PDF corpus behind
+`PdfFontNormalizerRealismTest` and `PdfFontNormalizerEdgeCaseTest` — realistic
+document pairs that differ only in typography, plus edge cases pinning known
+`-nf` defects (`@Ignore`d, each tagged with its issue). To write the same
+corpus to disk for eyeballing or a real Eyes run:
+
+    mvn -q test-compile org.codehaus.mojo:exec-maven-plugin:3.1.1:java "-Dexec.mainClass=com.applitools.imagetester.lib.testdata.NfCorpusWriter" "-Dexec.classpathScope=test"
+
+Files land in `target/nf-corpus/` (pass a directory argument with
+`"-Dexec.args=<dir>"` to override). Point the CLI at them with:
+
+    java -jar jars/ImageTester_<version>.jar -k <api-key> -f target/nf-corpus -nf
+
 ## Architecture
 
 ### CLI core execution flow

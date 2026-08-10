@@ -19,6 +19,12 @@ docs/
 jars/Programmatic Applitools Version Control Integration.pdf
 .env
 TestData/
+# TestData/ (customer-file guard) also matches src/.../lib/testdata/ on
+# case-insensitive checkouts (core.ignorecase). Re-include ONLY .java sources
+# there; binaries stay ignored, and sub-packages are NOT re-included.
+!src/test/java/com/applitools/imagetester/lib/testdata/
+src/test/java/com/applitools/imagetester/lib/testdata/*
+!src/test/java/com/applitools/imagetester/lib/testdata/*.java
 .superpowers/
 .playwright-mcp/
 clean_policy_doc.png

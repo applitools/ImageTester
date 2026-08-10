@@ -1,6 +1,8 @@
 package com.applitools.imagetester.lib;
 
 import static org.junit.Assert.*;
+import static com.applitools.imagetester.lib.PdfImageAssertions.assertImagesDiffer;
+import static com.applitools.imagetester.lib.PdfImageAssertions.assertImagesMatch;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -172,40 +174,6 @@ public class PdfFontNormalizerTest {
         try (PDDocument document = PDDocument.load(pdfFile)) {
             return PdfFontNormalizer.renderNormalized(document.getPage(0), TEST_DPI);
         }
-    }
-
-    private void assertImagesMatch(BufferedImage a, BufferedImage b) {
-        assertEquals("Width mismatch", a.getWidth(), b.getWidth());
-        assertEquals("Height mismatch", a.getHeight(), b.getHeight());
-
-        int totalPixels = a.getWidth() * a.getHeight();
-        int diffPixels = 0;
-        for (int y = 0; y < a.getHeight(); y++) {
-            for (int x = 0; x < a.getWidth(); x++) {
-                if (a.getRGB(x, y) != b.getRGB(x, y)) {
-                    diffPixels++;
-                }
-            }
-        }
-        double diffPercent = (diffPixels * 100.0) / totalPixels;
-        assertTrue("Images differ by " + String.format("%.2f", diffPercent) + "% (threshold 1%)",
-                diffPercent < 1.0);
-    }
-
-    private void assertImagesDiffer(BufferedImage a, BufferedImage b) {
-        if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) {
-            return; // Different dimensions = different images
-        }
-        int totalPixels = a.getWidth() * a.getHeight();
-        int diffPixels = 0;
-        for (int y = 0; y < a.getHeight(); y++) {
-            for (int x = 0; x < a.getWidth(); x++) {
-                if (a.getRGB(x, y) != b.getRGB(x, y)) {
-                    diffPixels++;
-                }
-            }
-        }
-        assertTrue("Images should differ but are identical", diffPixels > 0);
     }
 
     private File createTestPdf(String line1, String line2,

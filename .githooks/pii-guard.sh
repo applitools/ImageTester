@@ -21,7 +21,7 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 ALLOWLIST=".github/fixture-allowlist.txt"
 EMAIL_RE='[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'
 ALLOWED_DOMAINS_RE='@(applitools\.com|example\.com|proxy\.local|([A-Za-z0-9-]+\.)*noreply\.github\.com|anthropic\.com)$'
-BINARY_EXT_RE='\.(pdf|xlsx?|docx?|pptx?|png|jpe?g|gif|bmp|ico|zip|jar|ps)$'
+BINARY_EXT_RE='\.(pdf|xlsx?|docx?|pptx?|png|jpe?g|gif|bmp|ico|zip|jar|ps|ttf|otf)$'
 OOXML_EXT_RE='\.(xlsx|docx|pptx)$'
 BLOCKED_NAME_RE='permwat|black_card'
 # Exact addresses allowed anywhere: fake identities from public sample datasets.

@@ -58,3 +58,4 @@ src/test/resources/fixtures/valid-10-page.pdf
 src/test/resources/fixtures/valid-2-page.pdf
 src/test/resources/watermark/PDF_with_watermark.pdf
 src/test/resources/watermark/PDF_without_watermark.pdf
+src/test/resources/fonts/NotoSans-Regular.ttf
