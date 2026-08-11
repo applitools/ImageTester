@@ -269,9 +269,10 @@ Options that apply when testing PDFs and other documents.
 ### Font Normalization
 Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
 false-positive diffs when comparing PDFs across document generation pipelines. The `-nf` / `--normalizeFont` flag provides
-a middle ground: before a PDF page is rasterized, all font references in the content stream are rewritten
-to **Helvetica 12pt**, producing a deterministic render that is insensitive to typographic changes while
-still catching structural differences (missing text, reordered content, layout regressions).
+a middle ground: before a PDF page is rasterized, each text run is decoded to Unicode through its original
+font's encoding, then re-encoded for **Helvetica 12pt**, producing a deterministic render that is insensitive
+to typographic changes while still catching structural differences (missing text, reordered content, layout
+regressions).
 
 **Usage:**
 ```
@@ -282,6 +283,11 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf
 - The original PDF document on disk is **never modified**. Normalization operates on a copy of the page's
   content stream and resources; the baseline file and any downstream consumers are untouched.
 - Image content, vector graphics, and page geometry (media box, matrix) are preserved as-is.
+- Runs whose font cannot be decoded to Unicode keep their original font, size, and bytes — `-nf` never guesses.
+- Characters Helvetica cannot represent (for example non-Latin scripts) are rendered as `?`, and each
+  substitution is logged with a warning naming the code point.
+- Because normalized output changed in 3.17, enabling `-nf` after upgrading invalidates `-nf` baselines
+  created by earlier versions for documents with embedded or subset fonts — plan a baseline refresh.
 
 **When to use it:**
 - Baselines are breaking because the document generator upgraded a font library or switched a typeface.

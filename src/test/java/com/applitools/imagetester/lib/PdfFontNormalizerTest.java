@@ -119,11 +119,16 @@ public class PdfFontNormalizerTest {
             parser.parse();
             List<Object> tokens = parser.getTokens();
 
-            // Every Tf operator should now reference Helv at size 12
+            // The Tf in effect at each show operator must reference Helv
+            Object governingFont = null;
             for (int i = 0; i < tokens.size(); i++) {
                 Object token = tokens.get(i);
-                if (token instanceof Operator && "Tf".equals(((Operator) token).getName())) {
-                    assertEquals(COSName.getPDFName("Helv"), tokens.get(i - 2));
+                if (!(token instanceof Operator)) continue;
+                String op = ((Operator) token).getName();
+                if ("Tf".equals(op)) {
+                    governingFont = tokens.get(i - 2);
+                } else if ("Tj".equals(op)) {
+                    assertEquals(COSName.getPDFName("Helv"), governingFont);
                 }
             }
         }

@@ -1,13 +1,24 @@
 package com.applitools.imagetester.lib;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.Ignore;
@@ -97,7 +108,6 @@ public class PdfFontNormalizerEdgeCaseTest {
         assertEquals(plain.getHeight(), normalized.getHeight());
     }
 
-    @Ignore("FIXME(chris): -nf reinterprets non-WinAnsi bytes as WinAnsi, corrupting text (#46)")
     @Test
     public void normalized_differences_encoded_page_preserves_text() throws IOException {
         File pdf = NfTestPdfBuilder.createDifferencesEncoded(tempFolder.getRoot(), "differences.pdf");
@@ -105,7 +115,6 @@ public class PdfFontNormalizerEdgeCaseTest {
         assertEquals(NfTestPdfBuilder.DIFFERENCES_TEXT, extractNormalizedFirstPage(pdf));
     }
 
-    @Ignore("FIXME(chris): -nf reinterprets non-WinAnsi bytes as WinAnsi, corrupting text (#46)")
     @Test
     public void normalized_subset_identity_h_page_preserves_text() throws IOException {
         File pdf = NfTestPdfBuilder.createSubsetIdentityH(tempFolder.getRoot(), "subset.pdf");
@@ -125,6 +134,44 @@ public class PdfFontNormalizerEdgeCaseTest {
 
         PdfImageAssertions.assertImagesDiffer(
                 renderNormalizedFirstPage(plain), renderNormalizedFirstPage(spaced));
+    }
+
+    /**
+     * Never-silent contract: Noto Sans has the glyph for U+0141 (Lslash) but
+     * Helvetica's WinAnsiEncoding does not, so normalization substitutes '?'
+     * instead of dropping or garbling the character - and logs a warning
+     * naming the code point.
+     */
+    @Test
+    public void unencodable_codepoint_becomes_question_mark_with_warning_logged() throws IOException {
+        File pdf = createNotoPdfWithLslash();
+        List<LogRecord> captured = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                captured.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        Logger logger = Logger.getLogger(PdfFontNormalizer.class.getName());
+        logger.addHandler(handler);
+        try {
+            String extracted = extractNormalizedFirstPage(pdf);
+
+            assertTrue("expected '?' in normalized text: " + extracted, extracted.contains("?"));
+            assertFalse("expected Lslash removed from normalized text: " + extracted,
+                    extracted.contains("\u0141"));
+            assertTrue("expected a WARNING log naming U+141", containsWarningAbout(captured, "U+141"));
+        } finally {
+            logger.removeHandler(handler);
+        }
     }
 
     // --- helpers ---
@@ -161,5 +208,34 @@ public class PdfFontNormalizerEdgeCaseTest {
         try (PDDocument doc = PDDocument.load(pdf)) {
             return PdfFontNormalizer.renderNormalized(doc.getPage(0), TEST_DPI);
         }
+    }
+
+    /** One page, Noto Sans (has the glyph), text containing U+0141 (Lslash). */
+    private File createNotoPdfWithLslash() throws IOException {
+        File file = tempFolder.newFile();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            PDType0Font noto = NfTestPdfBuilder.loadNotoSans(doc);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.beginText();
+                cs.setFont(noto, 12);
+                cs.newLineAtOffset(72, 700);
+                cs.showText("\u0141owicz Street");
+                cs.endText();
+            }
+            doc.save(file);
+        }
+        return file;
+    }
+
+    private boolean containsWarningAbout(List<LogRecord> records, String needle) {
+        for (LogRecord record : records) {
+            if (record.getLevel() == Level.WARNING && record.getMessage() != null
+                    && record.getMessage().contains(needle)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
