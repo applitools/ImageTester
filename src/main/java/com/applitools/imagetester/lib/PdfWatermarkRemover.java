@@ -1,9 +1,7 @@
 package com.applitools.imagetester.lib;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -109,25 +107,25 @@ public class PdfWatermarkRemover {
             if ("Tf".equals(op) && i >= 2) {
                 currentFont = resolveFont(resources, tokens.get(i - 2));
             } else if ("Tj".equals(op) && i >= 1 && currentFont != null) {
-                String decoded = decodeCosString(tokens.get(i - 1), currentFont);
+                String decoded = PdfTextDecoder.decode(asCosString(tokens.get(i - 1)), currentFont);
                 if (matches(decoded, hint)) {
                     indicesToRemove.add(i - 1);
                     indicesToRemove.add(i);
                 }
             } else if ("TJ".equals(op) && i >= 1 && currentFont != null) {
-                String decoded = decodeCosArray(tokens.get(i - 1), currentFont);
+                String decoded = PdfTextDecoder.decode(asCosArray(tokens.get(i - 1)), currentFont);
                 if (matches(decoded, hint)) {
                     indicesToRemove.add(i - 1);
                     indicesToRemove.add(i);
                 }
             } else if ("'".equals(op) && i >= 1 && currentFont != null) {
-                String decoded = decodeCosString(tokens.get(i - 1), currentFont);
+                String decoded = PdfTextDecoder.decode(asCosString(tokens.get(i - 1)), currentFont);
                 if (matches(decoded, hint)) {
                     indicesToRemove.add(i - 1);
                     indicesToRemove.add(i);
                 }
             } else if ("\"".equals(op) && i >= 3 && currentFont != null) {
-                String decoded = decodeCosString(tokens.get(i - 1), currentFont);
+                String decoded = PdfTextDecoder.decode(asCosString(tokens.get(i - 1)), currentFont);
                 if (matches(decoded, hint)) {
                     indicesToRemove.add(i - 3);
                     indicesToRemove.add(i - 2);
@@ -151,45 +149,12 @@ public class PdfWatermarkRemover {
         }
     }
 
-    private static String decodeCosString(Object cosStringToken, PDFont font) {
-        if (!(cosStringToken instanceof COSString)) {
-            return null;
-        }
-        byte[] bytes = ((COSString) cosStringToken).getBytes();
-        StringBuilder sb = new StringBuilder();
-        try (InputStream in = new ByteArrayInputStream(bytes)) {
-            while (in.available() > 0) {
-                int code = font.readCode(in);
-                String unicode = font.toUnicode(code);
-                if (unicode == null) {
-                    return null;
-                }
-                sb.append(unicode);
-            }
-        } catch (IOException e) {
-            LOG.log(Level.FINE, "Could not decode text-show payload", e);
-            return null;
-        }
-        return sb.toString();
+    private static COSString asCosString(Object token) {
+        return token instanceof COSString ? (COSString) token : null;
     }
 
-    private static String decodeCosArray(Object cosArrayToken, PDFont font) {
-        if (!(cosArrayToken instanceof COSArray)) {
-            return null;
-        }
-        COSArray array = (COSArray) cosArrayToken;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < array.size(); i++) {
-            COSBase element = array.get(i);
-            if (element instanceof COSString) {
-                String part = decodeCosString(element, font);
-                if (part == null) {
-                    return null;
-                }
-                sb.append(part);
-            }
-        }
-        return sb.toString();
+    private static COSArray asCosArray(Object token) {
+        return token instanceof COSArray ? (COSArray) token : null;
     }
 
     private static boolean matches(String decoded, String hint) {
