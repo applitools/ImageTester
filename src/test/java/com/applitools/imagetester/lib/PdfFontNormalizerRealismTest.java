@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -87,7 +86,6 @@ public class PdfFontNormalizerRealismTest {
      * differently. Fails today because the Identity-H side's bytes are
      * reinterpreted as WinAnsi.
      */
-    @Ignore("FIXME(chris): -nf reinterprets non-WinAnsi bytes as WinAnsi, corrupting text (#46)")
     @Test
     public void encoding_mismatch_pair_renders_identically_after_normalization() throws IOException {
         File a = NfTestPdfBuilder.createEncodingMismatchWinAnsi(tempFolder.getRoot(), "mismatch-a.pdf");

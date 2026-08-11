@@ -97,7 +97,6 @@ public class PdfFontNormalizerEdgeCaseTest {
         assertEquals(plain.getHeight(), normalized.getHeight());
     }
 
-    @Ignore("FIXME(chris): -nf reinterprets non-WinAnsi bytes as WinAnsi, corrupting text (#46)")
     @Test
     public void normalized_differences_encoded_page_preserves_text() throws IOException {
         File pdf = NfTestPdfBuilder.createDifferencesEncoded(tempFolder.getRoot(), "differences.pdf");
@@ -105,7 +104,6 @@ public class PdfFontNormalizerEdgeCaseTest {
         assertEquals(NfTestPdfBuilder.DIFFERENCES_TEXT, extractNormalizedFirstPage(pdf));
     }
 
-    @Ignore("FIXME(chris): -nf reinterprets non-WinAnsi bytes as WinAnsi, corrupting text (#46)")
     @Test
     public void normalized_subset_identity_h_page_preserves_text() throws IOException {
         File pdf = NfTestPdfBuilder.createSubsetIdentityH(tempFolder.getRoot(), "subset.pdf");
