@@ -6,9 +6,12 @@ import static org.junit.Assert.assertNull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSInteger;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -23,6 +26,14 @@ import org.junit.Test;
 import com.applitools.imagetester.lib.testdata.NfTestPdfBuilder;
 
 public class PdfTextDecoderTest {
+
+    /**
+     * A CID the subset font below never assigns to a real glyph. PDFBox's
+     * auto-generated ToUnicode CMap only covers CIDs that were actually
+     * encoded, so this one is guaranteed to have no Unicode mapping -
+     * the "never-garble" contract's null case.
+     */
+    private static final int UNMAPPED_CID = 0xFFFE;
 
     @Test
     public void should_decode_simple_font_string() {
@@ -104,6 +115,67 @@ public class PdfTextDecoderTest {
             String decoded = PdfTextDecoder.decode(array, font);
 
             assertEquals("Subset", decoded);
+        }
+    }
+
+    @Test
+    public void should_return_null_when_code_has_no_unicode_mapping() throws IOException {
+        byte[] pdfBytes = buildSubsetPdfWithUnmappedCid();
+
+        try (PDDocument reloaded = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+            PDResources resources = reloaded.getPage(0).getResources();
+            PDFont font = resources.getFont(resources.getFontNames().iterator().next());
+            byte[] unmappedBytes = { (byte) (UNMAPPED_CID >> 8), (byte) UNMAPPED_CID };
+
+            String decoded = PdfTextDecoder.decode(new COSString(unmappedBytes), font);
+
+            assertNull(decoded);
+        }
+    }
+
+    /**
+     * Builds a one-page PDF with an embedded Noto Sans subset, drawn through a
+     * raw content stream: real text first (so the subset and its ToUnicode CMap
+     * look like an ordinary document), then a raw CID the subsetter never
+     * assigned to a glyph and therefore never mapped in the auto-generated
+     * ToUnicode CMap. showText()/PDPageContentStream can't produce this - both
+     * validate every codepoint against the font's cmap - so the payload is
+     * written directly to the content stream.
+     */
+    private byte[] buildSubsetPdfWithUnmappedCid() throws IOException {
+        try (PDDocument doc = new PDDocument()) {
+            PDType0Font noto = NfTestPdfBuilder.loadNotoSans(doc);
+            byte[] realText = noto.encode("Subset text");
+            byte[] unmappedBytes = { (byte) (UNMAPPED_CID >> 8), (byte) UNMAPPED_CID };
+
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            PDResources resources = new PDResources();
+            resources.put(COSName.getPDFName("F1"), noto);
+            page.setResources(resources);
+
+            COSStream contentStream = new COSStream();
+            try (OutputStream out = contentStream.createOutputStream()) {
+                out.write("BT /F1 12 Tf 72 700 Td (".getBytes("ISO-8859-1"));
+                writeEscapedLiteral(out, realText);
+                writeEscapedLiteral(out, unmappedBytes);
+                out.write(") Tj ET".getBytes("ISO-8859-1"));
+            }
+            page.getCOSObject().setItem(COSName.CONTENTS, contentStream);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.save(out);
+            return out.toByteArray();
+        }
+    }
+
+    private void writeEscapedLiteral(OutputStream out, byte[] bytes) throws IOException {
+        for (byte b : bytes) {
+            int unsigned = b & 0xff;
+            if (unsigned == '(' || unsigned == ')' || unsigned == '\\') {
+                out.write('\\');
+            }
+            out.write(unsigned);
         }
     }
 }
