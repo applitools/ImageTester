@@ -34,16 +34,33 @@ public class PdfFontNormalizerTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
-    public void should_produce_identical_images_when_fonts_differ_but_text_matches() throws IOException {
-        File baseline = createTestPdf("Hello World", "Subtitle",
-                PDType1Font.HELVETICA, 12f, PDType1Font.HELVETICA, 10f);
-        File checkpoint = createTestPdf("Hello World", "Subtitle",
-                PDType1Font.TIMES_BOLD, 24f, PDType1Font.COURIER_OBLIQUE, 8f);
+    public void should_produce_identical_images_when_font_embeddings_differ() throws IOException {
+        File baseline = com.applitools.imagetester.lib.testdata.NfTestPdfBuilder
+                .createEncodingMismatchWinAnsi(tempFolder.getRoot(), "embed-a.pdf");
+        File checkpoint = com.applitools.imagetester.lib.testdata.NfTestPdfBuilder
+                .createEncodingMismatchIdentityH(tempFolder.getRoot(), "embed-b.pdf");
 
         BufferedImage baselineImg = renderNormalizedFirstPage(baseline);
         BufferedImage checkpointImg = renderNormalizedFirstPage(checkpoint);
 
         assertImagesMatch(baselineImg, checkpointImg);
+    }
+
+    /**
+     * Layout is preserved, not normalized: a genuine font-size change moves
+     * glyphs, so it must still diff after normalization.
+     */
+    @Test
+    public void should_preserve_layout_so_size_changes_still_differ() throws IOException {
+        File baseline = com.applitools.imagetester.lib.testdata.NfTestPdfBuilder
+                .createDenseHelvetica(tempFolder.getRoot(), "size-a.pdf", 12f);
+        File checkpoint = com.applitools.imagetester.lib.testdata.NfTestPdfBuilder
+                .createDenseHelvetica(tempFolder.getRoot(), "size-b.pdf", 14f);
+
+        BufferedImage baselineImg = renderNormalizedFirstPage(baseline);
+        BufferedImage checkpointImg = renderNormalizedFirstPage(checkpoint);
+
+        assertImagesDiffer(baselineImg, checkpointImg);
     }
 
     @Test

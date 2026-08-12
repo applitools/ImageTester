@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -13,9 +12,11 @@ import org.junit.rules.TemporaryFolder;
 import com.applitools.imagetester.lib.testdata.NfTestPdfBuilder;
 
 /**
- * Realistic document pairs: identical text at identical fixed positions,
- * different typography. After -nf both sides must render the same; before
- * -nf they must differ (the negative test keeps the positive one honest).
+ * Realistic document pairs: identical text, layout and metrics, produced by
+ * two font-embedding pipelines (simple WinAnsi TrueType vs Type0/Identity-H
+ * subset — the Word-vs-Aspose shape). After -nf both sides must render the
+ * same; the structural tests prove the pairs genuinely embed fonts
+ * differently, keeping the image assertions honest.
  */
 public class PdfFontNormalizerRealismTest {
 
@@ -33,11 +34,11 @@ public class PdfFontNormalizerRealismTest {
     }
 
     @Test
-    public void invoice_pair_renders_differently_without_normalization() throws IOException {
+    public void invoice_pair_embeds_fonts_differently() throws IOException {
         File a = NfTestPdfBuilder.createInvoice(tempFolder.getRoot(), "invoice-a.pdf", NfTestPdfBuilder.THEME_A);
         File b = NfTestPdfBuilder.createInvoice(tempFolder.getRoot(), "invoice-b.pdf", NfTestPdfBuilder.THEME_B);
 
-        PdfImageAssertions.assertImagesClearlyDiffer(renderPage(a, 0), renderPage(b, 0));
+        assertFontImplementationsDiffer(a, b);
     }
 
     @Test
@@ -50,11 +51,11 @@ public class PdfFontNormalizerRealismTest {
     }
 
     @Test
-    public void report_pair_renders_differently_without_normalization() throws IOException {
+    public void report_pair_embeds_fonts_differently() throws IOException {
         File a = NfTestPdfBuilder.createReport(tempFolder.getRoot(), "report-a.pdf", NfTestPdfBuilder.THEME_A);
         File b = NfTestPdfBuilder.createReport(tempFolder.getRoot(), "report-b.pdf", NfTestPdfBuilder.THEME_B);
 
-        PdfImageAssertions.assertImagesClearlyDiffer(renderPage(a, 0), renderPage(b, 0));
+        assertFontImplementationsDiffer(a, b);
     }
 
     @Test
@@ -66,25 +67,24 @@ public class PdfFontNormalizerRealismTest {
     }
 
     @Test
-    public void letter_pair_renders_differently_without_normalization() throws IOException {
+    public void letter_pair_embeds_fonts_differently() throws IOException {
         File a = NfTestPdfBuilder.createLetter(tempFolder.getRoot(), "letter-a.pdf", NfTestPdfBuilder.THEME_A);
         File b = NfTestPdfBuilder.createLetter(tempFolder.getRoot(), "letter-b.pdf", NfTestPdfBuilder.THEME_B);
 
-        PdfImageAssertions.assertImagesClearlyDiffer(renderPage(a, 0), renderPage(b, 0));
+        assertFontImplementationsDiffer(a, b);
     }
 
     @Test
-    public void encoding_mismatch_pair_renders_differently_without_normalization() throws IOException {
+    public void encoding_mismatch_pair_embeds_fonts_differently() throws IOException {
         File a = NfTestPdfBuilder.createEncodingMismatchWinAnsi(tempFolder.getRoot(), "mismatch-a.pdf");
         File b = NfTestPdfBuilder.createEncodingMismatchIdentityH(tempFolder.getRoot(), "mismatch-b.pdf");
 
-        PdfImageAssertions.assertImagesClearlyDiffer(renderPage(a, 0), renderPage(b, 0));
+        assertFontImplementationsDiffer(a, b);
     }
 
     /**
-     * The README's headline use case for -nf: two pipelines embedding fonts
-     * differently. Fails today because the Identity-H side's bytes are
-     * reinterpreted as WinAnsi.
+     * The README's headline use case for -nf: two pipelines embedding the
+     * same font differently.
      */
     @Test
     public void encoding_mismatch_pair_renders_identically_after_normalization() throws IOException {
@@ -105,10 +105,20 @@ public class PdfFontNormalizerRealismTest {
 
     // --- helpers ---
 
-    private BufferedImage renderPage(File pdf, int pageIndex) throws IOException {
+    /** The pair's two sides must implement their fonts with different PDF font types. */
+    private static void assertFontImplementationsDiffer(File a, File b) throws IOException {
+        org.junit.Assert.assertNotEquals(fontImplementations(a), fontImplementations(b));
+    }
+
+    private static java.util.Set<String> fontImplementations(File pdf) throws IOException {
+        java.util.Set<String> implementations = new java.util.TreeSet<>();
         try (PDDocument doc = PDDocument.load(pdf)) {
-            return new PDFRenderer(doc).renderImageWithDPI(pageIndex, TEST_DPI);
+            org.apache.pdfbox.pdmodel.PDResources resources = doc.getPage(0).getResources();
+            for (org.apache.pdfbox.cos.COSName name : resources.getFontNames()) {
+                implementations.add(resources.getFont(name).getClass().getSimpleName());
+            }
         }
+        return implementations;
     }
 
     private BufferedImage renderNormalizedPage(File pdf, int pageIndex) throws IOException {

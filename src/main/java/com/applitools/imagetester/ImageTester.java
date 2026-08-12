@@ -677,14 +677,15 @@ public class ImageTester {
             .build());
         options.addOption(Option.builder("nf")
             .longOpt("normalizeFont")
-            .desc("Normalize Latin-script PDF text to Helvetica 12pt before rendering. Japanese text is left untouched — combine with -nfj to normalize it too.")
+            .desc("Redraw Latin-script PDF text in Helvetica before rendering, keeping every glyph's original size and position. Japanese text is left untouched — combine with -nfj to normalize it too.")
             .hasArg(false)
             .build());
         options.addOption(Option.builder("nfj")
             .longOpt("normalizeFontJP")
-            .desc("Normalize Japanese (Hiragana/Katakana/Kanji) PDF text to bundled " +
-                  "Noto Sans JP 12pt before rendering. Latin-only text is left untouched — " +
-                  "combine with -nf to normalize it too.")
+            .desc("Redraw Japanese (Hiragana/Katakana/Kanji) PDF text in bundled " +
+                  "Noto Sans JP before rendering, keeping every glyph's original size and " +
+                  "position. Latin-only text is left untouched — combine with -nf to " +
+                  "normalize it too.")
             .hasArg(false)
             .build());
 

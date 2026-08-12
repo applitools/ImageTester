@@ -135,19 +135,24 @@ public class PdfPageRendererTest {
         }
     }
 
+    /**
+     * Normalization is layout-faithful: re-encoding a 24pt Noto document
+     * through the nfj path must not move or resize anything, so the render
+     * matches the un-normalized one. The old 12pt-flattening behavior fails
+     * this — it shrank every glyph.
+     */
     @Test
-    public void with_nfj_set_normalizes_japanese_fonts() throws IOException {
-        File pdf24 = createJapanesePdf("変更手続きのご案内", 24f);
-        File pdf12 = createJapanesePdf("変更手続きのご案内", 12f);
-        try (PDDocument doc24 = PDDocument.load(pdf24);
-             PDDocument doc12 = PDDocument.load(pdf12)) {
+    public void with_nfj_set_preserves_japanese_layout() throws IOException {
+        File pdf = createJapanesePdf("変更手続きのご案内", 24f);
+        try (PDDocument plainDoc = PDDocument.load(pdf);
+             PDDocument nfjDoc = PDDocument.load(pdf)) {
             Config configNfj = baseConfig();
             configNfj.normalizeFontJP = true;
 
-            BufferedImage img24 = PdfPageRenderer.render(doc24.getPage(0), 0, new PDFRenderer(doc24), configNfj);
-            BufferedImage img12 = PdfPageRenderer.render(doc12.getPage(0), 0, new PDFRenderer(doc12), configNfj);
+            BufferedImage plain = PdfPageRenderer.render(plainDoc.getPage(0), 0, new PDFRenderer(plainDoc), baseConfig());
+            BufferedImage normalized = PdfPageRenderer.render(nfjDoc.getPage(0), 0, new PDFRenderer(nfjDoc), configNfj);
 
-            assertImagesMatch(img24, img12);
+            assertImagesMatch(plain, normalized);
         }
     }
 

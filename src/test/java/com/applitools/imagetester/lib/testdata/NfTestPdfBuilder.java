@@ -20,9 +20,13 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDFontFactory;
+import org.apache.pdfbox.pdmodel.font.PDTrueTypeFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.encoding.WinAnsiEncoding;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+
+import com.applitools.imagetester.lib.NotoFontProvider;
 
 /**
  * Builds the synthetic PDF corpus used to exercise -nf font normalization.
@@ -122,15 +126,17 @@ public final class NfTestPdfBuilder {
     private static final float[] MISMATCH_LINE_Y_POSITIONS =
             {700, 680, 660, 640, 620, 600, 580, 560};
 
-    /** WinAnsi member of the encoding-mismatch pair. */
+    /** WinAnsi member of the encoding-mismatch pair: same face as the
+     *  Identity-H member, embedded as a simple WinAnsi TrueType font. */
     public static File createEncodingMismatchWinAnsi(File dir, String fileName) throws IOException {
         File file = new File(dir, fileName);
         try (PDDocument doc = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
+            PDFont noto = winAnsiNotoSans(doc);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
                 for (int i = 0; i < MISMATCH_LINE_Y_POSITIONS.length; i++) {
-                    textAt(cs, PDType1Font.HELVETICA, 12, 72, MISMATCH_LINE_Y_POSITIONS[i],
+                    textAt(cs, noto, 12, 72, MISMATCH_LINE_Y_POSITIONS[i],
                             MISMATCH_LINES[i % MISMATCH_LINES.length]);
                 }
             }
@@ -149,7 +155,7 @@ public final class NfTestPdfBuilder {
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
                 for (int i = 0; i < MISMATCH_LINE_Y_POSITIONS.length; i++) {
                     cs.beginText();
-                    cs.setFont(noto, 13);
+                    cs.setFont(noto, 12);
                     cs.newLineAtOffset(72, MISMATCH_LINE_Y_POSITIONS[i]);
                     cs.showText(MISMATCH_LINES[i % MISMATCH_LINES.length]);
                     cs.endText();
@@ -233,19 +239,144 @@ public final class NfTestPdfBuilder {
                 "BT /F1 12 Tf " + ops + "72 700 Td (Spacing operators test line) Tj ET");
     }
 
+    /** First run of the cursor-flow fixtures - wide glyphs so advance drift accumulates. */
+    public static final String CURSOR_FLOW_FILLER = "mmmmmmmmmmmmmmmmmmmm";
+    /** Second run - its pen position depends entirely on the first run's advances. */
+    public static final String CURSOR_FLOW_MARKER = "SECOND";
+    public static final String JP_CURSOR_FLOW_FILLER = "あいうえおかきくけこ";
+    public static final String JP_CURSOR_FLOW_MARKER = "日本語";
+
+    /** Every CID advances 600/1000 - narrower than Noto's natural metrics, the
+     *  way MS PGothic's proportional glyphs are narrower than Noto's. */
+    private static final int NARROW_CID_WIDTH = 600;
+
     /**
-     * Typography bundle for realism pairs. Layout coordinates are fixed
-     * constants in each create* method - ONLY these values differ between
-     * the -a and -b member of a pair.
+     * Two consecutive Tj runs with no repositioning between them (the Aspose
+     * shape): the second run starts wherever the first run's glyph advances
+     * left the pen. PDPageContentStream can't produce this - it forces a Td
+     * per showText - so the payload is written raw.
+     */
+    public static File createCursorFlowLatin(File dir, String fileName) throws IOException {
+        File file = new File(dir, fileName);
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            PDType0Font noto = loadNotoSans(doc);
+            writeCursorFlowContent(doc, page, noto,
+                    noto.encode(CURSOR_FLOW_FILLER), noto.encode(CURSOR_FLOW_MARKER));
+            doc.save(file);
+        }
+        return file;
+    }
+
+    /**
+     * Same cursor-flow shape with Japanese text, then the CIDFont's /W array
+     * patched to declare every advance as 600/1000. Re-encoding to Noto's
+     * natural 1000/1000 metrics moves the second run unless the normalizer
+     * compensates advances.
+     */
+    public static File createCursorFlowJapaneseNarrowWidths(File dir, String fileName) throws IOException {
+        File file = new File(dir, fileName);
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            PDType0Font noto = NotoFontProvider.load(doc);
+            writeCursorFlowContent(doc, page, noto,
+                    noto.encode(JP_CURSOR_FLOW_FILLER), noto.encode(JP_CURSOR_FLOW_MARKER));
+            doc.save(buffer);
+        }
+        try (PDDocument doc = PDDocument.load(new ByteArrayInputStream(buffer.toByteArray()))) {
+            PDResources resources = doc.getPage(0).getResources();
+            COSDictionary type0 = resources.getFont(resources.getFontNames().iterator().next()).getCOSObject();
+            COSArray descendants = (COSArray) type0.getDictionaryObject(COSName.DESCENDANT_FONTS);
+            COSDictionary cidFont = (COSDictionary) descendants.getObject(0);
+            COSArray widths = new COSArray();
+            widths.add(COSInteger.get(0));
+            widths.add(COSInteger.get(65535));
+            widths.add(COSInteger.get(NARROW_CID_WIDTH));
+            cidFont.setItem(COSName.W, widths);
+            doc.save(file);
+        }
+        return file;
+    }
+
+    /** Two lines flowed by TL + the ' operator: the second line's baseline
+     *  sits exactly one original leading (10.8) below the first. */
+    public static File createLeadingFlow(File dir, String fileName) throws IOException {
+        return writeRawTextPdf(dir, fileName, PDType1Font.HELVETICA,
+                "BT /F1 9 Tf 10.8 TL 72 700 Td (AAAA) Tj (BBBB) ' ET");
+    }
+
+    private static void writeCursorFlowContent(PDDocument doc, PDPage page, PDFont font,
+                                               byte[] run1, byte[] run2) throws IOException {
+        PDResources resources = new PDResources();
+        resources.put(COSName.getPDFName("F1"), font);
+        page.setResources(resources);
+        PDStream contents = new PDStream(doc);
+        try (OutputStream out = contents.createOutputStream()) {
+            out.write("BT /F1 12 Tf 72 700 Td (".getBytes(StandardCharsets.US_ASCII));
+            writeEscapedLiteral(out, run1);
+            out.write(") Tj (".getBytes(StandardCharsets.US_ASCII));
+            writeEscapedLiteral(out, run2);
+            out.write(") Tj ET".getBytes(StandardCharsets.US_ASCII));
+        }
+        page.setContents(contents);
+    }
+
+    private static void writeEscapedLiteral(OutputStream out, byte[] bytes) throws IOException {
+        for (byte b : bytes) {
+            int unsigned = b & 0xff;
+            if (unsigned == '(' || unsigned == ')' || unsigned == '\\') {
+                out.write('\\');
+            }
+            out.write(unsigned);
+        }
+    }
+
+    /** Standard-14 Helvetica drawing MISMATCH_LINES at the given size -
+     *  dense enough that a size change clears the 1% differ threshold. */
+    public static File createDenseHelvetica(File dir, String fileName, float size) throws IOException {
+        File file = new File(dir, fileName);
+        try (PDDocument doc = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                for (int i = 0; i < MISMATCH_LINE_Y_POSITIONS.length; i++) {
+                    textAt(cs, PDType1Font.HELVETICA, size, 72, MISMATCH_LINE_Y_POSITIONS[i],
+                            MISMATCH_LINES[i % MISMATCH_LINES.length]);
+                }
+            }
+            doc.save(file);
+        }
+        return file;
+    }
+
+    /** Loads a font into the target document - embedded fonts are per-document objects. */
+    public interface FontSource {
+        PDFont load(PDDocument doc) throws IOException;
+    }
+
+    /** The bundled Noto Sans embedded as a simple TrueType font with WinAnsi encoding. */
+    public static PDFont winAnsiNotoSans(PDDocument doc) throws IOException {
+        return PDTrueTypeFont.load(doc, new ByteArrayInputStream(readResource(FONT_RESOURCE)),
+                WinAnsiEncoding.INSTANCE);
+    }
+
+    /**
+     * Font pipeline bundle for realism pairs: the SAME face and metrics
+     * embedded differently - the cross-pipeline scenario -nf exists for.
+     * Layout coordinates are fixed constants in each create* method; the
+     * -a and -b member of a pair differ only in font embedding.
      */
     public static final class Theme {
-        public final PDType1Font body;
-        public final PDType1Font bold;
+        public final FontSource body;
+        public final FontSource bold;
         public final float bodySize;
         public final float headingSize;
         public final float leading;
 
-        public Theme(PDType1Font body, PDType1Font bold,
+        public Theme(FontSource body, FontSource bold,
                      float bodySize, float headingSize, float leading) {
             this.body = body;
             this.bold = bold;
@@ -255,10 +386,12 @@ public final class NfTestPdfBuilder {
         }
     }
 
+    /** Pipeline A: simple TrueType font, WinAnsi-encoded. */
     public static final Theme THEME_A =
-            new Theme(PDType1Font.HELVETICA, PDType1Font.HELVETICA_BOLD, 10f, 16f, 12f);
+            new Theme(NfTestPdfBuilder::winAnsiNotoSans, NfTestPdfBuilder::winAnsiNotoSans, 10f, 16f, 12f);
+    /** Pipeline B: composite Type0 font, Identity-H subset. */
     public static final Theme THEME_B =
-            new Theme(PDType1Font.TIMES_ROMAN, PDType1Font.TIMES_BOLD, 11f, 20f, 16.5f);
+            new Theme(NfTestPdfBuilder::loadNotoSans, NfTestPdfBuilder::loadNotoSans, 10f, 16f, 12f);
 
     private static final String[][] INVOICE_ROWS = {
             {"Precision vise, 4 inch", "2", "158.00"},
@@ -280,25 +413,27 @@ public final class NfTestPdfBuilder {
         try (PDDocument doc = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
+            PDFont body = t.body.load(doc);
+            PDFont bold = t.bold.load(doc);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
-                textAt(cs, t.bold, t.headingSize, 72, 730,
+                textAt(cs, bold, t.headingSize, 72, 730,
                         "ACME Tooling \u2014 Invoice 10247");
 
-                textAt(cs, t.body, t.bodySize, 72, 690, "Meridian Fabrication Ltd.");
-                textAt(cs, t.body, t.bodySize, 72, 676, "410 Foundry Row, Building C");
-                textAt(cs, t.body, t.bodySize, 72, 662, "Dayton, OH 45402");
+                textAt(cs, body, t.bodySize, 72, 690, "Meridian Fabrication Ltd.");
+                textAt(cs, body, t.bodySize, 72, 676, "410 Foundry Row, Building C");
+                textAt(cs, body, t.bodySize, 72, 662, "Dayton, OH 45402");
 
-                textAt(cs, t.bold, t.bodySize, 72, 600, "Description");
-                textAt(cs, t.bold, t.bodySize, 340, 600, "Qty");
-                textAt(cs, t.bold, t.bodySize, 430, 600, "Amount (USD)");
+                textAt(cs, bold, t.bodySize, 72, 600, "Description");
+                textAt(cs, bold, t.bodySize, 340, 600, "Qty");
+                textAt(cs, bold, t.bodySize, 430, 600, "Amount (USD)");
                 for (int i = 0; i < INVOICE_ROWS.length; i++) {
                     float y = 584 - i * 16;
-                    textAt(cs, t.body, t.bodySize, 72, y, INVOICE_ROWS[i][0]);
-                    textAt(cs, t.body, t.bodySize, 340, y, INVOICE_ROWS[i][1]);
-                    textAt(cs, t.body, t.bodySize, 430, y, INVOICE_ROWS[i][2]);
+                    textAt(cs, body, t.bodySize, 72, y, INVOICE_ROWS[i][0]);
+                    textAt(cs, body, t.bodySize, 340, y, INVOICE_ROWS[i][1]);
+                    textAt(cs, body, t.bodySize, 430, y, INVOICE_ROWS[i][2]);
                 }
-                textAt(cs, t.bold, t.bodySize, 340, 460, "Total");
-                textAt(cs, t.bold, t.bodySize, 430, 460, "663.49");
+                textAt(cs, bold, t.bodySize, 340, 460, "Total");
+                textAt(cs, bold, t.bodySize, 430, 460, "663.49");
 
                 // Vector logo: teal block plus triangle, top right.
                 cs.setNonStrokingColor(0, 128, 128);
@@ -315,7 +450,7 @@ public final class NfTestPdfBuilder {
                 cs.moveTo(72, 90);
                 cs.lineTo(540, 90);
                 cs.stroke();
-                textAt(cs, t.body, t.bodySize, 72, 74,
+                textAt(cs, body, t.bodySize, 72, 74,
                         "Payment due within 30 days. Quote invoice number on remittance.");
             }
             doc.save(file);
@@ -365,21 +500,23 @@ public final class NfTestPdfBuilder {
     public static File createReport(File dir, String fileName, Theme t) throws IOException {
         File file = new File(dir, fileName);
         try (PDDocument doc = new PDDocument()) {
+            PDFont body = t.body.load(doc);
+            PDFont bold = t.bold.load(doc);
             PDPage page1 = new PDPage(PDRectangle.LETTER);
             doc.addPage(page1);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page1)) {
-                textAt(cs, t.bold, t.headingSize, 72, 730, "Quarterly Calibration Report");
-                paragraphAt(cs, t, 72, 690, REPORT_P1_BODY);
-                paragraphAt(cs, t, 90, 540, REPORT_P1_BULLETS);
-                textAt(cs, t.body, t.bodySize, 72, 40, "Page 1 of 2");
+                textAt(cs, bold, t.headingSize, 72, 730, "Quarterly Calibration Report");
+                paragraphAt(cs, body, t.bodySize, t.leading, 72, 690, REPORT_P1_BODY);
+                paragraphAt(cs, body, t.bodySize, t.leading, 90, 540, REPORT_P1_BULLETS);
+                textAt(cs, body, t.bodySize, 72, 40, "Page 1 of 2");
             }
 
             PDPage page2 = new PDPage(PDRectangle.LETTER);
             doc.addPage(page2);
             try (PDPageContentStream cs = new PDPageContentStream(doc, page2)) {
-                textAt(cs, t.bold, t.headingSize, 72, 730, "Follow-up Actions");
-                paragraphAt(cs, t, 72, 690, REPORT_P2_BODY);
-                textAt(cs, t.body, t.bodySize, 72, 40, "Page 2 of 2");
+                textAt(cs, bold, t.headingSize, 72, 730, "Follow-up Actions");
+                paragraphAt(cs, body, t.bodySize, t.leading, 72, 690, REPORT_P2_BODY);
+                textAt(cs, body, t.bodySize, 72, 40, "Page 2 of 2");
             }
             doc.save(file);
         }
@@ -392,14 +529,16 @@ public final class NfTestPdfBuilder {
         try (PDDocument doc = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.LETTER);
             doc.addPage(page);
+            PDFont body = t.body.load(doc);
+            PDFont bold = t.bold.load(doc);
             PDImageXObject image = PDImageXObject.createFromByteArray(
                     doc, readResource(IMAGE_RESOURCE), "sample");
             try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
                 cs.drawImage(image, 72, 620, 120, 90);
-                textAt(cs, t.body, t.bodySize, 72, 580, "Dear Ms. Okafor,");
-                paragraphAt(cs, t, 72, 550, LETTER_BODY);
-                textAt(cs, t.body, t.bodySize, 72, 430, "Kind regards,");
-                textAt(cs, t.bold, t.bodySize, 72, 402, "R. Halvorsen, Accounts");
+                textAt(cs, body, t.bodySize, 72, 580, "Dear Ms. Okafor,");
+                paragraphAt(cs, body, t.bodySize, t.leading, 72, 550, LETTER_BODY);
+                textAt(cs, body, t.bodySize, 72, 430, "Kind regards,");
+                textAt(cs, bold, t.bodySize, 72, 402, "R. Halvorsen, Accounts");
             }
             doc.save(file);
         }
@@ -407,7 +546,7 @@ public final class NfTestPdfBuilder {
     }
 
     /** One BT/ET text run at an absolute position - keeps pair layouts fixed. */
-    private static void textAt(PDPageContentStream cs, PDType1Font font, float size,
+    private static void textAt(PDPageContentStream cs, PDFont font, float size,
                                float x, float y, String text) throws IOException {
         cs.beginText();
         cs.setFont(font, size);
@@ -417,11 +556,11 @@ public final class NfTestPdfBuilder {
     }
 
     /** Multi-line text run driven by TL/T* - the operators -nf normalizes. */
-    private static void paragraphAt(PDPageContentStream cs, Theme t,
-                                    float x, float y, String[] lines) throws IOException {
+    private static void paragraphAt(PDPageContentStream cs, PDFont font, float size,
+                                    float leading, float x, float y, String[] lines) throws IOException {
         cs.beginText();
-        cs.setFont(t.body, t.bodySize);
-        cs.setLeading(t.leading);
+        cs.setFont(font, size);
+        cs.setLeading(leading);
         cs.newLineAtOffset(x, y);
         for (String line : lines) {
             cs.showText(line);

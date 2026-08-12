@@ -261,23 +261,28 @@ Options that apply when testing PDFs and other documents.
 + `-pp [password]` - Password for opening protected PDF files
 + `-pn` - Preserve the original test names when testing only selected pages
 + `-st` - Split a multi-page document into individual single-step tests
-+ `-nf` - Normalize Latin-script PDF text to Helvetica 12pt before rendering. Japanese text is left untouched. See [Font Normalization](#font-normalization).
-+ `-nfj` - Normalize Japanese PDF text (Hiragana, Katakana, Kanji) to bundled Noto Sans JP 12pt before rendering. See [Font Normalization](#font-normalization).
++ `-nf` - Redraw Latin-script PDF text in Helvetica before rendering, keeping every glyph's original size and position. See [Font Normalization](#font-normalization).
++ `-nfj` - Redraw Japanese PDF text (Hiragana, Katakana, Kanji) in bundled Noto Sans JP, keeping every glyph's original size and position. See [Font Normalization](#font-normalization).
 + `-lo` - Use legacy (pre-2.0) file ordering to stay compatible with older baselines
 + `-rwauto` - Auto-detect and remove a watermark (a stamped outline like a diagonal "UAT - Proof"). See [Watermark Removal](#watermark-removal).
 + `-rwo [dir]` - Standalone output mode: write cleaned PDFs to the directory and exit without uploading. Combine with `-rwauto`. See [Watermark Removal](#watermark-removal).
 
 ### Font Normalization
-Font changes (family swaps, weight tweaks, kerning differences) are one of the most common sources of
-false-positive diffs when comparing PDFs across document generation pipelines. Two flags rewrite text
-to fixed fonts before a PDF page is rasterized, producing a deterministic render that is insensitive
-to typographic changes while still catching structural differences (missing text, reordered content,
-layout regressions):
+Font internals (embedding style, subsetting, encodings, hinting) are one of the most common sources
+of false-positive diffs when comparing PDFs across document generation pipelines: the same document
+produced by two pipelines embeds the "same" font differently and every glyph rasterizes slightly
+differently. Two flags redraw text in a fixed font while keeping the document's layout byte-faithful —
+glyph shapes are normalized, but every glyph keeps its original size and pen position:
 
-+ `-nf` / `--normalizeFont` — rewrites **Latin-script** text to **Helvetica 12pt**.
-+ `-nfj` / `--normalizeFontJP` — rewrites **Japanese** text (Hiragana, Katakana, Kanji, fullwidth
-  forms) to a bundled **Noto Sans JP 12pt** (SIL OFL 1.1 licensed, embedded in the JAR — no fonts
++ `-nf` / `--normalizeFont` — redraws **Latin-script** text in **Helvetica**.
++ `-nfj` / `--normalizeFontJP` — redraws **Japanese** text (Hiragana, Katakana, Kanji, fullwidth
+  forms) in a bundled **Noto Sans JP** (SIL OFL 1.1 licensed, embedded in the JAR — no fonts
   need to be installed, and renders are identical on every OS).
+
+Because layout is preserved, differences that genuinely move or resize text (font-size changes,
+different leading, a different layout engine) still diff — that is content, not font noise. For
+comparisons where small position shifts are expected, combine normalization with Eyes'
+**Ignore displacement** setting.
 
 Classification is per text run: a run counts as Japanese if it contains at least one Japanese
 character, so mixed runs like `2025年10月31日` normalize as Japanese (Noto covers their Latin
@@ -293,6 +298,9 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf -nfj
 **Behavior:**
 - The original PDF document on disk is **never modified**. Normalization operates on a copy of the page's
   content stream and resources; the baseline file and any downstream consumers are untouched.
+- Layout is byte-faithful: every glyph keeps its original size, advance and pen position (a kerning
+  adjustment after each glyph restores the original font's metrics), and leading/spacing operators
+  pass through untouched.
 - Image content, vector graphics, and page geometry (media box, matrix) are preserved as-is.
 - Text that cannot be decoded to Unicode (no ToUnicode mapping) keeps its original font — it renders
   faithfully rather than as garbage, but font differences in those runs still diff.
@@ -302,18 +310,23 @@ java -jar ImageTester.jar -k [api-key] -f report.pdf -nf -nfj
   as `?`, and each substitution is logged with a warning naming the code point.
 
 **When to use it:**
-- Baselines are breaking because the document generator upgraded a font library or switched a typeface.
-- You want to validate structural/layout correctness of a document independently of its typography.
-- You are comparing output from two rendering pipelines that embed fonts differently.
+- You are comparing output from two rendering pipelines that embed or subset fonts differently
+  (e.g. Word vs a conversion library producing the "same" document).
+- Baselines are breaking on font-internal churn: re-subsetting, embedding changes, encoding changes.
+- You want to validate structural/layout correctness of a document independently of which font
+  implementation drew it.
 
 **When *not* to use it:**
 - Typography is part of what you are validating (brand compliance, marketing collateral).
 - You need to verify that a specific font is present and rendered correctly.
+- The two documents use different font sizes or leading for the same text — that moves glyphs, and
+  normalization intentionally preserves it. Use Eyes' Ignore displacement or Layout match level there.
 
 **Note:** Enabling either flag invalidates affected baselines — normalized renders will not match a
 baseline captured without normalization. Plan for a baseline refresh when rolling this out. Upgrading
-from an earlier ImageTester whose `-nf` rewrote all fonts also changes output on documents with
-non-ASCII text or fonts lacking Unicode mappings — expect a one-time re-approval there as well.
+from an earlier ImageTester whose `-nf` forced all text to 12pt Helvetica also changes output —
+normalized renders now keep the document's own sizes and positions — so expect a one-time
+re-approval of existing `-nf` baselines as well.
 
 ### Watermark Removal
 
