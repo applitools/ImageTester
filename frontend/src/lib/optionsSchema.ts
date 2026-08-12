@@ -49,7 +49,7 @@ const TAB_ANCHORS: Record<TabId, string> = {
 
 /** README section that explains a given option, used to deep-link each help tip. */
 export function docUrl(spec: OptionSpec): string {
-  if (spec.flag === "nf") return README_BASE + "#font-normalization";
+  if (spec.flag === "nf" || spec.flag === "nfj") return README_BASE + "#font-normalization";
   return README_BASE + TAB_ANCHORS[spec.tab];
 }
 
@@ -116,7 +116,8 @@ export const OPTION_SPECS: OptionSpec[] = [
   { flag: "pn", label: "Page numbers",      type: "checkbox", tab: "pdf", help: "Preserve the original test names when testing only selected pages.", default: false },
   { flag: "pp", label: "PDF password",      type: "password", tab: "pdf", help: "Password for opening protected PDF files.", default: "" },
   { flag: "st", label: "Split steps",       type: "checkbox", tab: "pdf", help: "Split a multi-page document into individual single-step tests.", default: false },
-  { flag: "nf", label: "Normalize fonts",   type: "checkbox", tab: "pdf", help: "Rewrite all PDF fonts to Helvetica 12pt before rendering — ignores font/typography changes. Invalidates existing baselines.", default: false },
+  { flag: "nf",  label: "Normalize Latin fonts",    type: "checkbox", tab: "pdf", help: "Rewrite Latin-script PDF text to Helvetica 12pt before rendering — ignores font/typography changes. Japanese text is left untouched (use Normalize Japanese fonts). Invalidates existing baselines.", default: false },
+  { flag: "nfj", label: "Normalize Japanese fonts", type: "checkbox", tab: "pdf", help: "Rewrite Japanese text (Hiragana, Katakana, Kanji) to a bundled Noto Sans JP 12pt before rendering — ignores Japanese font changes. Combine with Normalize Latin fonts for full normalization. Invalidates existing baselines.", default: false },
   { flag: "lo", label: "Legacy file order", type: "checkbox", tab: "pdf", help: "Use pre-2.0 file ordering to stay compatible with older baselines.", default: false },
   // Connection
   { flag: "s",  label: "Server URL",         type: "text",     tab: "connection", help: "Applitools server URL. Also settable via APPLITOOLS_SERVER_URL.", default: "" },

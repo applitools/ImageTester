@@ -50,6 +50,7 @@ public class Config {
     public Region[] contentRegions = null;
     public boolean shouldThrowException = false;
     public boolean normalizeFont = false;
+    public boolean normalizeFontJP = false;
     public String removeWatermarkText = null;
     public String removeWatermarkOutDir = null;
     private final HashSet<String> batchesIdListForBatchClose = new HashSet<>();

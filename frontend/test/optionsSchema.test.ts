@@ -42,9 +42,17 @@ describe("optionsSchema", () => {
     expect(withoutHelp).toEqual([]);
   });
 
-  it("links normalize-fonts to the font-normalization README section", () => {
+  it("links both normalize-fonts flags to the font-normalization README section", () => {
     const nf = OPTION_SPECS.find((o) => o.flag === "nf")!;
+    const nfj = OPTION_SPECS.find((o) => o.flag === "nfj")!;
     expect(docUrl(nf)).toContain("#font-normalization");
+    expect(docUrl(nfj)).toContain("#font-normalization");
+  });
+
+  it("offers Japanese font normalization as a checkbox in the pdf tab", () => {
+    const nfj = OPTION_SPECS.find((o) => o.flag === "nfj");
+    expect(nfj?.tab).toBe("pdf");
+    expect(nfj?.type).toBe("checkbox");
   });
 
   it("links PDF options to the documents README section", () => {

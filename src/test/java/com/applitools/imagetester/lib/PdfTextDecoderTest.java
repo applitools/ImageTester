@@ -1,12 +1,14 @@
 package com.applitools.imagetester.lib;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.Normalizer;
 
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSInteger;
@@ -82,6 +84,37 @@ public class PdfTextDecoderTest {
     }
 
     @Test
+    public void should_decode_type0_japanese_string_roundtrip() throws IOException {
+        byte[] encoded;
+        byte[] pdfBytes;
+        try (PDDocument doc = new PDDocument()) {
+            PDType0Font noto = NotoFontProvider.load(doc);
+            encoded = noto.encode("日本語");
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.beginText();
+                cs.setFont(noto, 12);
+                cs.newLineAtOffset(72, 700);
+                cs.showText("日本語");
+                cs.endText();
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.save(out);
+            pdfBytes = out.toByteArray();
+        }
+
+        try (PDDocument reloaded = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+            PDResources resources = reloaded.getPage(0).getResources();
+            PDFont font = resources.getFont(resources.getFontNames().iterator().next());
+
+            String decoded = PdfTextDecoder.decode(new COSString(encoded), font);
+
+            assertEqualsNfkc("日本語", decoded);
+        }
+    }
+
+    @Test
     public void should_decode_tj_array_skipping_kern_numbers() throws IOException {
         byte[] part1;
         byte[] part2;
@@ -115,6 +148,43 @@ public class PdfTextDecoderTest {
             String decoded = PdfTextDecoder.decode(array, font);
 
             assertEquals("Subset", decoded);
+        }
+    }
+
+    @Test
+    public void should_decode_tj_array_japanese_payload() throws IOException {
+        byte[] part1;
+        byte[] part2;
+        byte[] pdfBytes;
+        try (PDDocument doc = new PDDocument()) {
+            PDType0Font noto = NotoFontProvider.load(doc);
+            part1 = noto.encode("日本");
+            part2 = noto.encode("語");
+            PDPage page = new PDPage(PDRectangle.LETTER);
+            doc.addPage(page);
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                cs.beginText();
+                cs.setFont(noto, 12);
+                cs.newLineAtOffset(72, 700);
+                cs.showText("日本語");
+                cs.endText();
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            doc.save(out);
+            pdfBytes = out.toByteArray();
+        }
+
+        try (PDDocument reloaded = PDDocument.load(new ByteArrayInputStream(pdfBytes))) {
+            PDResources resources = reloaded.getPage(0).getResources();
+            PDFont font = resources.getFont(resources.getFontNames().iterator().next());
+            COSArray array = new COSArray();
+            array.add(new COSString(part1));
+            array.add(COSInteger.get(-120));
+            array.add(new COSString(part2));
+
+            String decoded = PdfTextDecoder.decode(array, font);
+
+            assertEqualsNfkc("日本語", decoded);
         }
     }
 
@@ -177,5 +247,16 @@ public class PdfTextDecoderTest {
             }
             out.write(unsigned);
         }
+    }
+
+    /**
+     * PDFBox builds ToUnicode CMaps by reverse cmap lookup; ideographs that share
+     * a glyph with a Kangxi radical (e.g. 日 vs U+2F47) may decode to the radical
+     * codepoint. NFKC folds radicals back to the unified ideographs.
+     */
+    private static void assertEqualsNfkc(String expected, String actual) {
+        assertNotNull(actual);
+        assertEquals(Normalizer.normalize(expected, Normalizer.Form.NFKC),
+                Normalizer.normalize(actual, Normalizer.Form.NFKC));
     }
 }

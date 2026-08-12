@@ -12,7 +12,7 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 
 /**
  * Decodes PDF show-text payloads to Unicode using the font that governs them.
- * Returns null when any code point has no Unicode mapping - callers treat
+ * Returns null when any code point has no Unicode mapping — callers treat
  * that run as undecodable and leave it untouched.
  */
 public final class PdfTextDecoder {
