@@ -270,6 +270,49 @@ public class PdfFontNormalizerTest {
     }
 
     @Test
+    public void should_route_bold_latin_runs_to_helvetica_bold() throws IOException {
+        File pdf = createTestPdf("Bold heading", "Regular body",
+                PDType1Font.TIMES_BOLD, 12f, PDType1Font.TIMES_ROMAN, 10f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, false);
+
+            assertEquals("Bold heading", decodedTextGovernedBy(normalized, "HelvB"));
+        }
+    }
+
+    /**
+     * Only a Regular weight of Noto Sans JP is bundled, so bold Japanese
+     * sources keep their weight the way Word itself fakes bold: fill+stroke
+     * text rendering (Tr 2) with a hairline stroke, then restore.
+     */
+    @Test
+    public void should_synthesize_bold_stroke_for_bold_japanese_runs() throws IOException {
+        File pdf = createBoldNamedJapanesePdf("変更手続きのご案内", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(2, renderingModeAroundFirstRunOf(normalized, "NotoJP", true));
+            assertEquals(0, renderingModeAroundFirstRunOf(normalized, "NotoJP", false));
+        }
+    }
+
+    @Test
+    public void should_not_synthesize_bold_for_regular_japanese_runs() throws IOException {
+        File pdf = createJapanesePdf("変更手続きのご案内", 18f);
+
+        try (PDDocument document = PDDocument.load(pdf);
+             PDDocument tempDoc = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(document.getPage(0), tempDoc, true, true);
+
+            assertEquals(-1, renderingModeAroundFirstRunOf(normalized, "NotoJP", true));
+        }
+    }
+
+    @Test
     public void should_keep_pure_ascii_runs_in_helvetica_when_both_flags_on() throws IOException {
         File pdf = createJapanesePdf("plain ascii 123", 18f);
 
@@ -529,6 +572,69 @@ public class PdfFontNormalizerTest {
 
     /**
      * Walks the normalized page's content stream and returns the concatenated
+     * Like createJapanesePdf, but the embedded font's descriptor and BaseFont
+     * claim a Bold face (the shape Aspose produces for MS-PGothic,Bold).
+     */
+    private File createBoldNamedJapanesePdf(String text, float size) throws IOException {
+        File plain = createJapanesePdf(text, size);
+        File file = tempFolder.newFile();
+        try (PDDocument doc = PDDocument.load(plain)) {
+            org.apache.pdfbox.pdmodel.PDResources resources = doc.getPage(0).getResources();
+            org.apache.pdfbox.cos.COSDictionary type0 =
+                    resources.getFont(resources.getFontNames().iterator().next()).getCOSObject();
+            String boldName = type0.getNameAsString(COSName.BASE_FONT) + ",Bold";
+            type0.setName(COSName.BASE_FONT, boldName);
+            org.apache.pdfbox.cos.COSArray descendants =
+                    (org.apache.pdfbox.cos.COSArray) type0.getDictionaryObject(COSName.DESCENDANT_FONTS);
+            org.apache.pdfbox.cos.COSDictionary cidFont =
+                    (org.apache.pdfbox.cos.COSDictionary) descendants.getObject(0);
+            cidFont.setName(COSName.BASE_FONT, boldName);
+            org.apache.pdfbox.cos.COSDictionary descriptor =
+                    (org.apache.pdfbox.cos.COSDictionary) cidFont.getDictionaryObject(COSName.FONT_DESC);
+            descriptor.setName(COSName.FONT_NAME, boldName);
+            doc.save(file);
+        }
+        return file;
+    }
+
+    /**
+     * The text rendering mode in force immediately before the first show op
+     * governed by fontName (before=true), or the first mode set after that
+     * run (before=false); -1 when no Tr op exists on that side of the run.
+     */
+    private int renderingModeAroundFirstRunOf(PDPage page, String fontName, boolean before) throws IOException {
+        PDFStreamParser parser = new PDFStreamParser(page);
+        parser.parse();
+        List<Object> tokens = parser.getTokens();
+
+        COSName governing = null;
+        int mode = -1;
+        boolean runSeen = false;
+        for (int i = 0; i < tokens.size(); i++) {
+            Object token = tokens.get(i);
+            if (!(token instanceof Operator)) continue;
+            String op = ((Operator) token).getName();
+            if ("Tf".equals(op)) {
+                governing = (COSName) tokens.get(i - 2);
+            } else if ("Tr".equals(op)) {
+                int value = ((org.apache.pdfbox.cos.COSNumber) tokens.get(i - 1)).intValue();
+                if (!runSeen) {
+                    mode = value;
+                } else {
+                    return before ? mode : value;
+                }
+            } else if (("Tj".equals(op) || "TJ".equals(op) || "'".equals(op) || "\"".equals(op))
+                    && governing != null && fontName.equals(governing.getName())) {
+                if (before) {
+                    return mode;
+                }
+                runSeen = true;
+            }
+        }
+        return before ? mode : -1;
+    }
+
+    /**
      * decoded text of every show op whose governing Tf names the given font.
      * Decoding uses the page's own resources, so it works for any font.
      */

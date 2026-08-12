@@ -18,6 +18,7 @@ import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSFloat;
+import org.apache.pdfbox.cos.COSInteger;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSNumber;
 import org.apache.pdfbox.cos.COSStream;
@@ -29,6 +30,7 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDFontDescriptor;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
@@ -50,7 +52,15 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 public class PdfFontNormalizer {
 
     private static final COSName HELV = COSName.getPDFName("Helv");
+    private static final COSName HELV_B = COSName.getPDFName("HelvB");
     private static final COSName NOTO_JP = COSName.getPDFName("NotoJP");
+    /**
+     * Stroke width per pt of font size when faking bold (Tr 2) for bold
+     * Japanese sources — only a Regular Noto is bundled. 0.0262em matches the
+     * hairline Word emits when it fakes bold for fonts without a bold face,
+     * so both sides of a Word-vs-generator comparison converge.
+     */
+    private static final float BOLD_STROKE_EM = 0.0262f;
     private static final char MISSING_JP_GLYPH = '\u3013'; // 〓 geta mark (escape survives any source encoding)
     private static final char MISSING_LATIN_GLYPH = '?';
     /** Advance deltas below this (thousandths of an em) are invisible; skip the adjustment. */
@@ -67,6 +77,8 @@ public class PdfFontNormalizer {
         COSBase emittedSize;
         float charSpacing;              // Tc
         float wordSpacing;              // Tw
+        int renderingMode;              // Tr
+        float lineWidth = 1f;           // w
 
         FontState copy() {
             FontState c = new FontState();
@@ -77,6 +89,8 @@ public class PdfFontNormalizer {
             c.emittedSize = emittedSize;
             c.charSpacing = charSpacing;
             c.wordSpacing = wordSpacing;
+            c.renderingMode = renderingMode;
+            c.lineWidth = lineWidth;
             return c;
         }
     }
@@ -160,6 +174,10 @@ public class PdfFontNormalizer {
                 state.charSpacing = lastNumber(operands);
             } else if ("Tw".equals(op) && lastIsNumber(operands)) {
                 state.wordSpacing = lastNumber(operands);
+            } else if ("Tr".equals(op) && lastIsNumber(operands)) {
+                state.renderingMode = (int) lastNumber(operands);
+            } else if ("w".equals(op) && lastIsNumber(operands)) {
+                state.lineWidth = lastNumber(operands);
             } else if ("q".equals(op)) {
                 saved.push(state.copy());
             } else if ("Q".equals(op) && !saved.isEmpty()) {
@@ -252,7 +270,13 @@ public class PdfFontNormalizer {
             return;
         }
 
-        PDFont targetFont = NOTO_JP.equals(target) ? notoFont : PDType1Font.HELVETICA;
+        boolean bold = isBoldFont(state.font);
+        if (HELV.equals(target) && bold) {
+            target = HELV_B;
+        }
+        PDFont targetFont = NOTO_JP.equals(target) ? notoFont
+                : HELV_B.equals(target) ? PDType1Font.HELVETICA_BOLD
+                : PDType1Font.HELVETICA;
         char fallback = NOTO_JP.equals(target) ? MISSING_JP_GLYPH : MISSING_LATIN_GLYPH;
 
         COSArray rewritten;
@@ -273,9 +297,36 @@ public class PdfFontNormalizer {
         if ("'".equals(op) || "\"".equals(op)) {
             out.add(Operator.getOperator("T*"));
         }
+        boolean strokeBold = bold && NOTO_JP.equals(target);
+        if (strokeBold) {
+            out.add(COSInteger.get(2));
+            out.add(Operator.getOperator("Tr"));
+            out.add(new COSFloat(BOLD_STROKE_EM * sizeOrig));
+            out.add(Operator.getOperator("w"));
+        }
         ensureFont(out, state, target, state.size);
         out.add(rewritten);
         out.add(Operator.getOperator("TJ"));
+        if (strokeBold) {
+            out.add(COSInteger.get(state.renderingMode));
+            out.add(Operator.getOperator("Tr"));
+            out.add(new COSFloat(state.lineWidth));
+            out.add(Operator.getOperator("w"));
+        }
+    }
+
+    /** Bold detection for subset names like "FAAAAI+MS-PGothic,Bold" and descriptor metadata. */
+    private static boolean isBoldFont(PDFont font) {
+        if (font == null) {
+            return false;
+        }
+        PDFontDescriptor descriptor = font.getFontDescriptor();
+        if (descriptor != null && (descriptor.isForceBold() || descriptor.getFontWeight() >= 600)) {
+            return true;
+        }
+        String name = descriptor != null && descriptor.getFontName() != null
+                ? descriptor.getFontName() : font.getName();
+        return name != null && name.toLowerCase().contains("bold");
     }
 
     /** Keeps a run's original operator, operands and bytes. */
@@ -422,6 +473,7 @@ public class PdfFontNormalizer {
                                               boolean normalizeLatin) {
         if (normalizeLatin) {
             resources.put(HELV, PDType1Font.HELVETICA);
+            resources.put(HELV_B, PDType1Font.HELVETICA_BOLD);
         }
         if (notoFont != null) {
             resources.put(NOTO_JP, notoFont);
