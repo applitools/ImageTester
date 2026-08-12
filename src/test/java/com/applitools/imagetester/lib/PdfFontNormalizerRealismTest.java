@@ -113,7 +113,7 @@ public class PdfFontNormalizerRealismTest {
 
     private BufferedImage renderNormalizedPage(File pdf, int pageIndex) throws IOException {
         try (PDDocument doc = PDDocument.load(pdf)) {
-            return PdfFontNormalizer.renderNormalized(doc.getPage(pageIndex), TEST_DPI);
+            return PdfFontNormalizer.renderNormalized(doc.getPage(pageIndex), TEST_DPI, true, false);
         }
     }
 }

@@ -68,8 +68,8 @@ public class PdfFontNormalizerEdgeCaseTest {
     public void normalized_page_preserves_rotation() throws IOException {
         File pdf = NfTestPdfBuilder.createRotated(tempFolder.getRoot(), "rotated.pdf");
 
-        try (PDDocument doc = PDDocument.load(pdf)) {
-            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0));
+        try (PDDocument doc = PDDocument.load(pdf); PDDocument tmp = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0), tmp, true, false);
             assertEquals(90, normalized.getRotation());
         }
     }
@@ -90,8 +90,8 @@ public class PdfFontNormalizerEdgeCaseTest {
     public void normalized_page_preserves_cropbox_dimensions() throws IOException {
         File pdf = NfTestPdfBuilder.createCropBoxed(tempFolder.getRoot(), "cropbox.pdf");
 
-        try (PDDocument doc = PDDocument.load(pdf)) {
-            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0));
+        try (PDDocument doc = PDDocument.load(pdf); PDDocument tmp = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0), tmp, true, false);
             assertEquals(306f, normalized.getCropBox().getWidth(), 0.01f);
             assertEquals(396f, normalized.getCropBox().getHeight(), 0.01f);
         }
@@ -192,21 +192,19 @@ public class PdfFontNormalizerEdgeCaseTest {
     }
 
     private String extractNormalizedFirstPage(File pdf) throws IOException {
-        try (PDDocument doc = PDDocument.load(pdf)) {
-            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0));
-            try (PDDocument tmp = new PDDocument()) {
-                tmp.addPage(normalized);
-                PDFTextStripper stripper = new PDFTextStripper();
-                stripper.setStartPage(1);
-                stripper.setEndPage(1);
-                return stripper.getText(tmp).trim();
-            }
+        try (PDDocument doc = PDDocument.load(pdf); PDDocument tmp = new PDDocument()) {
+            PDPage normalized = PdfFontNormalizer.normalize(doc.getPage(0), tmp, true, false);
+            tmp.addPage(normalized);
+            PDFTextStripper stripper = new PDFTextStripper();
+            stripper.setStartPage(1);
+            stripper.setEndPage(1);
+            return stripper.getText(tmp).trim();
         }
     }
 
     private BufferedImage renderNormalizedFirstPage(File pdf) throws IOException {
         try (PDDocument doc = PDDocument.load(pdf)) {
-            return PdfFontNormalizer.renderNormalized(doc.getPage(0), TEST_DPI);
+            return PdfFontNormalizer.renderNormalized(doc.getPage(0), TEST_DPI, true, false);
         }
     }
 
