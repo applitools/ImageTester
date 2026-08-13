@@ -2,6 +2,8 @@ package com.applitools.imagetester;
 
 import com.applitools.imagetester.lib.EyesFactory;
 import com.applitools.imagetester.lib.Logger;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -62,6 +64,26 @@ public class EyesFactoryTest {
     public void accSettings_null_isNoOp() {
         EyesFactory factory = createFactory().accSettings(null);
         assertNotNull(factory);
+    }
+
+    @Test
+    public void accSettings_combinedLevelColonVersionToken_enablesValidation() {
+        EyesFactory factory = createFactory().accSettings(new String[]{"AA:WCAG_2_1"});
+        assertTrue(factory.hasAccessibilityValidation());
+    }
+
+    @Test
+    public void accSettings_combinedTokenWithBlankLevel_enablesValidation() {
+        EyesFactory factory = createFactory().accSettings(new String[]{":WCAG_2_1"});
+        assertTrue(factory.hasAccessibilityValidation());
+    }
+
+    @Test
+    public void accSettings_cliParsedColonSeparatedValue_enablesValidation() throws Exception {
+        CommandLine cmd = new DefaultParser().parse(ImageTester.getOptions(),
+                new String[]{"-ac", "AA:WCAG_2_1"});
+        EyesFactory factory = createFactory().accSettings(cmd.getOptionValues("ac"));
+        assertTrue(factory.hasAccessibilityValidation());
     }
 
     @Test(expected = IllegalArgumentException.class)

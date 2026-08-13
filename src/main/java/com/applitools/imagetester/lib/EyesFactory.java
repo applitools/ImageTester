@@ -225,6 +225,10 @@ public class EyesFactory {
     public EyesFactory accSettings(String[] settings) {
         if (settings == null)
             return this;
+        // commons-cli 1.6.0 ignores valueSeparator(':') on options with optionalArg(true),
+        // so "-ac AA:WCAG_2_1" arrives here as one unsplit token — split it ourselves.
+        if (settings.length == 1 && settings[0].contains(":"))
+            settings = settings[0].split(":", 2);
         AccessibilityLevel level = AccessibilityLevel.AA;
         AccessibilityGuidelinesVersion version = AccessibilityGuidelinesVersion.WCAG_2_0;
         if (settings.length > 2)
