@@ -580,7 +580,7 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("ac")
                 .longOpt("accessibility")
-                .desc("Set accessibility validation options in the format [Level:GuidelineVer], default: \"AA:WCAG_2_0\", including partial notations ie: \":WCAG_2_1\"")
+                .desc("Run WCAG accessibility validation. Format Level:Guideline — Level: AA or AAA, Guideline: WCAG_2_0 or WCAG_2_1. Either part may be omitted and defaults to AA:WCAG_2_0, e.g. -ac AA:WCAG_2_1, -ac AAA, -ac :WCAG_2_1, or bare -ac for the defaults")
                 .numberOfArgs(2)
                 .optionalArg(true)
                 .valueSeparator(':') //, and not ; to avoid bash commands separation

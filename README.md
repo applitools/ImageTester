@@ -140,7 +140,8 @@ How images are compared and which differences count as failures.
 + `-ic [{header,footer,left,right}]` - Cut pixels from each side before comparing; missing notations allowed, e.g. `-ic ,,10,4`
 + `-rc [x,y,width,height]` - Capture (test) only a particular region of PDFs/Images.
   **Example:** `-rc "200,500,1000,1000"` tests only the region at x:200, y:500, width:1000, height:1000
-+ `-ac [Level:GuidelineVer]` - Set accessibility validation, optionally with arguments split by `:`; default "AA:WCAG_2_0", available [AA|AAA:WCAG_2_0|WCAG_2_1]
++ `-ac [Level:Guideline]` - Run WCAG accessibility validation. Level is `AA` or `AAA`; Guideline is `WCAG_2_0` or `WCAG_2_1`. Either part may be omitted and defaults to `AA:WCAG_2_0`.
+  **Examples:** `-ac AA:WCAG_2_1` validates AA conformance against WCAG 2.1; bare `-ac` uses the defaults; `-ac AAA` sets only the level; `-ac :WCAG_2_1` sets only the guideline
 + `-id` - Ignore displacement of shifting elements
 + `-as` - Automatically save baselines on failures
 + `-pt` - Prompt for new tests — new tests are not saved automatically; review and save them manually

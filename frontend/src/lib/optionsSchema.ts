@@ -21,14 +21,26 @@ export type TabId =
   | "watermark"
   | "downloads";
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 export interface OptionSpec {
   flag: string;
   label: string;
   type: ControlType;
   tab: TabId;
   help?: string;
-  options?: string[];
+  options?: (string | SelectOption)[];
   default: unknown;
+}
+
+/** Select options normalized to value/label pairs; plain strings label themselves. */
+export function selectOptions(spec: OptionSpec): SelectOption[] {
+  return (spec.options ?? []).map((opt) =>
+    typeof opt === "string" ? { value: opt, label: opt } : opt,
+  );
 }
 
 const README_BASE = "https://github.com/applitools/ImageTester";
@@ -89,7 +101,13 @@ export const OPTION_SPECS: OptionSpec[] = [
   { flag: "pt", label: "Prompt new tests",    type: "checkbox", tab: "matching", help: "Don't auto-save new tests; review and save them manually on the dashboard.", default: false },
   { flag: "ic", label: "Image cut",           type: "imagecut", tab: "matching", help: "Trim pixels from each side before comparing. Order: header, footer, left, right (leave any blank to skip).", default: "" },
   { flag: "rc", label: "Region capture",      type: "regions",  tab: "matching", help: "Test only a sub-region of each image/PDF instead of the whole page. One region: x, y, width, height.", default: "" },
-  { flag: "ac", label: "Accessibility",       type: "text",     tab: "matching", help: "Run accessibility validation. Format Level:Guideline, e.g. AA:WCAG_2_0 (AA|AAA, WCAG_2_0|WCAG_2_1).", default: "" },
+  { flag: "ac", label: "Accessibility",       type: "select",   tab: "matching", help: "Validate against a WCAG standard at the chosen conformance level.", default: "", options: [
+    { value: "",               label: "Off" },
+    { value: "AA:WCAG_2_0",    label: "AA — WCAG 2.0" },
+    { value: "AA:WCAG_2_1",    label: "AA — WCAG 2.1" },
+    { value: "AAA:WCAG_2_0",   label: "AAA — WCAG 2.0" },
+    { value: "AAA:WCAG_2_1",   label: "AAA — WCAG 2.1" },
+  ] },
   // Batch & Branch
   { flag: "br",  label: "Branch",             type: "text",     tab: "batch", help: "Branch name for this run (for branch-based baselines).", default: "" },
   { flag: "pb",  label: "Parent branch",      type: "text",     tab: "batch", help: "Parent branch name, used when working with branches.", default: "" },

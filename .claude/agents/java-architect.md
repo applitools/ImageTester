@@ -21,7 +21,7 @@ Java development checklist:
 - SpotBugs and SonarQube clean
 - API documentation with OpenAPI
 - JMH benchmarks for critical paths
-- Proper exception handling hierarchy
+- Proper exception handling hierWaitarchy
 - Database migrations versioned
 
 Enterprise patterns:

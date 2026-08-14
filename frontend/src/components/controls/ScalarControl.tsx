@@ -1,4 +1,4 @@
-import type { OptionSpec } from "../../lib/optionsSchema";
+import { selectOptions, type OptionSpec } from "../../lib/optionsSchema";
 
 interface Props {
   spec: OptionSpec;
@@ -21,7 +21,7 @@ export function ScalarControl({ spec, value, onChange }: Props) {
       <label htmlFor={id} className="block text-sm">
         <span className="text-gray-700">{spec.label}</span>
         <select id={id} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm">
-          {(spec.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+          {selectOptions(spec).map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       </label>
     );
