@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.16.4 - 2026/8/13
+- Fix: `-ac` accessibility validation rejected every `Level:Guideline` value (e.g. `AA:WCAG_2_1`)
+  with an "Unable to parse value" error — commons-cli 1.6.0 stopped splitting on `:` (#49)
+- GUI: the Accessibility option is now a dropdown (Off, AA/AAA × WCAG 2.0/2.1) instead of a
+  free-text field with an easy-to-mistype format
+- Clearer `-ac` instructions in the README and CLI `--help`
+- 
 ## 3.16.3 - 2026/8/3
 - Fix issue in which Mac environments were not able to click the folder popup
 
