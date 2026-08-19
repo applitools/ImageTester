@@ -122,6 +122,11 @@ public class Logger {
                 sb.append(String.format("%s\n", e.getMessage())); break;
             case "ExecutionException":
                 sb.append(String.format("%s\n", e.getMessage())); break;
+            case "EyesException":
+                sb.append(String.format("%s \n", e.getMessage()));
+                if (isInvalidApiKey(e))
+                    sb.append("Are you testing against a private cloud? Be sure to set your Applitools server URL — the Connection tab in the GUI, or -s on the command line. \n");
+                break;
             default:
                 sb.append(String.format("Unexpected error, %s, %s \n", e.getClass().getName(), e.getMessage())); break;
         }
@@ -131,6 +136,14 @@ public class Logger {
             sb.append(sw.toString());
         }
         emit(sb.toString());
+    }
+
+    // An invalid key against the public cloud is often really a missing private-cloud server URL.
+    private static boolean isInvalidApiKey(Throwable e) {
+        String message = e.getMessage();
+        if (message == null) return false;
+        String lower = message.toLowerCase();
+        return lower.contains("api key") && lower.contains("invalid");
     }
 
     public void printVersion(String cur_ver) {

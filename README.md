@@ -100,6 +100,16 @@ line. The tool is built in Java and requires a minimal set of parameters. The mi
     + `-k [api-key]` - Applitools api key, can also be set by the environment variable APPLITOOLS_API_KEY
     + `-f [path]` - A path to the target folder or file (default: the execution folder)
 
+### Setting the server URL
+
+By default ImageTester connects to the public Applitools cloud at `https://eyes.applitools.com`.
+If your account is on a private or dedicated cloud, set your server URL — otherwise your API key
+will be rejected as invalid. Any of these work:
+
++ The `-s` flag: `java -jar ImageTester.jar -k [api-key] -s https://mycompanyeyes.applitools.com`
++ The environment variable `APPLITOOLS_SERVER_URL`
++ In the GUI: **Options → Connection → Server URL**
+
 The optional parameters and flags below are grouped by category. These categories mirror the tabs in the ImageTester GUI, so a link from the GUI lands on the matching section here.
 
 ### Metadata options
@@ -180,7 +190,7 @@ Mark areas to ignore, treat as content, or check for layout/accessibility only. 
 ### Connection options
 Server, proxy, and SSL settings.
 
-+ `-s [server]` - Set the Applitools server URL, can also be set by the environment variable APPLITOOLS_SERVER_URL
++ `-s [server]` - Set the Applitools server URL, default = `https://eyes.applitools.com`. Testing against a private cloud? Set your private server URL here. Can also be set by the environment variable APPLITOOLS_SERVER_URL. See [Setting the server URL](#setting-the-server-url)
 + `-p [http://proxy{,user,pass}]` - Set the proxy with optional username and password, can also be set by APPLITOOLS_PROXY
 + `-dv` - Disable SSL certificate validation. !!!Unsecured!!!
 

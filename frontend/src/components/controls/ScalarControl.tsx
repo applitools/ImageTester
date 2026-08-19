@@ -31,6 +31,7 @@ export function ScalarControl({ spec, value, onChange }: Props) {
     <label htmlFor={id} className="block text-sm">
       <span className="text-gray-700">{spec.label}</span>
       <input id={id} type={inputType} value={String(value ?? "")}
+        placeholder={spec.placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-brand-teal focus:outline-none" />
     </label>

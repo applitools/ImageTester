@@ -32,6 +32,7 @@ export interface OptionSpec {
   type: ControlType;
   tab: TabId;
   help?: string;
+  placeholder?: string;
   options?: (string | SelectOption)[];
   default: unknown;
 }
@@ -137,7 +138,7 @@ export const OPTION_SPECS: OptionSpec[] = [
   { flag: "nf", label: "Normalize fonts",   type: "checkbox", tab: "pdf", help: "Rewrite all PDF fonts to Helvetica 12pt before rendering — ignores font/typography changes. Invalidates existing baselines.", default: false },
   { flag: "lo", label: "Legacy file order", type: "checkbox", tab: "pdf", help: "Use pre-2.0 file ordering to stay compatible with older baselines.", default: false },
   // Connection
-  { flag: "s",  label: "Server URL",         type: "text",     tab: "connection", help: "Applitools server URL. Also settable via APPLITOOLS_SERVER_URL.", default: "" },
+  { flag: "s",  label: "Server URL",         type: "text",     tab: "connection", help: "Applitools server URL. Default value of https://eyes.applitools.com. Testing against a private cloud? Enter your private server URL here. Also settable via the APPLITOOLS_SERVER_URL environment variable.", placeholder: "https://eyes.applitools.com", default: "" },
   { flag: "p",  label: "Proxy",              type: "proxy",    tab: "connection", help: "Proxy server, with optional username and password.", default: "" },
   { flag: "dv", label: "Disable SSL verify", type: "checkbox", tab: "connection", help: "Disable SSL certificate validation. Insecure — only use if your network requires it.", default: false },
   // Watermark

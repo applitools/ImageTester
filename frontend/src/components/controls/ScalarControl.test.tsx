@@ -36,3 +36,18 @@ describe("ScalarControl select", () => {
     expect(screen.getByRole("option", { name: "two" })).toBeTruthy();
   });
 });
+
+describe("ScalarControl text", () => {
+  it("shows the spec placeholder in an empty text input", () => {
+    const spec: OptionSpec = {
+      flag: "s",
+      label: "Server URL",
+      type: "text",
+      tab: "connection",
+      placeholder: "https://eyes.applitools.com",
+      default: "",
+    };
+    render(<ScalarControl spec={spec} value="" onChange={() => {}} />);
+    expect(screen.getByPlaceholderText("https://eyes.applitools.com")).toBeTruthy();
+  });
+});

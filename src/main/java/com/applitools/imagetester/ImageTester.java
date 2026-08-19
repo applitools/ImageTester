@@ -398,7 +398,7 @@ public class ImageTester {
         );
         options.addOption(Option.builder("s")
                 .longOpt("server")
-                .desc("Set Applitools server url")
+                .desc("Set Applitools server url, default = https://eyes.applitools.com (set this when testing against a private cloud)")
                 .hasArg()
                 .argName("url")
                 .build()

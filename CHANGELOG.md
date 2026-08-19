@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+- Improved: an invalid API key now prints the SDK message plus a hint to set the server URL when
+  testing against a private cloud, instead of a raw `Unexpected error, EyesException` dump
+- The default server URL (`https://eyes.applitools.com`) and how to change it are now called out
+  everywhere: GUI Server URL placeholder + help text, `-s` CLI help, and a new
+  "Setting the server URL" README section
+
 ## 3.16.4 - 2026/8/13
 - Fix: `-ac` accessibility validation rejected every `Level:Guideline` value (e.g. `AA:WCAG_2_1`)
   with an "Unable to parse value" error — commons-cli 1.6.0 stopped splitting on `:` (#49)
