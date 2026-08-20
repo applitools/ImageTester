@@ -23,7 +23,8 @@ public class TestBase {
         if (JAR_PATH != null) {
             runAsJar(args);
         } else {
-            ImageTester.run(args.split(" "));
+            int exitCode = ImageTester.run(args.split(" "));
+            assertEquals("ImageTester exited with non-zero code", 0, exitCode);
         }
     }
 
@@ -34,10 +35,11 @@ public class TestBase {
             pb.redirectErrorStream(true);
             pb.inheritIO();
             Process proc = pb.start();
-            boolean finished = proc.waitFor(120, TimeUnit.SECONDS);
+            // Compare mode renders 2x20 PDF pages inside the spawned JVM — 120s flakes.
+            boolean finished = proc.waitFor(300, TimeUnit.SECONDS);
             if (!finished) {
                 proc.destroyForcibly();
-                throw new RuntimeException("JAR process timed out after 120 seconds");
+                throw new RuntimeException("JAR process timed out after 300 seconds");
             }
             assertEquals("JAR exited with non-zero code", 0, proc.exitValue());
         } catch (RuntimeException e) {

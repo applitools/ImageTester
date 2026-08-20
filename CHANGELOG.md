@@ -1,6 +1,17 @@
 # Changelog
 
 ## Unreleased
+- Fix: `-p url,user,password` treated the whole comma-joined value as the proxy URL, silently
+  dropping the credentials — same commons-cli 1.6.0 regression that broke `-ac` (#49)
+- Fix: `-rc`, `-mt`, and `-dn` consumed no value at all since the commons-cli 1.6.0 bump
+  (2023-11): region capture, match timeout, and device name were silently ignored
+- Fix: a failed batch-mapper run (`-mp`) now exits non-zero instead of printing a stack
+  trace and exiting 0
+- Every CLI flag now has a parse-contract unit test (CliContractTest) and, where runnable, an
+  end-to-end Eyes scenario, so a dependency update that breaks a flag turns CI red
+- CI: new jar-smoke job runs the packaged jar on every push/PR (catches shading breakage);
+  the Eyes E2E job now runs against the packaged jar and fails loudly when the API key is
+  missing (Dependabot and fork runs, which never receive the secret, skip it instead)
 - Improved: an invalid API key now prints the SDK message plus a hint to set the server URL when
   testing against a private cloud, instead of a raw `Unexpected error, EyesException` dump
 - The default server URL (`https://eyes.applitools.com`) and how to change it are now called out

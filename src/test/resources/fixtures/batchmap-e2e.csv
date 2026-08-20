@@ -1,0 +1,2 @@
+filePath|testName|app|os|browser|viewport|matchsize|pages|matchLevel|layoutRegions|contentRegions|ignoreRegions
+TestData/b/Lorem1.pdf|BatchMapperE2E|ImageTesterE2E|Windows|Chrome|||1|Strict|||

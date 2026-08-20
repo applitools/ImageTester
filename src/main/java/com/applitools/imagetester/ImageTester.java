@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -113,8 +114,7 @@ public class ImageTester {
 
             String batchMapperPath = cmd.getOptionValue("mp", null);
             if (batchMapperPath != null) {
-                runTestWithBatchMapper(logger, cmd);
-                return 0;
+                return runTestWithBatchMapper(logger, cmd);
             }
 
             if (cmd.hasOption("doc1")) {
@@ -234,11 +234,13 @@ public class ImageTester {
      *
      * @param logger Logger utility
      * @param cmd CommandLine tool that parses arguments and flags from CLI execution
+     * @return process exit code: 0 when every batch ran, 1 when the mapper file or any batch failed
      */
-    private static void runTestWithBatchMapper(final Logger logger, final CommandLine cmd) {
+    private static int runTestWithBatchMapper(final Logger logger, final CommandLine cmd) {
 
         logger.printMessage("Running ImageTester with BatchMapper");
 
+        final AtomicBoolean batchFailed = new AtomicBoolean(false);
         try {
             String batchMapperPath = cmd.getOptionValue("mp", null);
 
@@ -345,8 +347,10 @@ public class ImageTester {
                 } catch (IOException e) {
                     logger.printMessage("Could not find file to test upon");
                     e.printStackTrace();
+                    batchFailed.set(true);
                 } catch (ParseException e) {
                     e.printStackTrace();
+                    batchFailed.set(true);
                 } finally {
                     currentConfiguration.closeBatches();
                 }
@@ -354,7 +358,9 @@ public class ImageTester {
         } catch (Exception e) {
             logger.reportException(e);
             e.printStackTrace();
+            return 1;
         }
+        return batchFailed.get() ? 1 : 0;
     }
 
     public static Options getOptions() {
@@ -645,23 +651,22 @@ public class ImageTester {
                 .hasArgs()
                 .optionalArg(true)
                 .build());
+        // commons-cli 1.6.0: optionalArg(false) after hasArgs() resets the option's arg
+        // count, so the option silently consumes no values — never call it, false is the default.
         options.addOption(Option.builder("rc")
                 .longOpt("regionCapture")
                 .desc("Tests specific region of images and PDFs.\nexample: `-rc 0,200,1000,1000`")
                 .hasArgs()
-                .optionalArg(false)
                 .build());
         options.addOption(Option.builder("mt")
                 .longOpt("matchTimeout")
                 .desc("Set value for match timeout and retry timeout in ms(minimum 500).\nexample: `-mt 2000`")
                 .hasArgs()
-                .optionalArg(false)
                 .build());
         options.addOption(Option.builder("dn")
                 .longOpt("deviceName")
                 .desc("Set device name metadata.\nexample: `-dn 'my device'`")
                 .hasArgs()
-                .optionalArg(false)
                 .build());
         options.addOption(Option.builder("rf")
             .longOpt("regexFilter")

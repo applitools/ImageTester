@@ -98,6 +98,12 @@ public class Config {
     }
 
     public void setProxy(String[] proxy) {
+        // commons-cli 1.6.0 ignores valueSeparator(',') on options with optionalArg(true),
+        // so "-p url,user,pass" arrives here as one unsplit token — split it ourselves (as #49 did for -ac).
+        // Limit 3 mirrors the declared numberOfArgs(3) contract: it keeps a trailing empty
+        // password and leaves commas inside the password intact.
+        if (proxy != null && proxy.length == 1 && proxy[0].contains(","))
+            proxy = proxy[0].split(",", 3);
         if (proxy != null && proxy.length > 0)
             if (proxy.length == 1) {
                 logger.reportDebug("Using proxy %s \n", proxy[0]);
