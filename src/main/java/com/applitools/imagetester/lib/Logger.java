@@ -20,6 +20,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Logger {
+    private static final String SUPPORT_HINT =
+            "If the problem persists, please contact support at support@applitools.com \n";
+
     private final PrintStream out_;
     private boolean debug_;
     private final SimpleDateFormat dateFormatter_ = new SimpleDateFormat("HH:mm:ss");
@@ -82,24 +85,23 @@ public class Logger {
     }
 
     public void reportResult(ExecutorResult result) {
+        // No result means the failure was already reported via reportException —
+        // an "[N/A], null" line adds nothing.
+        if (result.testResult == null) return;
         StringBuilder sb = new StringBuilder(prefix());
         if (debug_) sb.append(String.format("[%d Msec] ", TimeUnit.NANOSECONDS.toMillis(result.runTimeNs)));
-        String status = result.testResult != null ? result.testResult.getStatus().toString() : "N/A";
-        sb.append(String.format("[%s], %s \n", status, result.testResult));
+        sb.append(String.format("[%s], %s \n", result.testResult.getStatus().toString(), result.testResult));
         emit(sb.toString());
     }
 
     public void reportResultAccessibility(ExecutorResult result) {
-        if (result.testResult == null || result.testResult.getAccessibilityStatus() == null) {
-            emit("Accessibility: N/A, Level: N/A, Version: N/A \n");
-        } else {
-            emit(String.format(
-                "Accessibility: [%s], Level: [%s], Version: [%s] \n",
-                result.testResult.getAccessibilityStatus().getStatus().toString(),
-                result.testResult.getAccessibilityStatus().getLevel().toString(),
-                result.testResult.getAccessibilityStatus().getVersion().toString()
-            ));
-        }
+        if (result.testResult == null || result.testResult.getAccessibilityStatus() == null) return;
+        emit(String.format(
+            "Accessibility: [%s], Level: [%s], Version: [%s] \n",
+            result.testResult.getAccessibilityStatus().getStatus().toString(),
+            result.testResult.getAccessibilityStatus().getLevel().toString(),
+            result.testResult.getAccessibilityStatus().getVersion().toString()
+        ));
     }
 
     public void reportException(Throwable e) { reportException(e, null); }
@@ -126,9 +128,16 @@ public class Logger {
                 sb.append(String.format("%s \n", e.getMessage()));
                 if (isInvalidApiKey(e))
                     sb.append("Are you testing against a private cloud? Be sure to set your Applitools server URL — the Connection tab in the GUI, or -s on the command line. \n");
+                else
+                    sb.append(SUPPORT_HINT);
                 break;
             default:
-                sb.append(String.format("Unexpected error, %s, %s \n", e.getClass().getName(), e.getMessage())); break;
+                if (e.getMessage() != null)
+                    sb.append(String.format("Error: %s \n", e.getMessage()));
+                else
+                    sb.append(String.format("Unexpected error (%s) \n", e.getClass().getSimpleName()));
+                sb.append(SUPPORT_HINT);
+                break;
         }
         if (debug_) {
             StringWriter sw = new StringWriter();

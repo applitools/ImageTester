@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,6 +44,34 @@ public class LoggerTest {
     public void reportException_otherEyesException_omitsPrivateCloudHint() {
         String output = report(new EyesException("Failed closing test"));
         assertFalse(output.contains(PRIVATE_CLOUD_HINT));
+    }
+
+    @Test
+    public void reportException_unexpectedError_pointsToSupport() {
+        String output = report(new IllegalStateException("boom"));
+        assertTrue(output.contains("support@applitools.com"));
+    }
+
+    @Test
+    public void reportException_unexpectedError_omitsExceptionClassName() {
+        String output = report(new IllegalStateException("boom"));
+        assertFalse(output.contains("java.lang.IllegalStateException"));
+    }
+
+    @Test
+    public void reportResult_withoutTestResult_printsNothing() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), false);
+        logger.reportResult(new ExecutorResult(null, 0));
+        assertEquals("", buffer.toString());
+    }
+
+    @Test
+    public void reportResultAccessibility_withoutTestResult_printsNothing() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), false);
+        logger.reportResultAccessibility(new ExecutorResult(null, 0));
+        assertEquals("", buffer.toString());
     }
 
     private static String report(Throwable e) {
