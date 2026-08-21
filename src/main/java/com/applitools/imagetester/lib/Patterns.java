@@ -17,4 +17,8 @@ public abstract class Patterns {
     public static final Pattern POWERPOINT = Pattern.compile("(.+)(\\.(?i)(ppt|pptx|pptm|pps|ppsx|ppsm|pot|potx|potm))$");
     public static final Pattern SPREADSHEET = Pattern.compile("(.+)(\\.(?i)(xls|xlsx|xlsm|xlt|xltx|xltm|ods|csv))$");
     public static final Pattern VECTOR = Pattern.compile("(.+)(\\.(?i)(ps|eps|xps))$");
+    // The VECTOR formats LibreOffice cannot actually import (no PS/XPS filter — it falls
+    // back to a plain-text Writer import of the raw source). EPS is excluded: Draw has a
+    // real EPS import filter.
+    public static final Pattern POSTSCRIPT_XPS = Pattern.compile("(.+)(\\.(?i)(ps|xps))$");
 }

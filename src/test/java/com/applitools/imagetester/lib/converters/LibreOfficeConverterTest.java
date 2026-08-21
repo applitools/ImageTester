@@ -64,6 +64,46 @@ public class LibreOfficeConverterTest {
     }
 
     @Test
+    public void skipsPostscriptWithUnsupportedReason() throws Exception {
+        LibreOfficeConverter c = new LibreOfficeConverter(
+                new StubLocator(Optional.of(Paths.get("/soffice"))), new RecordingRunner(0));
+        File input = tempFolder.newFile("figure.ps");
+        try {
+            c.convertToPdf(input, tempFolder.getRoot().toPath());
+            fail("expected SkippedFileException");
+        } catch (SkippedFileException e) {
+            assertEquals(SkipTracker.REASON_POSTSCRIPT_XPS_UNSUPPORTED, e.getReason());
+        }
+    }
+
+    @Test
+    public void skipsXpsWithUnsupportedReason() throws Exception {
+        LibreOfficeConverter c = new LibreOfficeConverter(
+                new StubLocator(Optional.of(Paths.get("/soffice"))), new RecordingRunner(0));
+        File input = tempFolder.newFile("slides.xps");
+        try {
+            c.convertToPdf(input, tempFolder.getRoot().toPath());
+            fail("expected SkippedFileException");
+        } catch (SkippedFileException e) {
+            assertEquals(SkipTracker.REASON_POSTSCRIPT_XPS_UNSUPPORTED, e.getReason());
+        }
+    }
+
+    @Test
+    public void postscriptSkipNeverInvokesSoffice() throws Exception {
+        RecordingRunner runner = new RecordingRunner(0);
+        LibreOfficeConverter c = new LibreOfficeConverter(
+                new StubLocator(Optional.of(Paths.get("/soffice"))), runner);
+        File input = tempFolder.newFile("figure.ps");
+        try {
+            c.convertToPdf(input, tempFolder.getRoot().toPath());
+            fail("expected SkippedFileException");
+        } catch (SkippedFileException e) {
+            assertEquals(null, runner.lastCommand);
+        }
+    }
+
+    @Test
     public void throwsSkippedFileExceptionWhenLibreOfficeMissing() throws Exception {
         LibreOfficeConverter c = new LibreOfficeConverter(
                 new StubLocator(Optional.empty()), new RecordingRunner(0));

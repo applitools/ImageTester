@@ -9,6 +9,9 @@ public class SkipTracker {
 
     public static final String REASON_LIBREOFFICE_MISSING = "LibreOffice not found";
 
+    public static final String REASON_POSTSCRIPT_XPS_UNSUPPORTED =
+            "PostScript/XPS conversion is not supported - convert the file to PDF first";
+
     public static final class SkipRecord {
         public final File file;
         public final String reason;

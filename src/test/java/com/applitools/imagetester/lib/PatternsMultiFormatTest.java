@@ -51,6 +51,19 @@ public class PatternsMultiFormatTest {
     }
 
     @Test
+    public void postscriptXpsPatternMatchesPsAndXps() {
+        for (String ext : new String[]{"ps", "xps"}) {
+            assertTrue("expected match for ." + ext,
+                    Patterns.POSTSCRIPT_XPS.matcher("file." + ext).matches());
+        }
+    }
+
+    @Test
+    public void postscriptXpsPatternExcludesEps() {
+        assertFalse(Patterns.POSTSCRIPT_XPS.matcher("file.eps").matches());
+    }
+
+    @Test
     public void spreadsheetPatternMatchesAllSpreadsheetVariants() {
         for (String ext : new String[]{"xls", "xlsx", "xlsm", "xlt", "xltx", "xltm", "ods", "csv"}) {
             assertTrue("expected match for ." + ext,

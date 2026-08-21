@@ -45,6 +45,13 @@ public class LibreOfficeConverter implements FormatConverter {
 
     @Override
     public File convertToPdf(File file, Path tempDir) throws SkippedFileException, IOException {
+        // LibreOffice has no PS/XPS import filter and silently falls back to Writer's
+        // plain-text import, paginating the raw source (a 3-page .ps became a 529-page
+        // baseline in CI, 574 locally) — skip loudly instead of uploading garbage.
+        if (Patterns.POSTSCRIPT_XPS.matcher(file.getName()).matches()) {
+            throw new SkippedFileException(file, SkipTracker.REASON_POSTSCRIPT_XPS_UNSUPPORTED);
+        }
+
         Optional<Path> soffice = locator.locate();
         if (!soffice.isPresent()) {
             throw new SkippedFileException(file, SkipTracker.REASON_LIBREOFFICE_MISSING);

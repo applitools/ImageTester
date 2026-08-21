@@ -103,8 +103,8 @@ jobs:
           echo "::error::APPLITOOLS_API_KEY is not available - the Eyes E2E suite cannot run."
           exit 1
 
-      # The mixed-content E2E scenario converts a .ps fixture via LibreOffice;
-      # without it the run exits 2 (skipped files) and the suite fails.
+      # Tests/MultiFormatIntegrationTest converts Office-document fixtures via
+      # LibreOffice; without it those runs exit 2 (skipped files) and the suite fails.
       - name: Install LibreOffice
         run: |
           sudo apt-get update

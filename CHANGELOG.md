@@ -14,6 +14,10 @@
 - Stray command-line tokens (e.g. `-ari 1,1,1,1 2,2,2,2`, where the second region was
   silently dropped) now fail the run with a usage error pointing at the joined
   `x,y,w,h|x,y,w,h` format
+- `.ps` and `.xps` files are now skipped with a clear reason instead of being uploaded as
+  a text dump of their raw source: LibreOffice has no PostScript/XPS import filter and
+  silently falls back to a plain-text import (a 3-page `.ps` produced a 529-page baseline).
+  `.eps` still converts correctly via LibreOffice Draw
 - Every CLI flag now has a parse-contract unit test (CliContractTest) and, where runnable, an
   end-to-end Eyes scenario, so a dependency update that breaks a flag turns CI red
 - CI: new jar-smoke job runs the packaged jar on every push/PR (catches shading breakage);
