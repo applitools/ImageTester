@@ -17,7 +17,7 @@ public final class RunConfigFactory {
         String[] proxySettings = cmd.getOptionValues("p");
         if (proxySettings == null) {
             String proxyString = System.getenv(ApplitoolsConstants.APPLITOOLS_PROXY);
-            proxySettings = proxyString != null ? proxyString.split(",") : null;
+            proxySettings = proxyString != null ? new String[]{proxyString} : null;
         }
         config.setProxy(proxySettings);
 

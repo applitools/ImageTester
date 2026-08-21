@@ -13,9 +13,15 @@ import com.applitools.imagetester.lib.RunConfig;
 import com.applitools.imagetester.lib.RunConfigFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.ParseException;
 import org.junit.Assume;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,6 +37,9 @@ import static org.junit.Assert.assertTrue;
  * which silently broke -ac, #49) turns CI red instead of shipping.
  */
 public class CliContractTest {
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private static CommandLine parse(String... args) throws Exception {
         return new DefaultParser().parse(ImageTester.getOptions(), args);
@@ -96,6 +105,17 @@ public class CliContractTest {
     public void proxyFlagKeepsCommaInsidePassword() throws Exception {
         Config config = configFor("-k", "key", "-p", "http://proxy:8080,user,pa,ss");
         assertEquals("pa,ss", config.proxy_settings.getPassword());
+    }
+
+    @Test
+    public void proxyFlagSplitsSpaceSeparatedCredentials() throws Exception {
+        Config config = configFor("-k", "key", "-p", "http://proxy:8080", "user", "secret");
+        assertEquals("secret", config.proxy_settings.getPassword());
+    }
+
+    @Test(expected = MissingArgumentException.class)
+    public void bareProxyFlagIsAParseError() throws Exception {
+        parse("-k", "key", "-p");
     }
 
     // --- Identity: -a -fn -sq -fb -nc -dcb ---
@@ -327,6 +347,11 @@ public class CliContractTest {
     @Test
     public void bareAriFlagParsesWithoutRegions() throws Exception {
         assertNull(configFor("-k", "key", "-ari").accessibilityIgnoreRegions);
+    }
+
+    @Test
+    public void pipeSeparatedAccessibilityRegionsProduceMultipleRegions() throws Exception {
+        assertEquals(2, configFor("-k", "key", "-ari", "1,2,3,4|5,6,7,8").accessibilityIgnoreRegions.length);
     }
 
     @Test
@@ -597,6 +622,14 @@ public class CliContractTest {
     @Test
     public void mapperWithMissingCsvExitsWithError() {
         assertEquals(1, ImageTester.run(new String[]{"-k", "key", "-mp", "does-not-exist.csv"}));
+    }
+
+    @Test
+    public void leftoverArgumentsExitWithUsageError() throws IOException {
+        File in = tempFolder.newFolder("in");
+        File out = tempFolder.newFolder("out");
+        assertEquals(2, ImageTester.run(new String[]{
+                "-rw", "X", "-rwo", out.getAbsolutePath(), "-f", in.getAbsolutePath(), "1,2,3,4"}));
     }
 
     @Test

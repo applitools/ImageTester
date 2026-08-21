@@ -7,6 +7,13 @@
   (2023-11): region capture, match timeout, and device name were silently ignored
 - Fix: a failed batch-mapper run (`-mp`) now exits non-zero instead of printing a stack
   trace and exiting 0
+- Fix: space-separated `-p url user password` silently dropped the credentials (commons-cli
+  1.6.0 caps optional-arg options at one token); both the space- and comma-joined forms now
+  work, and the same splitter covers `APPLITOOLS_PROXY`, so passwords containing commas no
+  longer break it. Bare `-p` without a value is now a parse error instead of a silent no-op
+- Stray command-line tokens (e.g. `-ari 1,1,1,1 2,2,2,2`, where the second region was
+  silently dropped) now fail the run with a usage error pointing at the joined
+  `x,y,w,h|x,y,w,h` format
 - Every CLI flag now has a parse-contract unit test (CliContractTest) and, where runnable, an
   end-to-end Eyes scenario, so a dependency update that breaks a flag turns CI red
 - CI: new jar-smoke job runs the packaged jar on every push/PR (catches shading breakage);

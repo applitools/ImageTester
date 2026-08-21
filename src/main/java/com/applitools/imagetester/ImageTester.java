@@ -68,6 +68,17 @@ public class ImageTester {
 
         try {
             CommandLine cmd = parser.parse(options, args);
+
+            // ImageTester takes no positional arguments, so anything left over is a value
+            // some flag failed to consume — fail loudly instead of silently dropping it
+            // (commons-cli 1.6.0 caps optional-arg options like -ari/-ac at one token).
+            if (cmd.getArgs().length > 0) {
+                logger.printMessage("ERROR: unexpected argument(s): " + String.join(" ", cmd.getArgs())
+                        + "\nMulti-value flags take one joined token, e.g. -p url,user,password"
+                        + " or -ari x,y,w,h|x,y,w,h");
+                return 2;
+            }
+
             logger.setDebug(cmd.hasOption("debug"));
             logger.printVersion(CUR_VER);
             com.applitools.imagetester.lib.UpdateChecker.production().checkAsync(update ->
@@ -255,7 +266,7 @@ public class ImageTester {
 
                 if(proxySettings == null) {
                     String proxyString = System.getenv(ApplitoolsConstants.APPLITOOLS_PROXY);
-                    proxySettings = proxyString != null ? proxyString.split(",") : null;
+                    proxySettings = proxyString != null ? new String[]{proxyString} : null;
                 }
                 currentConfiguration.setProxy(proxySettings);
                                 
@@ -395,11 +406,12 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("p")
                 .longOpt("proxy")
-                .desc("Set proxy address")
-                .numberOfArgs(3)
-                .optionalArg(true)
-                .valueSeparator(',') //, and not ; to avoid bash commands separation
-                .argName("url [,user,password]")
+                .desc("Set proxy address, with optional credentials.\nexample: `-p http://proxy:8080,user,password`")
+                // commons-cli 1.6.0: optionalArg(true) caps the arg count at 1 and disables
+                // valueSeparator, and numberOfArgs(3) rejects fewer than 3 tokens — hasArgs()
+                // accepts 1..n and Config.setProxy splits/validates the joined form itself.
+                .hasArgs()
+                .argName("url[,user,password]")
                 .build()
         );
         options.addOption(Option.builder("s")
@@ -623,31 +635,31 @@ public class ImageTester {
                 .build());
         options.addOption(Option.builder("ari")
                 .longOpt("accessibility region: ignore")
-                .desc("Parameters for accessibility ignore regions [x, y, width, height]")
+                .desc("Parameters for accessibility ignore regions x,y,width,height — join multiple with '|', e.g. 1,2,3,4|5,6,7,8")
                 .hasArgs()
                 .optionalArg(true)
                 .build());
         options.addOption(Option.builder("arr")
                 .longOpt("accessibility region: regular text")
-                .desc("Parameters for accessibility regular text regions [x, y, width, height]")
+                .desc("Parameters for accessibility regular text regions x,y,width,height — join multiple with '|', e.g. 1,2,3,4|5,6,7,8")
                 .hasArgs()
                 .optionalArg(true)
                 .build());
         options.addOption(Option.builder("arl")
                 .longOpt("accessibility region: large text")
-                .desc("Parameters for accessibility large text regions [x, y, width, height]")
+                .desc("Parameters for accessibility large text regions x,y,width,height — join multiple with '|', e.g. 1,2,3,4|5,6,7,8")
                 .hasArgs()
                 .optionalArg(true)
                 .build());
         options.addOption(Option.builder("arb")
                 .longOpt("accessibility region: bold text")
-                .desc("Parameters for accessibility bold text regions [x, y, width, height]")
+                .desc("Parameters for accessibility bold text regions x,y,width,height — join multiple with '|', e.g. 1,2,3,4|5,6,7,8")
                 .hasArgs()
                 .optionalArg(true)
                 .build());
         options.addOption(Option.builder("arg")
                 .longOpt("accessibility region: graphic")
-                .desc("Parameters for accessibility graphics regions [x, y, width, height]")
+                .desc("Parameters for accessibility graphics regions x,y,width,height — join multiple with '|', e.g. 1,2,3,4|5,6,7,8")
                 .hasArgs()
                 .optionalArg(true)
                 .build());
