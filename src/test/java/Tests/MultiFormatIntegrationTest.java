@@ -5,6 +5,8 @@ import com.applitools.imagetester.lib.converters.LibreOfficeConverter;
 import com.applitools.imagetester.lib.converters.LibreOfficeLocator;
 import com.applitools.imagetester.lib.converters.MarkdownToPdfConverter;
 import com.applitools.imagetester.lib.converters.RtfToPdfConverter;
+import com.applitools.imagetester.lib.converters.SkipTracker;
+import com.applitools.imagetester.lib.converters.SkippedFileException;
 import com.applitools.imagetester.lib.converters.TxtToPdfConverter;
 
 import org.junit.BeforeClass;
@@ -15,7 +17,9 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.nio.file.Path;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 public class MultiFormatIntegrationTest {
@@ -57,10 +61,18 @@ public class MultiFormatIntegrationTest {
         assertConvertsToValidPdf(new LibreOfficeConverter(), "sample.pptx");
     }
 
+    // LibreOffice has no PostScript import filter (it paginates the raw source as text),
+    // so the converter refuses .ps before ever invoking soffice — no LibreOffice needed.
     @Test
-    public void psFixtureConvertsWhenLibreOfficePresent() throws Exception {
-        assumeTrue("LibreOffice not present - skipping", libreOfficePresent);
-        assertConvertsToValidPdf(new LibreOfficeConverter(), "sample.ps");
+    public void psFixtureIsSkippedAsUnsupported() throws Exception {
+        File fixture = new File(FIXTURE_DIR, "sample.ps");
+        assertTrue("fixture missing: " + fixture, fixture.exists());
+        try {
+            new LibreOfficeConverter().convertToPdf(fixture, tempFolder.getRoot().toPath());
+            fail("expected SkippedFileException for .ps");
+        } catch (SkippedFileException e) {
+            assertEquals(SkipTracker.REASON_POSTSCRIPT_XPS_UNSUPPORTED, e.getReason());
+        }
     }
 
     private void assertConvertsToValidPdf(FormatConverter converter, String fixtureName) throws Exception {
