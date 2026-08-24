@@ -123,6 +123,12 @@ export function StatusPane({ state, logLines }: Props) {
             <p className="text-sm text-gray-500">Pick a source and click Run to start.</p>
           )}
 
+          {state.kind !== "idle" && state.errorMessage && (
+            <div role="alert" className="mb-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              {state.errorMessage}
+            </div>
+          )}
+
           {state.kind !== "idle" && (
             <div className="space-y-0.5">
               {state.tests.map((t) => <TestRow key={t.name} row={t} now={now} />)}

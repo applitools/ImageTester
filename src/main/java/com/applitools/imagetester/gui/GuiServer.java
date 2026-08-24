@@ -259,8 +259,12 @@ public final class GuiServer {
             }
             if (s instanceof RunState.Done) {
                 RunState.Done d = (RunState.Done) s;
-                return Map.of("kind", "done", "runId", d.runId, "tests", d.tests,
-                              "passed", d.passed, "failed", d.failed, "durationMs", d.durationMs);
+                Map<String, Object> map = new java.util.HashMap<>(Map.of(
+                        "kind", "done", "runId", d.runId, "tests", d.tests,
+                        "passed", d.passed, "failed", d.failed, "durationMs", d.durationMs));
+                // Map.of rejects nulls, so the optional field joins only when present.
+                if (d.errorMessage != null) map.put("errorMessage", d.errorMessage);
+                return map;
             }
             return Map.of("kind", "unknown");
         }

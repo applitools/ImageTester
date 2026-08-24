@@ -193,6 +193,54 @@ public class RunControllerTest {
                 captured.toString().contains("certificate verification is disabled"));
     }
 
+    @Test
+    public void workerFailureBeforeAnyTests_setsErrorMessageOnDone() throws Exception {
+        FailedRun run = runWithFailingWorkers();
+        assertTrue("expected the Done error message to direct users to the Log tab, got: " + run.done.errorMessage,
+                run.done.errorMessage != null && run.done.errorMessage.contains("Log tab"));
+    }
+
+    @Test
+    public void workerFailureBeforeAnyTests_emitsRunErrorEvent() throws Exception {
+        FailedRun run = runWithFailingWorkers();
+        assertTrue("run-error not emitted; got: " + run.events, run.events.contains("\"type\":\"run-error\""));
+    }
+
+    private static final class FailedRun {
+        final RunState.Done done;
+        final String events;
+        FailedRun(RunState.Done done, String events) { this.done = done; this.events = events; }
+    }
+
+    /** Starts a folder run whose Eyes construction fails in every worker, then waits for Done. */
+    private FailedRun runWithFailingWorkers() throws Exception {
+        RunStream stream = new RunStream();
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenThrow(
+                new RuntimeException("Parent Branches (pb) should be combined with branches (br)."));
+        RunController c = new RunController(SecretsStore.inMemoryForTest(), stream, (req, logger) -> {
+            Config config = new Config();
+            config.logger = logger;
+            return new RunConfig(config, factory, 2);
+        });
+        c.setSecretApiKey("sk_test");
+        File folder = tmp.newFolder("pix");
+        makeTinyPng(folder);
+
+        java.io.StringWriter sink = new java.io.StringWriter();
+        CountDownLatch ready = new CountDownLatch(1);
+        stream.addClient(new java.io.PrintWriter(sink), () -> {}, ready);
+        ready.await(5, TimeUnit.SECONDS);
+
+        c.start(req(folder, "Strict"));
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (!(c.snapshot() instanceof RunState.Done) && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        assertTrue("did not reach Done within 10s", c.snapshot() instanceof RunState.Done);
+        return new FailedRun((RunState.Done) c.snapshot(), sink.toString());
+    }
+
     // ---- helpers ----
 
     @Test

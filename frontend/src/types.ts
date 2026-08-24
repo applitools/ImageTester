@@ -14,14 +14,15 @@ export interface TestRow {
 
 export type RunStateSnapshot =
   | { kind: "idle" }
-  | { kind: "running"; runId: string; tests: TestRow[] }
-  | { kind: "done"; runId: string; tests: TestRow[]; passed: number; failed: number; durationMs: number; outputDir?: string; fileCount?: number };
+  | { kind: "running"; runId: string; tests: TestRow[]; errorMessage?: string }
+  | { kind: "done"; runId: string; tests: TestRow[]; passed: number; failed: number; durationMs: number; outputDir?: string; fileCount?: number; errorMessage?: string };
 
 export type SseEvent =
   | { type: "run-started"; runId: string }
   | { type: "test-started"; name: string; previewPath?: string; doc2PreviewPath?: string }
   | { type: "test-finished"; name: string; status: Exclude<TestStatus, "running">; durationMs: number; dashboardUrl?: string; previewPath?: string; doc2PreviewPath?: string }
   | { type: "log-line"; text: string }
+  | { type: "run-error"; text: string }
   | { type: "run-finished"; passed: number; failed: number; durationMs: number }
   | { type: "watermark-cleaned"; outputDir: string; fileCount: number; durationMs: number };
 

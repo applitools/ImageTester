@@ -209,6 +209,18 @@ public final class RunController {
         return "mismatch".equals(status) || "failed".equals(status) || "error".equals(status);
     }
 
+    private static final String SEE_LOG_TAB = "See the Log tab for details.";
+    private static final String RUN_FAILED_BEFORE_TESTS =
+            "The run failed before any tests could complete. " + SEE_LOG_TAB;
+
+    /** Customer-facing banner text: the throwable's message when it has one, never a stack trace. */
+    private static String describeRunError(Throwable t) {
+        String message = t.getMessage();
+        if (message == null || message.trim().isEmpty())
+            return String.format("The run failed unexpectedly (%s). %s", t.getClass().getSimpleName(), SEE_LOG_TAB);
+        return String.format("%s %s", message, SEE_LOG_TAB);
+    }
+
     public void cancel() {
         AtomicBoolean compareCancel = compareCancel_.get();
         if (compareCancel != null) compareCancel.set(true);
@@ -231,7 +243,7 @@ public final class RunController {
 
         Object rwo = req.options == null ? null : req.options.get("rwo");
         if (rwo != null && !rwo.toString().isEmpty()) {
-            runWatermarkOut(source, req, config.logger, running, startedNs);
+            runWatermarkOut(source, req, config.logger, running, startedNs, apiKey);
             return;
         }
 
@@ -261,6 +273,7 @@ public final class RunController {
         }
 
         int passed = 0, failed = 0;
+        String runError = null;
         try {
             EyesFactory factory = rc.factory;
             factory.logHandlerInstance(new EyesLogBridge(config.logger));
@@ -293,17 +306,26 @@ public final class RunController {
             suite.run();
         } catch (Throwable t) {
             config.logger.reportException(t);
+            runError = describeRunError(t);
         } finally {
             TestExecutor executor = currentExecutor_.getAndSet(null);
-            if (executor != null && executor.isCancelled())
+            boolean cancelled = executor != null && executor.isCancelled();
+            if (cancelled)
                 config.logger.printMessage("Run cancelled" + System.lineSeparator());
             config.logger.removeListener(logListener);
             for (RunState.TestRow r : running.tests) {
                 if ("passed".equals(r.status)) passed++;
                 else if (countsAsFailed(r.status)) failed++;
             }
+            // Worker-level failures (e.g. Eyes construction) never reach the catch above —
+            // they only leave error counts behind. An error-only run with an empty Tests
+            // pane would otherwise look like it silently did nothing.
+            if (runError == null && !cancelled && running.tests.isEmpty() && config.testErrorCount.get() > 0)
+                runError = RUN_FAILED_BEFORE_TESTS;
+            String redactedError = runError == null ? null : LogRedactor.redact(runError, apiKey);
+            if (redactedError != null) runStream_.emit(new SseEvent.RunError(redactedError));
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
-            RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
+            RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs, null, redactedError);
             state_.set(done);
             runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
         }
@@ -333,6 +355,7 @@ public final class RunController {
         config.cancelRequested = cancelled::get;
 
         int passed = 0, failed = 0;
+        String runError = null;
         try {
             String name = config.forcedName;
             runStream_.emit(new SseEvent.TestStarted(name, doc1.getAbsolutePath(), doc2.getAbsolutePath()));
@@ -347,6 +370,7 @@ public final class RunController {
             running.tests.add(row);
         } catch (Throwable t) {
             config.logger.reportException(t);
+            runError = describeRunError(t);
         } finally {
             compareCancel_.set(null);
             if (cancelled.get()) config.logger.printMessage("Run cancelled" + System.lineSeparator());
@@ -355,8 +379,10 @@ public final class RunController {
                 if ("passed".equals(r.status)) passed++;
                 else if (countsAsFailed(r.status)) failed++;
             }
+            String redactedError = runError == null ? null : LogRedactor.redact(runError, apiKey);
+            if (redactedError != null) runStream_.emit(new SseEvent.RunError(redactedError));
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
-            RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs);
+            RunState.Done done = new RunState.Done(running.runId, running.tests, passed, failed, durationMs, null, redactedError);
             state_.set(done);
             runStream_.emit(new SseEvent.RunFinished(passed, failed, durationMs));
         }
@@ -398,11 +424,12 @@ public final class RunController {
     }
 
     private void runWatermarkOut(File source, RunRequest req, Logger logger,
-                                 RunState.Running running, long startedNs) {
+                                 RunState.Running running, long startedNs, String apiKey) {
         String outPath = req.options.get("rwo").toString();
         File outDir = new File(outPath);
         String rwText = req.options.get("rw") == null ? null : req.options.get("rw").toString();
         boolean auto = Boolean.TRUE.equals(req.options.get("rwauto"));
+        String runError = null;
         try {
             // Dependent-flag guard mirrors ImageTester.validateWatermarkFlags: -rwo needs -rw or -rwauto.
             if (!auto && (rwText == null || rwText.trim().isEmpty()))
@@ -411,11 +438,14 @@ public final class RunController {
             else PdfWatermarkOutMode.run(source, rwText, outDir, logger);
         } catch (Throwable t) {
             logger.reportException(t);
+            runError = describeRunError(t);
         } finally {
             File[] files = outDir.listFiles();
             int count = files == null ? 0 : files.length;
+            String redactedError = runError == null ? null : LogRedactor.redact(runError, apiKey);
+            if (redactedError != null) runStream_.emit(new SseEvent.RunError(redactedError));
             long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNs);
-            state_.set(new RunState.Done(running.runId, running.tests, 0, 0, durationMs, outPath));
+            state_.set(new RunState.Done(running.runId, running.tests, 0, 0, durationMs, outPath, redactedError));
             runStream_.emit(new SseEvent.WatermarkCleaned(outPath, count, durationMs));
         }
     }

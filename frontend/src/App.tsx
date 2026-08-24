@@ -27,7 +27,7 @@ type Action =
   | { type: "set"; snapshot: RunStateSnapshot }
   | { type: "sse"; event: SseEvent };
 
-function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
+export function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
   if (action.type === "set") return action.snapshot;
   const e = action.event;
   // The server emits run-started before /api/run even responds, so this — not the
@@ -44,14 +44,18 @@ function reducer(state: RunStateSnapshot, action: Action): RunStateSnapshot {
         : [...state.tests, { name: e.name, status: e.status, durationMs: e.durationMs, dashboardUrl: e.dashboardUrl, previewPath: e.previewPath, doc2PreviewPath: e.doc2PreviewPath }];
       return { ...state, tests };
     }
+    case "run-error":
+      // Run-level failure with no test row to attach it to; run-finished follows and
+      // carries it into "done" so the Tests pane keeps explaining what happened.
+      return { ...state, errorMessage: e.text };
     case "run-finished": {
       // A row still "running" here means its test never completed (e.g. a cancelled compare) —
       // carrying it into "done" as-is would leave a spinner ticking forever.
       const settled = state.tests.map((t): TestRow => t.status === "running" ? { ...t, status: "cancelled" } : t);
-      return { kind: "done", runId: state.runId, tests: settled, passed: e.passed, failed: e.failed, durationMs: e.durationMs };
+      return { kind: "done", runId: state.runId, tests: settled, passed: e.passed, failed: e.failed, durationMs: e.durationMs, errorMessage: state.errorMessage };
     }
     case "watermark-cleaned":
-      return { kind: "done", runId: state.runId, tests: state.tests, passed: 0, failed: 0, durationMs: e.durationMs, outputDir: e.outputDir, fileCount: e.fileCount };
+      return { kind: "done", runId: state.runId, tests: state.tests, passed: 0, failed: 0, durationMs: e.durationMs, outputDir: e.outputDir, fileCount: e.fileCount, errorMessage: state.errorMessage };
     default:
       return state;
   }

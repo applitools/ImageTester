@@ -47,6 +47,12 @@ public abstract class SseEvent {
         public LogLine(String text) { super("log-line"); this.text = text; }
     }
 
+    /** Run-level failure (nothing test-specific to attach it to); emitted just before RunFinished. */
+    public static final class RunError extends SseEvent {
+        public final String text;
+        public RunError(String text) { super("run-error"); this.text = text; }
+    }
+
     public static final class RunFinished extends SseEvent {
         public final int passed;
         public final int failed;
