@@ -129,7 +129,7 @@ public final class CompareRunner {
             TestResults result = test.runSafe(eyes);
             // runSafe already aborted a cancelled test asynchronously; the synchronous
             // abort here would block on the core's never-arriving results.
-            if (!isCancelled.getAsBoolean()) eyes.abortIfNotClosed();
+            if (!isCancelled.getAsBoolean()) Utils.abortQuietly(eyes, config.logger);
             if (eyes.getBatch() != null) config.addBatchIdToCloseList(eyes.getBatch().getId());
             eyes.setBatch(null);
             if (test instanceof IDisposable) ((IDisposable) test).dispose();

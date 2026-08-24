@@ -10,6 +10,13 @@ public final class RunConfigFactory {
     private RunConfigFactory() {}
 
     public static RunConfig from(CommandLine cmd, Logger logger) throws ParseException {
+        // EyesFactory.build() enforces this too, but only inside a worker thread mid-run;
+        // failing at parse time surfaces it before "Starting tests" on both the CLI and the GUI.
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(cmd.getOptionValue("pb"))
+                && org.apache.commons.lang3.StringUtils.isBlank(cmd.getOptionValue("br")))
+            throw new ParseException(
+                    "Parent branch (-pb / \"Parent branch\") requires a branch name (-br / \"Branch\").");
+
         Config config = new Config();
         config.apiKey = cmd.getOptionValue("k", System.getenv(ApplitoolsConstants.APPLITOOLS_API_KEY));
         config.serverUrl = cmd.getOptionValue("s", System.getenv(ApplitoolsConstants.APPLITOOLS_SERVER_URL));
@@ -24,6 +31,7 @@ public final class RunConfigFactory {
         String[] accessibilityOptions = cmd.getOptionValues("ac");
         accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
+        logger.setBaselineBranchContext(cmd.getOptionValue("bb", null));
         EyesFactory factory = new EyesFactory(ImageTester.CUR_VER, logger)
                 .apiKey(config.apiKey)
                 .serverUrl(config.serverUrl)

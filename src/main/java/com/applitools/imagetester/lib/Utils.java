@@ -1,6 +1,7 @@
 package com.applitools.imagetester.lib;
 
 import com.applitools.eyes.TestResults;
+import com.applitools.eyes.images.Eyes;
 import com.applitools.eyesutilities.commands.AnimatedDiffs;
 import com.applitools.eyesutilities.commands.DownloadDiffs;
 import com.applitools.eyesutilities.commands.DownloadImages;
@@ -19,6 +20,19 @@ public class Utils {
     public static final String CERT_VALIDATION_DISABLED_WARNING =
             "Warning: TLS certificate verification is disabled (-dv) for this JVM. "
             + "Connections can be intercepted; use only behind a trusted proxy. \n";
+
+    /**
+     * When a session already failed to open, the universal core rethrows that same failure
+     * from abort — the original error was reported when it happened, so the rethrow is only
+     * debug noise and must never mask the run's real outcome.
+     */
+    public static void abortQuietly(Eyes eyes, Logger logger) {
+        try {
+            eyes.abortIfNotClosed();
+        } catch (Exception e) {
+            logger.reportDebug("Post-run abort failed on an already-failed session: %s \n", e.getMessage());
+        }
+    }
 
     public static void disableCertValidation() throws KeyManagementException, NoSuchAlgorithmException {
 

@@ -214,13 +214,15 @@ public class ImageTester {
         return 0;
     }
 
-    private static int computeExitCode(Config config, Logger logger) {
-        if (config.skipTracker.isEmpty()) return 0;
-        printSkipSummary(config, logger);
-        if (config.skipTracker.hasLibreOfficeMissing()) {
-            printInstallHint(logger);
+    static int computeExitCode(Config config, Logger logger) {
+        if (!config.skipTracker.isEmpty()) {
+            printSkipSummary(config, logger);
+            if (config.skipTracker.hasLibreOfficeMissing()) {
+                printInstallHint(logger);
+            }
         }
-        return 2;
+        if (config.testErrorCount.get() > 0) return 1;
+        return config.skipTracker.isEmpty() ? 0 : 2;
     }
 
     private static void printSkipSummary(Config config, Logger logger) {
@@ -273,6 +275,7 @@ public class ImageTester {
                 String[] accessibilityOptions = cmd.getOptionValues("ac");
                 accessibilityOptions = cmd.hasOption("ac") && accessibilityOptions == null ? new String[0] : accessibilityOptions;
 
+                logger.setBaselineBranchContext(cmd.getOptionValue("bb", null));
                 EyesFactory factory
                         = new EyesFactory(CUR_VER, logger)
                         .apiKey(currentConfiguration.apiKey)

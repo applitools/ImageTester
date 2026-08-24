@@ -22,9 +22,17 @@ import java.util.function.Consumer;
 public class Logger {
     private static final String SUPPORT_HINT =
             "If the problem persists, please contact support at support@applitools.com \n";
+    private static final String BASELINE_BRANCH_HINT =
+            "This most likely means the baseline branch '%s' does not exist on the Applitools server. "
+            + "Verify the branch name (-bb, or \"Baseline branch\" in the GUI options) or remove it. \n";
+    // The universal core's invalid-API-key message still points at a pre-restructure docs URL
+    // that now dead-ends in a "Redirecting..." page; swap it for the live doc before printing.
+    private static final String STALE_API_KEY_DOC_URL = "https://applitools.com/docs/Default.html#cshid=api";
+    private static final String CURRENT_API_KEY_DOC_URL = "https://applitools.com/docs/topics/overview/obtain-api-key.html";
 
     private final PrintStream out_;
     private boolean debug_;
+    private String baselineBranchContext_;
     private final SimpleDateFormat dateFormatter_ = new SimpleDateFormat("HH:mm:ss");
     private final List<Consumer<String>> listeners_ = new CopyOnWriteArrayList<>();
 
@@ -37,6 +45,9 @@ public class Logger {
 
     public void setDebug(boolean debug) { this.debug_ = debug; }
     public void setDebug() { setDebug(true); }
+
+    /** The -bb value of the current run, so an opaque openEyes rejection can name the likely culprit. */
+    public void setBaselineBranchContext(String branchName) { this.baselineBranchContext_ = branchName; }
 
     public void addListener(Consumer<String> listener) { listeners_.add(listener); }
     public void removeListener(Consumer<String> listener) { listeners_.remove(listener); }
@@ -125,26 +136,42 @@ public class Logger {
             case "ExecutionException":
                 sb.append(String.format("%s\n", e.getMessage())); break;
             case "EyesException":
-                sb.append(String.format("%s \n", e.getMessage()));
+                sb.append(String.format("%s \n", rewriteStaleDocLink(e.getMessage())));
                 if (isInvalidApiKey(e))
                     sb.append("Are you testing against a private cloud? Be sure to set your Applitools server URL — the Connection tab in the GUI, or -s on the command line. \n");
-                else
-                    sb.append(SUPPORT_HINT);
+                else if (isOpenEyesRejected(e) && hasBaselineBranchContext())
+                    sb.append(String.format(BASELINE_BRANCH_HINT, baselineBranchContext_));
                 break;
             default:
                 if (e.getMessage() != null)
                     sb.append(String.format("Error: %s \n", e.getMessage()));
                 else
                     sb.append(String.format("Unexpected error (%s) \n", e.getClass().getSimpleName()));
-                sb.append(SUPPORT_HINT);
                 break;
         }
+        // Every reported failure points at support, regardless of how specific the hint above is.
+        sb.append(SUPPORT_HINT);
         if (debug_) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
             sb.append(sw.toString());
         }
         emit(sb.toString());
+    }
+
+    // The server rejects openEyes with a bare 400 when the requested baseline branch doesn't
+    // exist; the SDK message never names the branch, so it has to be named here.
+    private boolean isOpenEyesRejected(Throwable e) {
+        String message = e.getMessage();
+        return message != null && message.contains("openEyes") && message.contains("Bad Request(400)");
+    }
+
+    private boolean hasBaselineBranchContext() {
+        return baselineBranchContext_ != null && !baselineBranchContext_.trim().isEmpty();
+    }
+
+    private static String rewriteStaleDocLink(String message) {
+        return message == null ? null : message.replace(STALE_API_KEY_DOC_URL, CURRENT_API_KEY_DOC_URL);
     }
 
     // An invalid key against the public cloud is often really a missing private-cloud server URL.

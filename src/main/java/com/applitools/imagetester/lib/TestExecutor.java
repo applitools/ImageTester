@@ -99,7 +99,7 @@ public class TestExecutor {
             TestResults result = test.runSafe(eyes);
             // runSafe already aborted a cancelled test asynchronously; the synchronous
             // abort here would block on the core's never-arriving results.
-            if (!config_.cancelRequested.getAsBoolean()) eyes.abortIfNotClosed();
+            if (!config_.cancelRequested.getAsBoolean()) Utils.abortQuietly(eyes, config_.logger);
 
             if (config_.shouldThrowException && result.isDifferent()) {
                 throw new DiffsFoundException(result, result.getId(), result.getName());
@@ -158,6 +158,9 @@ public class TestExecutor {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (ExecutionException e) {
+                    // Failures outside runSafe (e.g. Eyes construction) would otherwise
+                    // leave the run looking successful — no row, no error count, exit 0.
+                    config_.testErrorCount.incrementAndGet();
                     config_.logger.reportException(e);
                     if (config_.shouldThrowException) {
                         // Defer throw until in-flight workers drain. Interrupting them mid-RPC

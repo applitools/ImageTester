@@ -30,6 +30,9 @@ public class Config {
     // Polled between pages inside a document test; a true value makes the test return without
     // close() so runSafe's abortIfNotClosed discards it — never interrupt an in-flight Eyes call.
     public java.util.function.BooleanSupplier cancelRequested = () -> false;
+    // Tests that threw before producing a result; drives the CLI's non-zero exit code.
+    public final java.util.concurrent.atomic.AtomicInteger testErrorCount =
+            new java.util.concurrent.atomic.AtomicInteger();
     public SkipTracker skipTracker = new SkipTracker();
     public EyesUtilitiesConfig eyesUtilsConf;
     public BatchInfo flatBatch = null;

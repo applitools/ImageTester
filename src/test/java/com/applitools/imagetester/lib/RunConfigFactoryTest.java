@@ -15,6 +15,19 @@ public class RunConfigFactoryTest {
     }
 
     @Test
+    public void from_parentBranchWithoutBranch_failsAtParseTime() throws Exception {
+        CommandLine cmd = parse("-k", "key", "-f", ".", "-pb", "garbage");
+        assertThrows(org.apache.commons.cli.ParseException.class,
+                () -> RunConfigFactory.from(cmd, new Logger()));
+    }
+
+    @Test
+    public void from_parentBranchWithBranch_succeeds() throws Exception {
+        CommandLine cmd = parse("-k", "key", "-f", ".", "-pb", "parent", "-br", "child");
+        assertNotNull(RunConfigFactory.from(cmd, new Logger()).factory);
+    }
+
+    @Test
     public void mapsThreadsFromArg() throws Exception {
         CommandLine cmd = parse("-k", "key", "-f", ".", "-th", "7");
         RunConfig rc = RunConfigFactory.from(cmd, new Logger());

@@ -57,6 +57,29 @@ public class CompareRunnerTest {
         return r;
     }
 
+    @Test
+    public void run_abortRethrowAfterDoc1OpenFailure_stillRunsDoc2() throws Exception {
+        File doc1 = pngFile(tmp, "doc1.png");
+        File doc2 = pngFile(tmp, "doc2.png");
+        String openEyes400 = "Request \"openEyes\" failed due to unexpected status Bad Request(400)";
+
+        Eyes eyes1 = mock(Eyes.class);
+        org.mockito.Mockito.doThrow(new com.applitools.eyes.EyesException(openEyes400))
+                .when(eyes1).open(anyString(), anyString(), any(RectangleSize.class));
+        org.mockito.Mockito.doThrow(new com.applitools.eyes.EyesException(openEyes400))
+                .when(eyes1).abortIfNotClosed();
+        TestResults doc2Result = passedResult();
+        Eyes eyes2 = mock(Eyes.class);
+        when(eyes2.close(org.mockito.ArgumentMatchers.anyBoolean())).thenReturn(doc2Result);
+
+        EyesFactory factory = mock(EyesFactory.class);
+        when(factory.build()).thenReturn(eyes1, eyes2);
+
+        CompareRunner.run(doc1, doc2, config("cmp"), factory);
+
+        org.mockito.Mockito.verify(eyes2).open(anyString(), anyString(), any(RectangleSize.class));
+    }
+
     /** Records open()/close() call order across however many Eyes instances the factory hands out. */
     private static final class OrderingFactory {
         final List<String> log = new ArrayList<>();

@@ -77,6 +77,7 @@ public abstract class TestBase implements ITest {
             Utils.handleResultsDownload(conf_.eyesUtilsConf, res);
             return res;
         } catch (Exception e) {
+            conf_.testErrorCount.incrementAndGet();
             logger().reportException(e);
         } finally {
             // A cancelled test's session must be abandoned untouched: aborting it (sync OR
@@ -84,7 +85,7 @@ public abstract class TestBase implements ITest {
             // eyesGetResults, the async one leaves the core unable to serve the next run's
             // makeManager. Eyes' server times the orphaned session out; nothing is saved.
             if (!conf_.cancelRequested.getAsBoolean()) {
-                eyes.abortIfNotClosed();
+                Utils.abortQuietly(eyes, logger());
                 eyes.clearProperties();
             }
         }
