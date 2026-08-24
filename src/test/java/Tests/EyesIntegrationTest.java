@@ -217,6 +217,10 @@ public class EyesIntegrationTest extends TestBase {
 
     @Test
     public void baselineBranchName() {
+        // A -bb pointing at a branch the server doesn't know now fails the run (exit 1)
+        // instead of silently uploading nothing, so establish the branch first: running
+        // with -br creates it (and saves this test's baseline on it) if it's missing.
+        runImageTester("-f TestData/a/wikipedia.png -br e2e-baseline-branch -fn BaselineBranchE2E");
         runImageTester("-f TestData/a/wikipedia.png -bb e2e-baseline-branch -fn BaselineBranchE2E");
     }
 

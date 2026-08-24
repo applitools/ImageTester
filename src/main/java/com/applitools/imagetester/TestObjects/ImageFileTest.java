@@ -26,7 +26,9 @@ public class ImageFileTest extends TestBase {
             actualFile.getName(),
             new ImagesCheckSettingsFactory(image, config(), viewport(image)).create()
         );
-        return eyes.close(true);
+        // false = outcomes (new test, diffs found) come back as results, matching every
+        // other test object; a throwing close would count them as run errors and exit 1.
+        return eyes.close(false);
     }
 
     private File prepareImageFile(File inputFile) throws IOException {

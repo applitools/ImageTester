@@ -160,7 +160,11 @@ public class TestExecutor {
                 } catch (ExecutionException e) {
                     // Failures outside runSafe (e.g. Eyes construction) would otherwise
                     // leave the run looking successful — no row, no error count, exit 0.
-                    config_.testErrorCount.incrementAndGet();
+                    // Test OUTCOMES are exempt: the TestFailedException family (new test
+                    // awaiting approval, diffs found) is a result, and without -te those
+                    // must keep exiting 0.
+                    if (!(e.getCause() instanceof com.applitools.eyes.exceptions.TestFailedException))
+                        config_.testErrorCount.incrementAndGet();
                     config_.logger.reportException(e);
                     if (config_.shouldThrowException) {
                         // Defer throw until in-flight workers drain. Interrupting them mid-RPC

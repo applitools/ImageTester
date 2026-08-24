@@ -37,6 +37,29 @@ public class TestExecutorAbortTest {
     }
 
     @Test
+    public void join_newTestOutcome_doesNotCountAsTestError() {
+        Config config = new Config();
+        config.logger = new Logger(new java.io.PrintStream(new ByteArrayOutputStream(), true), false);
+
+        EyesFactory factory = mock(EyesFactory.class);
+        Eyes eyes = mock(Eyes.class);
+        when(factory.build()).thenReturn(eyes);
+        when(eyes.getBatch()).thenReturn(new BatchInfo("t"));
+        TestBase test = mock(TestBase.class);
+        when(test.name()).thenReturn("doc.png");
+        // "New test, please approve" is a test outcome, not an infrastructure failure —
+        // without -te it must leave the exit code at 0, exactly as mismatches do.
+        when(test.runSafe(any())).thenThrow(
+                new com.applitools.eyes.exceptions.NewTestException("'doc.png' is a new test, please approve"));
+
+        TestExecutor executor = new TestExecutor(1, factory, config);
+        executor.enqueue(test, null);
+        executor.join();
+
+        org.junit.Assert.assertEquals(0, config.testErrorCount.get());
+    }
+
+    @Test
     public void join_abortRethrowAfterFailedTest_printsNoDuplicateError() {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         Config config = new Config();

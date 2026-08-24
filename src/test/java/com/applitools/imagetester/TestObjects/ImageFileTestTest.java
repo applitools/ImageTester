@@ -40,13 +40,30 @@ public class ImageFileTestTest {
     }
 
     @Test
+    public void run_returnsOutcomeAsResultInsteadOfThrowing() throws Exception {
+        // The SDK's throwing close turns legitimate outcomes ("new test, please approve",
+        // "diffs found") into exceptions; every other test object closes with false and
+        // reports outcomes as result rows — image tests must match.
+        TestResults newTestResult = mock(TestResults.class);
+        Eyes eyes = mock(Eyes.class);
+        when(eyes.getIsOpen()).thenReturn(false, true);
+        when(eyes.close(false)).thenReturn(newTestResult);
+        when(eyes.close(true)).thenThrow(
+                new com.applitools.eyes.EyesException("Test 'x' of 'TestApp' is new! Please approve the new baseline"));
+
+        ImageFileTest test = new ImageFileTest(new File(FIXTURES, "sample.png"), config);
+
+        assertEquals(newTestResult, test.run(eyes));
+    }
+
+    @Test
     public void validPng_opensChecksCloses() throws Exception {
         ImageFileTest test = new ImageFileTest(new File(FIXTURES, "sample.png"), config);
         test.run(mockEyes);
 
         verify(mockEyes).open(eq("TestApp"), eq("sample.png"), any(RectangleSize.class));
         verify(mockEyes).check(eq("sample.png"), ArgumentMatchers.any());
-        verify(mockEyes).close(true);
+        verify(mockEyes).close(false);
     }
 
     @Test
@@ -60,7 +77,7 @@ public class ImageFileTestTest {
 
         // TIFF is converted to a PNG in the same directory; check is called with the converted name.
         verify(mockEyes).check(eq("sample.png"), ArgumentMatchers.any());
-        verify(mockEyes).close(true);
+        verify(mockEyes).close(false);
     }
 
     @Test
