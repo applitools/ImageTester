@@ -339,7 +339,7 @@ public class EyesIntegrationTest extends TestBase {
     public void removeWatermarkStandaloneOut() throws IOException {
         File inputDir = watermarkedPdfDir();
         File outDir = tempFolder.newFolder("rwo-out");
-        runImageTester("-rw WATERMARK -rwo " + outDir.getAbsolutePath() + " -f " + inputDir.getAbsolutePath());
+        runImageTesterExpectingNoResults("-rw WATERMARK -rwo " + outDir.getAbsolutePath() + " -f " + inputDir.getAbsolutePath());
     }
 
     @Test

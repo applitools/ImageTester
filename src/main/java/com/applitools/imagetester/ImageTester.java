@@ -41,10 +41,14 @@ public class ImageTester {
     }
 
     public static int run(String[] args) {
+        return run(args, new Logger());
+    }
+
+    /** Logger injection point for tests and embedders; all run output flows through it. */
+    public static int run(String[] args, Logger logger) {
 
         CommandLineParser parser = new DefaultParser();
         Options options = getOptions();
-        Logger logger = new Logger();
 
         // PDFBox generates fairly unhelpful logs - suppressing these by default
         java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.OFF);
