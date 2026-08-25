@@ -1,6 +1,29 @@
 # Changelog
 
-## Unreleased
+## 3.16.5 - 2026/8/24
+- **Behavior change:** a run where any test *errored* (rejected `openEyes`, render crash,
+  Eyes construction failure) now exits **1** — previously such runs exited 0 and looked
+  green to CI. Skip-only runs still exit 2; test outcomes (new test, mismatch) still exit 0
+  without `-te`. Pipelines keying on exit codes may newly fail — those runs were already
+  broken, just silently
+- A baseline branch that doesn't exist on the server (`-bb`) now fails with a message naming
+  the branch, instead of a raw `openEyes ... Bad Request(400)` dump — printed twice in folder
+  runs and crashing compare mode with a stack trace
+- Failures are reported once: the post-run abort no longer re-reports the same error, and
+  every reported failure ends with the support contact (targeted hints, like the private-cloud
+  or baseline-branch hint, add context instead of replacing it)
+- The invalid-API-key message pointed at a dead docs URL (`Default.html#cshid=api`, baked into
+  the Eyes SDK); it is rewritten to the live obtain-api-key page before printing
+- `-pb` without `-br` fails at parse time with a clear message, instead of erroring inside a
+  worker thread after "Starting tests"
+- Image tests now report outcomes as result rows like PDF tests always did: a new test under
+  `-pt` prints `[Unresolved], New test ...` with the dashboard URL instead of an exception
+  dump, and a mismatch prints `[Unresolved]` instead of "detected differences!" noise
+- GUI: run-level failures (nothing test-specific to attach them to) now show as a banner in
+  the Tests pane pointing at the Log tab, and survive a page refresh; Parent branch without
+  Branch is rejected when Run is clicked, before the run starts
+- E2E suite: scenarios now assert the run produced actual test results, not just exit code 0
+  (the `-bb` scenario had been green while every one of its runs silently failed)
 - Fix: `-p url,user,password` treated the whole comma-joined value as the proxy URL, silently
   dropping the credentials — same commons-cli 1.6.0 regression that broke `-ac` (#49)
 - Fix: `-rc`, `-mt`, and `-dn` consumed no value at all since the commons-cli 1.6.0 bump
@@ -35,7 +58,7 @@
 - GUI: the Accessibility option is now a dropdown (Off, AA/AAA × WCAG 2.0/2.1) instead of a
   free-text field with an easy-to-mistype format
 - Clearer `-ac` instructions in the README and CLI `--help`
-- 
+
 ## 3.16.3 - 2026/8/3
 - Fix issue in which Mac environments were not able to click the folder popup
 
