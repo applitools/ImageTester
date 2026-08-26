@@ -369,7 +369,7 @@
 				<!-- This plugin required to control version addition to the manifest so it will be consumable on runtime -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.2</version>
+				<version>3.5.1</version>
 				<configuration>
 					<archive>
 						<manifest>
