@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.16.6 - 2026/8/26
+- GUI: improved the precheck for comparing two documents — findings are presented in a
+  clearer review panel that opens automatically only when a document pair raises an issue
+  type not seen before; "Run anyway" dismisses it without changing any settings
+- Releases: notes now open with a **What's changed** section pulled from this changelog,
+  and publishing fails if the tagged version has no changelog section — a release can no
+  longer ship without its changes listed
+- Releases: titles dropped the "(demo)" suffix
+
 ## 3.16.5 - 2026/8/24
 - **Behavior change:** a run where any test *errored* (rejected `openEyes`, render crash,
   Eyes construction failure) now exits **1** — previously such runs exited 0 and looked
