@@ -203,7 +203,8 @@ jobs:
           # Demo phase ships unsigned, so the UNSIGNED block stays in.
           # When the signing seam is implemented, strip the block here for signed builds:
           #   sed -i '/<!-- UNSIGNED-START -->/,/<!-- UNSIGNED-END -->/d' body.md
-          sed "s/{{VERSION}}/${{ needs.validate.outputs.version }}/g" .github/release-template.md > body.md
+          bash .github/scripts/release-notes.sh \
+            "${{ needs.validate.outputs.version }}" CHANGELOG.md .github/release-template.md body.md
           cat body.md
 
       - name: Create release
@@ -212,6 +213,6 @@ jobs:
         run: |
           gh release create "${{ needs.validate.outputs.tag }}" \
             --latest \
-            --title "ImageTester GUI ${{ needs.validate.outputs.tag }} (demo)" \
+            --title "ImageTester GUI ${{ needs.validate.outputs.tag }}" \
             --notes-file body.md \
             dist/*

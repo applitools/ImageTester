@@ -14,13 +14,19 @@ installers, attached to a GitHub release marked Latest by
 | `ImageTester-<version>-macOS-Intel.dmg` | 〃 | macos-15-intel |
 | `ImageTester-<version>-Linux.deb` | 〃 | ubuntu-latest |
 
-Release notes come from `.github/release-template.md` (`{{VERSION}}` substituted).
+Release notes lead with a **What's changed** section — the tagged version's
+section from `CHANGELOG.md` — followed by `.github/release-template.md`
+(`{{VERSION}}` substituted). Both are assembled by
+`.github/scripts/release-notes.sh`, which fails the release if the CHANGELOG
+has no section for the version.
 
 ## Steps
 
-1. **Bump the version** in `pom.xml` (`<version>`). The workflow refuses tags
-   whose base version disagrees with the pom, so installer metadata and asset
-   names always match.
+1. **Bump the version** in `pom.xml` (`<version>`) and **add a matching
+   `## <version> - <date>` section to `CHANGELOG.md`**. The workflow refuses
+   tags whose base version disagrees with the pom, and the release step fails
+   if the CHANGELOG has no section for the version — the release notes lead
+   with it.
 2. Merge to `main` with CI green.
 3. **Tag and push**:
    ```
