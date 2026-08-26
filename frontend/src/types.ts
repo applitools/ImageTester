@@ -39,4 +39,6 @@ export interface PrecheckFinding {
   severity: "ERROR" | "WARNING" | "INFO";
   code: string;
   message: string;
+  /** Machine-readable extras for remediation actions, e.g. doc1SizePx/doc2SizePx on dimension-mismatch. */
+  data?: Record<string, string>;
 }

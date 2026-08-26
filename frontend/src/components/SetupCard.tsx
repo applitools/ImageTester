@@ -29,6 +29,7 @@ interface Props {
   onRun: () => void;
   onCancel: () => void;
   onToggleDrawer: () => void;
+  onSetMatchSize?: (value: string) => void;
 }
 
 export function SetupCard(p: Props) {
@@ -69,7 +70,6 @@ export function SetupCard(p: Props) {
             <DocDropZone label="Doc 1" path={p.doc1Path} uploadError={p.doc1UploadError} onChoose={p.onChooseDoc1} onDropFile={p.onDropDoc1} />
             <DocDropZone label="Doc 2" path={p.doc2Path} uploadError={p.doc2UploadError} onChoose={p.onChooseDoc2} onDropFile={p.onDropDoc2} />
           </div>
-          <PrecheckPanel findings={p.precheckFindings} />
           <div>
             <div className="text-sm text-gray-700">Comparison name <span className="text-rose-600">*</span></div>
             <input
@@ -113,6 +113,15 @@ export function SetupCard(p: Props) {
         <span>⚙ Options</span>
         <span className="text-xs text-gray-500">{p.optionsCount > 0 ? `${p.optionsCount} set` : "none"}{p.drawerOpen ? " ▴" : " ▾"}</span>
       </button>
+
+      {p.compareMode && (
+        <PrecheckPanel
+          findings={p.precheckFindings}
+          onOpenOptions={() => { if (!p.drawerOpen) p.onToggleDrawer(); }}
+          onSetMatchSize={p.onSetMatchSize}
+          resetKey={`${p.doc1Path}|${p.doc2Path}`}
+        />
+      )}
 
       {p.running ? (
         <button type="button" disabled={p.cancelling} onClick={p.onCancel}

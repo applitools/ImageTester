@@ -30,11 +30,18 @@ public class Logger {
     private static final String STALE_API_KEY_DOC_URL = "https://applitools.com/docs/Default.html#cshid=api";
     private static final String CURRENT_API_KEY_DOC_URL = "https://applitools.com/docs/topics/overview/obtain-api-key.html";
 
+    private static final String SUPPRESSION_NOTE =
+            "The same error repeated — further identical reports for this run are suppressed. \n";
+
     private final PrintStream out_;
     private boolean debug_;
     private String baselineBranchContext_;
     private final SimpleDateFormat dateFormatter_ = new SimpleDateFormat("HH:mm:ss");
     private final List<Consumer<String>> listeners_ = new CopyOnWriteArrayList<>();
+    // A run-wide failure (invalid key, rejected branch) hits every test identically —
+    // without this, a 50-file folder prints the same three-line block 50 times.
+    private final java.util.Set<String> reportedErrorBlocks_ = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.concurrent.atomic.AtomicBoolean suppressionNoted_ = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public Logger() { this(System.out, false); }
 
@@ -118,7 +125,7 @@ public class Logger {
     public void reportException(Throwable e) { reportException(e, null); }
 
     public void reportException(Throwable e, String filename) {
-        StringBuilder sb = new StringBuilder(prefix());
+        StringBuilder sb = new StringBuilder();
         if (filename != null && !filename.isEmpty())
             sb.append(String.format("File: %s \n", filename));
         switch (e.getClass().getSimpleName()) {
@@ -152,9 +159,16 @@ public class Logger {
         // Every reported failure points at support, regardless of how specific the hint above is.
         sb.append(SUPPORT_HINT);
         if (debug_) {
+            // Debug is the verbosity escape hatch: every occurrence, with its stack.
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
             sb.append(sw.toString());
+            emit(prefix() + sb);
+            return;
+        }
+        if (!reportedErrorBlocks_.add(sb.toString())) {
+            if (suppressionNoted_.compareAndSet(false, true)) emit(SUPPRESSION_NOTE);
+            return;
         }
         emit(sb.toString());
     }

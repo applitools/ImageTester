@@ -366,4 +366,78 @@ public class PdfComparePrecheckerTest {
         String message = byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch").message;
         assertTrue(message.chars().allMatch(c -> c < 128));
     }
+
+    // A4 at 250 DPI renders 2065x2923 px, LETTER renders 2125x2750 px (floor(points * 250/72)).
+
+    @Test
+    public void dimensionMismatchCarriesDoc1SizeAsMatchSizeValue() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        assertEquals("2065x2923",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
+                        .data.get("doc1SizePx"));
+    }
+
+    @Test
+    public void dimensionMismatchCarriesDoc2SizeAsMatchSizeValue() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        assertEquals("2125x2750",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
+                        .data.get("doc2SizePx"));
+    }
+
+    @Test
+    public void dimensionSizesComeFromTheFirstMismatchedPage() throws Exception {
+        File a = pdf("a.pdf", A4, A4);
+        File b = pdf("b.pdf", A4, LETTER);
+        assertEquals("2065x2923",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
+                        .data.get("doc1SizePx"));
+    }
+
+    @Test
+    public void dimensionMismatchWithSizeOverrideCarriesNoSuggestedSizes() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File b = pdf("b.pdf", LETTER);
+        Config config = new Config();
+        config.setMatchSize("1000x600");
+        assertTrue(byCode(PdfComparePrechecker.check(a, b, config, GUI), "dimension-mismatch")
+                .data.isEmpty());
+    }
+
+    @Test
+    public void dimensionDataListsTheMismatchedPages() throws Exception {
+        File a = pdf("a.pdf", A4, A4, A4);
+        File b = pdf("b.pdf", A4, LETTER, LETTER);
+        assertEquals("2, 3",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "dimension-mismatch")
+                        .data.get("pages"));
+    }
+
+    @Test
+    public void pageCountDataCarriesDoc1Count() throws Exception {
+        File a = pdf("a.pdf", A4, A4, A4);
+        File b = pdf("b.pdf", A4);
+        assertEquals("3",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "page-count-mismatch")
+                        .data.get("doc1Pages"));
+    }
+
+    @Test
+    public void pageCountDataCarriesDoc2Count() throws Exception {
+        File a = pdf("a.pdf", A4, A4, A4);
+        File b = pdf("b.pdf", A4);
+        assertEquals("1",
+                byCode(PdfComparePrechecker.check(a, b, new Config(), GUI), "page-count-mismatch")
+                        .data.get("doc2Pages"));
+    }
+
+    @Test
+    public void errorFindingsCarryNoData() throws Exception {
+        File a = pdf("a.pdf", A4);
+        File enc = encryptedPdf("enc.pdf");
+        assertTrue(byCode(PdfComparePrechecker.check(a, enc, new Config(), GUI), "encrypted")
+                .data.isEmpty());
+    }
 }

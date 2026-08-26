@@ -23,3 +23,9 @@ TestData/
 .playwright-mcp/
 clean_policy_doc.png
 clean_v2.png
+# design-sync (staged scripts, build output, machine state — see .design-sync/NOTES.md)
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules

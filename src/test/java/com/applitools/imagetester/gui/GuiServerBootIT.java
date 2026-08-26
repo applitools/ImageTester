@@ -283,6 +283,29 @@ public class GuiServerBootIT {
     }
 
     @Test
+    public void precheckSerializesSuggestedMatchSizes() throws Exception {
+        server = GuiServer.startForTest();
+        java.io.File dir = java.nio.file.Files.createTempDirectory("precheck-it").toFile();
+        java.io.File a = pdfFixture(dir, "a.pdf", 595f, 842f);
+        java.io.File b = pdfFixture(dir, "b.pdf", 612f, 792f);
+        String url = "http://127.0.0.1:" + server.port() + "/api/precheck-compare";
+        String body = JSON.writeValueAsString(Map.of(
+                "doc1Path", a.getAbsolutePath(),
+                "doc2Path", b.getAbsolutePath(),
+                "options", Map.of()));
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> resp = client.send(
+            HttpRequest.newBuilder(URI.create(url))
+                .header("Authorization", "Bearer " + server.token().value())
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(),
+            HttpResponse.BodyHandlers.ofString());
+        // 612x792pt at the default 250 DPI renders 2125x2750 px (floor(points * 250/72)).
+        assertTrue("expected doc2SizePx in body, got: " + resp.body(),
+                resp.body().contains("\"doc2SizePx\":\"2125x2750\""));
+    }
+
+    @Test
     public void precheckWithMissingPathReturns400() throws Exception {
         server = GuiServer.startForTest();
         String url = "http://127.0.0.1:" + server.port() + "/api/precheck-compare";

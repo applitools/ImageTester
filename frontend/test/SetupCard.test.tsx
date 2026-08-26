@@ -157,7 +157,7 @@ describe("SetupCard compare mode", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("500: boom");
   });
 
-  it("shows precheck findings under the doc pickers", () => {
+  it("announces precheck findings when they arrive", () => {
     render(<SetupCard {...baseProps} compareMode={true}
       precheckFindings={[{ severity: "WARNING", code: "page-count-mismatch", message: "Doc 1 has 3 page(s) but Doc 2 has 1 page(s)" }]} />);
     expect(screen.getByRole("status")).toHaveTextContent(/Doc 1 has 3 page/);
@@ -172,6 +172,7 @@ describe("SetupCard compare mode", () => {
   it("relabels Run to Run anyway when a precheck warning exists", () => {
     render(<SetupCard {...baseProps} compareMode={true} doc1Path="/a.pdf" doc2Path="/b.pdf" forcedName="cmp"
       precheckFindings={[{ severity: "WARNING", code: "dimension-mismatch", message: "Page dimensions differ" }]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.getByRole("button", { name: /run anyway/i })).toBeInTheDocument();
   });
 

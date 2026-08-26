@@ -225,12 +225,16 @@ public final class GuiServer {
 
         private void handlePrecheckCompare(HttpServletRequest req, HttpServletResponse resp) throws IOException {
             RunRequest runReq = json_.readValue(req.getInputStream(), RunRequest.class);
-            java.util.List<java.util.Map<String, String>> findings =
+            java.util.List<java.util.Map<String, Object>> findings =
                     controller_.precheckCompare(runReq).stream()
-                            .map(f -> java.util.Map.of(
-                                    "severity", f.severity.name(),
-                                    "code", f.code,
-                                    "message", f.message))
+                            .map(f -> {
+                                java.util.Map<String, Object> json = new java.util.LinkedHashMap<>();
+                                json.put("severity", f.severity.name());
+                                json.put("code", f.code);
+                                json.put("message", f.message);
+                                if (!f.data.isEmpty()) json.put("data", f.data);
+                                return json;
+                            })
                             .collect(java.util.stream.Collectors.toList());
             writeJson(resp, Map.of("findings", findings));
         }

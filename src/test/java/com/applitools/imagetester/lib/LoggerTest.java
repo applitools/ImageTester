@@ -150,6 +150,56 @@ public class LoggerTest {
         assertFalse(output.contains("Default.html#cshid=api"));
     }
 
+    private static final String INVALID_KEY =
+            "The provided API key as****df is invalid. Please check your API key and try again.";
+
+    @Test
+    public void reportException_identicalError_reportedOnlyOnce() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), false);
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException(INVALID_KEY));
+        assertEquals(1, countOccurrences(buffer.toString(), "as****df is invalid"));
+    }
+
+    @Test
+    public void reportException_repeatedError_notesSuppressionExactlyOnce() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), false);
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException(INVALID_KEY));
+        assertEquals(1, countOccurrences(buffer.toString(), "suppressed"));
+    }
+
+    @Test
+    public void reportException_differentErrors_bothReported() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), false);
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException("Failed closing test"));
+        String output = buffer.toString();
+        assertTrue(output.contains("as****df is invalid") && output.contains("Failed closing test"));
+    }
+
+    @Test
+    public void reportException_debugMode_reportsEveryOccurrence() {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        Logger logger = new Logger(new PrintStream(buffer, true), true);
+        logger.reportException(new EyesException(INVALID_KEY));
+        logger.reportException(new EyesException(INVALID_KEY));
+        // The debug stack trace repeats the message itself, so count the hint line instead.
+        assertEquals(2, countOccurrences(buffer.toString(), "private cloud"));
+    }
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length()))
+            count++;
+        return count;
+    }
+
     private static String reportWithBranchContext(String branchName, Throwable e) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         Logger logger = new Logger(new PrintStream(buffer, true), false);

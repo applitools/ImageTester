@@ -179,6 +179,7 @@ export function App() {
             onSetKey={async (v) => { if (v) { await api.setApiKey(v); setHasKey(true); } }}
             onChoosePath={async (t) => { const r = await api.choosePath(t, sourcePath || undefined); if (r.path) { setSourcePath(r.path); writeLastSourcePath(r.path); } }}
             onMatchLevel={(l) => setOption("ml", l)}
+            onSetMatchSize={(v) => setOption("ms", v)}
             onRun={async () => {
               setRunError(null);
               setLogLines([]);

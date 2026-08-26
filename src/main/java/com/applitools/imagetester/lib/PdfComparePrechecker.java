@@ -11,7 +11,9 @@ import java.io.InputStream;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -33,11 +35,18 @@ public final class PdfComparePrechecker {
         public final Severity severity;
         public final String code;
         public final String message;
+        /** Machine-readable extras for GUI remediation actions; empty for most findings. */
+        public final Map<String, String> data;
 
         Finding(Severity severity, String code, String message) {
+            this(severity, code, message, Collections.emptyMap());
+        }
+
+        Finding(Severity severity, String code, String message, Map<String, String> data) {
             this.severity = severity;
             this.code = code;
             this.message = message;
+            this.data = data;
         }
     }
 
@@ -129,7 +138,9 @@ public final class PdfComparePrechecker {
         findings.add(new Finding(Severity.WARNING, "page-count-mismatch", String.format(
                 "Doc 1 has %d page(s) but Doc 2 has %d page(s). The extra page(s) will create new baselines "
                         + "instead of comparisons. %s",
-                facts1.pageCount, facts2.pageCount, selectedPagesRemedy(style))));
+                facts1.pageCount, facts2.pageCount, selectedPagesRemedy(style)),
+                Map.of("doc1Pages", String.valueOf(facts1.pageCount),
+                        "doc2Pages", String.valueOf(facts2.pageCount))));
     }
 
     private static void addDimensionFindings(DocFacts facts1, DocFacts facts2, Config config,
@@ -176,8 +187,15 @@ public final class PdfComparePrechecker {
         } else {
             message.append(dimensionRemedy(style));
         }
+        // The sizes let the GUI offer one-click "Match Doc N size" fixes and draw the
+        // mismatch instead of describing it; once an override is set there is nothing
+        // left to suggest, so the INFO variant carries none.
+        Map<String, String> data = hasSizeOverride ? Collections.emptyMap() : Map.of(
+                "doc1SizePx", firstMismatchPx1[0] + "x" + firstMismatchPx1[1],
+                "doc2SizePx", firstMismatchPx2[0] + "x" + firstMismatchPx2[1],
+                "pages", listed + (mismatched.size() > MAX_LISTED_PAGES ? ", ..." : ""));
         findings.add(new Finding(hasSizeOverride ? Severity.INFO : Severity.WARNING,
-                "dimension-mismatch", message.toString()));
+                "dimension-mismatch", message.toString(), data));
     }
 
     /** GUI points at the Options drawer's "Selected pages" field; CLI names the -sp flag. */
