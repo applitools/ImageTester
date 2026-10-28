@@ -237,8 +237,13 @@ Source picker for Doc 1 / Doc 2 file pickers and a required Comparison name fiel
 
 On the command line:
 
-+ `-doc1 [path]` - First document to compare (image or PDF)
-+ `-doc2 [path]` - Second document to compare (image or PDF)
++ `-doc1 [path]` - First document to compare
++ `-doc2 [path]` - Second document to compare
+
+Both accept every file type a normal run does: images, PDFs, and anything ImageTester converts to
+PDF (DOC/DOCX, PPT/PPTX, XLS/XLSX, TXT, MD, RTF — office formats need LibreOffice installed, same
+as a folder run). Unlike a folder run, a document that can't be converted fails the comparison
+with the reason instead of being skipped, since there is nothing else to fall back to.
 
 Both flags are required together, and are mutually exclusive with `-f`. You must also set
 `-fn [name]` (Forced name) — Doc 1 and Doc 2 need to share this name so Eyes treats them as the
