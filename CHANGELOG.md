@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.16.7 - 2026/10/28
 - Compare two documents (GUI toggle, `-doc1`/`-doc2`) now accepts every file type a normal run
   does. Office documents, TXT, MD and RTF are converted to PDF through the same converters the
   folder-scan path uses; previously compare mode rejected them with "Unsupported file type for
