@@ -102,7 +102,7 @@
 		<dependency>
 			<groupId>com.applitools</groupId>
 			<artifactId>eyes-images-java5</artifactId>
-			<version>5.81.10</version>
+			<version>5.83.1</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
