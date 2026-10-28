@@ -8,11 +8,16 @@ import com.applitools.imagetester.TestObjects.ImageFileTest;
 import com.applitools.imagetester.TestObjects.IDisposable;
 import com.applitools.imagetester.TestObjects.PdfFileTest;
 import com.applitools.imagetester.TestObjects.TestBase;
+import com.applitools.imagetester.lib.converters.ConversionRegistry;
+import com.applitools.imagetester.lib.converters.PdfConversion;
+import com.applitools.imagetester.lib.converters.SkipTracker;
+import com.applitools.imagetester.lib.converters.SkippedFileException;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
 /**
@@ -46,25 +51,38 @@ public final class CompareRunner {
      */
     public static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory,
                                     java.util.function.BooleanSupplier isCancelled) throws IOException {
+        return run(doc1, doc2, config, factory, isCancelled, PdfConversion.defaultRegistry());
+    }
+
+    /** {@code registry} is injectable so tests can simulate converter outcomes (e.g. LibreOffice missing). */
+    static CompareResult run(File doc1, File doc2, Config config, EyesFactory factory,
+                             java.util.function.BooleanSupplier isCancelled,
+                             ConversionRegistry registry) throws IOException {
+        // Office/text documents are converted to PDF up front so every later step (precheck,
+        // page-range validation, the test objects) sees the same inputs the folder-scan path
+        // would. Images and PDFs pass through untouched.
+        File input1 = toComparable("Doc 1", doc1, config, registry);
+        File input2 = toComparable("Doc 2", doc2, config, registry);
+
         // GUI runs also precheck in RunController.start; this gate stays so the CLI -doc1/-doc2
         // path is covered -- don't deduplicate.
         for (PdfComparePrechecker.Finding finding
-                : PdfComparePrechecker.check(doc1, doc2, config, PdfComparePrechecker.MessageStyle.CLI)) {
+                : PdfComparePrechecker.check(input1, input2, config, PdfComparePrechecker.MessageStyle.CLI)) {
             if (finding.severity == PdfComparePrechecker.Severity.ERROR) {
                 throw new RuntimeException(finding.message);
             }
             config.logger.printMessage(String.format("Precheck %s: %s%n", finding.severity, finding.message));
         }
 
-        validatePageRangeFits(doc1, config);
-        validatePageRangeFits(doc2, config);
+        validatePageRangeFits(input1, config);
+        validatePageRangeFits(input2, config);
 
         boolean hasAccessibilityValidation = factory.hasAccessibilityValidation();
 
         if (isCancelled.getAsBoolean()) return new CompareResult(null, null);
 
         config.logger.printMessage(String.format("Comparing Doc 1 (baseline): %s%n", doc1.getName()));
-        TestResults doc1Result = runAllSequentially(buildTests(doc1, config), factory, config, hasAccessibilityValidation, isCancelled);
+        TestResults doc1Result = runAllSequentially(buildTests(input1, doc1, config), factory, config, hasAccessibilityValidation, isCancelled);
 
         if (isCancelled.getAsBoolean()) {
             config.logger.printMessage(String.format("Run cancelled — skipping Doc 2%n"));
@@ -72,7 +90,7 @@ public final class CompareRunner {
         }
 
         config.logger.printMessage(String.format("Comparing Doc 2: %s%n", doc2.getName()));
-        TestResults doc2Result = runAllSequentially(buildTests(doc2, config), factory, config, hasAccessibilityValidation, isCancelled);
+        TestResults doc2Result = runAllSequentially(buildTests(input2, doc2, config), factory, config, hasAccessibilityValidation, isCancelled);
 
         if (config.shouldThrowException && doc2Result != null && doc2Result.isDifferent()) {
             throw new DiffsFoundException(doc2Result, doc2Result.getId(), doc2Result.getName());
@@ -97,19 +115,50 @@ public final class CompareRunner {
         }
     }
 
-    /** Mirrors Suite.create()'s branching for a single file, scoped to images/PDFs only. */
-    private static List<TestBase> buildTests(File doc, Config config) throws IOException {
-        if (Patterns.IMAGE.matcher(doc.getName()).matches()) {
-            return java.util.Collections.singletonList(new ImageFileTest(doc, config));
+    /**
+     * Returns the file the test objects should actually open: the input itself for images and
+     * PDFs, a converted temp PDF for everything the folder-scan path can convert. Unlike Suite,
+     * which records a skip and moves on to the next file, compare mode has nothing to move on
+     * to - a document that can't be converted fails the run with the reason (and the install
+     * hint when the reason is a missing LibreOffice).
+     */
+    private static File toComparable(String label, File doc, Config config, ConversionRegistry registry)
+            throws IOException {
+        String name = doc.getName();
+        if (Patterns.IMAGE.matcher(name).matches() || Patterns.PDF.matcher(name).matches()) return doc;
+        Optional<File> converted;
+        try {
+            converted = PdfConversion.convertToTempPdf(doc, registry, config.logger);
+        } catch (SkippedFileException e) {
+            // Not recorded in skipTracker: the exception carries the reason, and the run
+            // ends here, so the end-of-run skip summary would never print anyway.
+            String message = String.format("%s (%s) could not be converted to PDF: %s", label, name, e.getReason());
+            if (SkipTracker.REASON_LIBREOFFICE_MISSING.equals(e.getReason())) {
+                message += "\n" + SkipTracker.LIBREOFFICE_INSTALL_HINT;
+            }
+            throw new RuntimeException(message, e);
         }
-        if (!Patterns.PDF.matcher(doc.getName()).matches()) {
-            throw new RuntimeException(
-                    "Unsupported file type for comparison: " + doc.getName() + " (only images and PDFs are supported)");
+        if (!converted.isPresent()) {
+            throw new RuntimeException("Unsupported file type for comparison: " + name
+                    + " (supported: images, PDFs, and documents that can be converted to PDF"
+                    + " such as DOC/DOCX, PPT/PPTX, XLS/XLSX, TXT, MD and RTF)");
+        }
+        return converted.get();
+    }
+
+    /**
+     * Mirrors Suite.create()'s branching for a single file. {@code input} is what gets opened
+     * (image, PDF, or converted temp PDF); {@code source} is the user's original file so test
+     * names and the Filename property report "quote.docx", not the temp PDF.
+     */
+    private static List<TestBase> buildTests(File input, File source, Config config) throws IOException {
+        if (Patterns.IMAGE.matcher(input.getName()).matches()) {
+            return java.util.Collections.singletonList(new ImageFileTest(input, config));
         }
         if (config.splitSteps) {
-            return new ArrayList<>(new PDFFileBatch(doc, config).tests());
+            return new ArrayList<>(new PDFFileBatch(input, config).tests());
         }
-        return java.util.Collections.singletonList(new PdfFileTest(doc, config));
+        return java.util.Collections.singletonList(new PdfFileTest(input, config, source));
     }
 
     /**

@@ -32,7 +32,7 @@ import com.applitools.imagetester.lib.TestExecutor;
 import com.applitools.imagetester.lib.Utils;
 
 public class ImageTester {
-    public static final String CUR_VER = "3.16.6";
+    public static final String CUR_VER = "3.16.7";
     public static final int DEFAULT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() * 2;
     public static final String DEFAULT_THREADS = String.valueOf(DEFAULT_THREAD_COUNT);
 
@@ -239,10 +239,8 @@ public class ImageTester {
     private static void printInstallHint(Logger logger) {
         logger.printMessage("");
         logger.printMessage("Some files required LibreOffice for conversion but it was not found on PATH.");
-        logger.printMessage("Install LibreOffice to enable support for .doc/.docx/.ppt/.pptx and other office formats:");
-        logger.printMessage("  macOS:   brew install --cask libreoffice");
-        logger.printMessage("  Windows: winget install TheDocumentFoundation.LibreOffice");
-        logger.printMessage("  Linux:   sudo apt-get install libreoffice");
+        for (String line : com.applitools.imagetester.lib.converters.SkipTracker.LIBREOFFICE_INSTALL_HINT.split("\n"))
+            logger.printMessage(line);
     }
 
     /**

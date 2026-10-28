@@ -13,18 +13,11 @@ import com.applitools.imagetester.TestObjects.TestBase;
 import com.applitools.imagetester.lib.Config;
 import com.applitools.imagetester.lib.Patterns;
 import com.applitools.imagetester.lib.TestExecutor;
-import com.applitools.imagetester.lib.converters.ConversionRegistry;
-import com.applitools.imagetester.lib.converters.FormatConverter;
-import com.applitools.imagetester.lib.converters.LibreOfficeConverter;
-import com.applitools.imagetester.lib.converters.MarkdownToPdfConverter;
-import com.applitools.imagetester.lib.converters.RtfToPdfConverter;
+import com.applitools.imagetester.lib.converters.PdfConversion;
 import com.applitools.imagetester.lib.converters.SkippedFileException;
-import com.applitools.imagetester.lib.converters.TxtToPdfConverter;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,17 +26,6 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public class Suite {
-
-    private static final ConversionRegistry REGISTRY = buildRegistry();
-
-    private static ConversionRegistry buildRegistry() {
-        ConversionRegistry r = new ConversionRegistry();
-        r.register(new TxtToPdfConverter());
-        r.register(new MarkdownToPdfConverter());
-        r.register(new RtfToPdfConverter());
-        r.register(new LibreOfficeConverter());
-        return r;
-    }
 
     private final TestExecutor executor_;
     private final List<TestBase> tests_ = new ArrayList<>();
@@ -115,15 +97,10 @@ public class Suite {
     }
 
     private static TestBase tryConvert(File file, Config conf) {
-        Optional<FormatConverter> match = REGISTRY.find(file);
-        if (!match.isPresent()) return null;
         try {
-            conf.logger.printMessage(String.format("Converting %s to PDF...%n", file.getName()));
-            Path tempDir = Files.createTempDirectory("imagetester-");
-            tempDir.toFile().deleteOnExit();
-            File pdfTemp = match.get().convertToPdf(file, tempDir);
-            pdfTemp.deleteOnExit();
-            return new PdfFileTest(pdfTemp, conf, file);
+            Optional<File> pdfTemp = PdfConversion.convertToTempPdf(file, PdfConversion.defaultRegistry(), conf.logger);
+            if (!pdfTemp.isPresent()) return null;
+            return new PdfFileTest(pdfTemp.get(), conf, file);
         } catch (SkippedFileException e) {
             conf.skipTracker.record(e.getFile(), e.getReason());
             conf.logger.printMessage(String.format("Skipping %s: %s",

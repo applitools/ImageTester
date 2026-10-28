@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.16.7 - 2026/10/28
+- Compare two documents (GUI toggle, `-doc1`/`-doc2`) now accepts every file type a normal run
+  does. Office documents, TXT, MD and RTF are converted to PDF through the same converters the
+  folder-scan path uses; previously compare mode rejected them with "Unsupported file type for
+  comparison ... (only images and PDFs are supported)" regardless of whether LibreOffice was
+  installed. A document that can't be converted (e.g. LibreOffice missing) fails the run with
+  the reason and the install hint instead of silently comparing nothing
+
 ## 3.16.6 - 2026/8/26
 - GUI: improved the precheck for comparing two documents — findings are presented in a
   clearer review panel that opens automatically only when a document pair raises an issue

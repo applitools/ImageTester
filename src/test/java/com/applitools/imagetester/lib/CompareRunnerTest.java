@@ -239,7 +239,7 @@ public class CompareRunnerTest {
 
     @Test
     public void unsupportedFileTypeThrowsClearErrorBeforeAnyEyesCall() throws Exception {
-        File doc1 = tmp.newFile("doc1.txt");
+        File doc1 = tmp.newFile("doc1.zip");
         File doc2 = pngFile(tmp, "doc2.png");
         OrderingFactory of = new OrderingFactory(new ArrayList<>());
 
@@ -247,7 +247,80 @@ public class CompareRunnerTest {
                 () -> CompareRunner.run(doc1, doc2, config("cmp"), of.factory()));
 
         assertTrue(ex.getMessage().contains("Unsupported file type for comparison"));
-        assertTrue(ex.getMessage().contains("doc1.txt"));
+        assertTrue(ex.getMessage().contains("doc1.zip"));
+        assertTrue("message should name the convertible formats: " + ex.getMessage(),
+                ex.getMessage().contains("DOCX"));
         assertTrue(of.log.isEmpty());
+    }
+
+    private static File txtFile(TemporaryFolder tmp, String name, String content) throws IOException {
+        File f = tmp.newFile(name);
+        java.nio.file.Files.write(f.toPath(), content.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return f;
+    }
+
+    /**
+     * Regression: compare mode used to reject every non-image/non-PDF input with "only images
+     * and PDFs are supported" even though the folder-scan path converted them. TXT exercises
+     * the shared conversion path without needing LibreOffice on the test machine.
+     */
+    @Test
+    public void convertibleDocumentsAreConvertedAndComparedLikePdfs() throws Exception {
+        File doc1 = txtFile(tmp, "quote-v1.txt", "Quote v1\nTotal: 100");
+        File doc2 = txtFile(tmp, "quote-v2.txt", "Quote v2\nTotal: 120");
+        Config c = config("cmp");
+        List<String> lines = new ArrayList<>();
+        c.logger.addListener(lines::add);
+        OrderingFactory of = new OrderingFactory(java.util.Arrays.asList(passedResult(), passedResult()));
+
+        CompareRunner.CompareResult result = CompareRunner.run(doc1, doc2, c, of.factory());
+
+        String log = String.join("", lines);
+        assertTrue("expected a conversion line for doc1, got: " + log, log.contains("Converting quote-v1.txt to PDF"));
+        assertTrue("expected a conversion line for doc2, got: " + log, log.contains("Converting quote-v2.txt to PDF"));
+        assertEquals("both documents must open once each, got: " + of.log,
+                java.util.Arrays.asList("open-0", "close-0", "open-1", "close-1"), of.log);
+        assertTrue(result.doc2Result != null);
+        assertTrue("conversion must not be recorded as a skip", c.skipTracker.isEmpty());
+    }
+
+    @Test
+    public void convertibleDocumentsWorkWithSplitSteps() throws Exception {
+        File doc1 = txtFile(tmp, "a.txt", "one page");
+        File doc2 = txtFile(tmp, "b.txt", "one page, changed");
+        Config c = config("cmp");
+        c.splitSteps = true;
+        OrderingFactory of = new OrderingFactory(java.util.Arrays.asList(passedResult(), passedResult()));
+
+        CompareRunner.run(doc1, doc2, c, of.factory());
+
+        assertEquals(java.util.Arrays.asList("open-0", "close-0", "open-1", "close-1"), of.log);
+    }
+
+    @Test
+    public void missingLibreOfficeFailsTheRunWithInstallHintBeforeAnyEyesCall() throws Exception {
+        File doc1 = tmp.newFile("quote.docx");
+        File doc2 = pngFile(tmp, "doc2.png");
+        Config c = config("cmp");
+        OrderingFactory of = new OrderingFactory(new ArrayList<>());
+        com.applitools.imagetester.lib.converters.ConversionRegistry registry =
+                new com.applitools.imagetester.lib.converters.ConversionRegistry();
+        registry.register(new com.applitools.imagetester.lib.converters.FormatConverter() {
+            @Override public boolean accepts(File file) { return file.getName().endsWith(".docx"); }
+            @Override public File convertToPdf(File file, java.nio.file.Path tempDir)
+                    throws com.applitools.imagetester.lib.converters.SkippedFileException {
+                throw new com.applitools.imagetester.lib.converters.SkippedFileException(file,
+                        com.applitools.imagetester.lib.converters.SkipTracker.REASON_LIBREOFFICE_MISSING);
+            }
+        });
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> CompareRunner.run(doc1, doc2, c, of.factory(), () -> false, registry));
+
+        assertTrue(ex.getMessage(), ex.getMessage().contains("Doc 1 (quote.docx) could not be converted to PDF"));
+        assertTrue(ex.getMessage(), ex.getMessage().contains("LibreOffice not found"));
+        assertTrue("message should carry the install hint: " + ex.getMessage(),
+                ex.getMessage().contains("winget install TheDocumentFoundation.LibreOffice"));
+        assertTrue("a failed conversion must make no Eyes calls, got: " + of.log, of.log.isEmpty());
     }
 }

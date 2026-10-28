@@ -9,6 +9,14 @@ public class SkipTracker {
 
     public static final String REASON_LIBREOFFICE_MISSING = "LibreOffice not found";
 
+    /** Printed whenever a run needed LibreOffice and couldn't find it; shared by the folder-scan
+     *  skip summary and the compare-mode failure message so both tell the user the same thing. */
+    public static final String LIBREOFFICE_INSTALL_HINT =
+            "Install LibreOffice to enable support for .doc/.docx/.ppt/.pptx and other office formats:\n"
+            + "  macOS:   brew install --cask libreoffice\n"
+            + "  Windows: winget install TheDocumentFoundation.LibreOffice\n"
+            + "  Linux:   sudo apt-get install libreoffice";
+
     public static final String REASON_POSTSCRIPT_XPS_UNSUPPORTED =
             "PostScript/XPS conversion is not supported - convert the file to PDF first";
 
